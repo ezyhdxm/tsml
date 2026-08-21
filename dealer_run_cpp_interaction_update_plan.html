@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dealer Run + CP+ Feature Upgrade Plan — Column-Aware Design</title>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--text:#172033;--muted:#667085;--line:#d9e1ea;--good:#067647;--goodbg:#ecfdf3;--warn:#b54708;--warnbg:#fffaeb;--bad:#b42318;--badbg:#fef3f2;--code:#fbfcfe;--codefg:#101828;--blue:#175cd3}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:15.5px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+main{max-width:1160px;margin:auto;padding:18px 14px 60px} .hero,.card{border-radius:16px;margin:16px 0}
+.hero{padding:28px;background:linear-gradient(135deg,#172554,#3157d5);color:#fff} .hero h1{margin:0 0 8px;font-size:36px} .hero p{margin:0;color:#e8ecff;max-width:980px}
+.card{background:#fff;border:1px solid var(--line);padding:22px} h2{margin:0 0 12px;font-size:25px} h3{margin:22px 0 8px;font-size:18px}
+.callout{padding:13px 15px;border-radius:10px;border-left:4px solid;margin:14px 0} .good{background:var(--goodbg);border-color:var(--good)} .warn{background:var(--warnbg);border-color:var(--warn)} .bad{background:var(--badbg);border-color:var(--bad)}
+.tbl{overflow:auto;border:1px solid var(--line);border-radius:10px} table{border-collapse:collapse;width:100%;min-width:840px} th,td{padding:10px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:13.5px} th{background:#f7f9fc}
+.p0{color:#b42318;font-weight:800} .p1{color:#b54708;font-weight:800} .p2{color:#175cd3;font-weight:800}
+.use{color:#067647;font-weight:700} .audit{color:#b54708;font-weight:700} .ban{color:#b42318;font-weight:700}
+code{background:#eef2f6;padding:1px 5px;border-radius:5px;color:#172033} .codebox{border:1px solid #c9d3df;border-radius:12px;overflow:hidden;margin:14px 0;background:var(--code)} .codehead{padding:8px 12px;background:#eef2f6;border-bottom:1px solid #c9d3df;font-weight:700} pre{margin:0;padding:15px;overflow:auto;background:var(--code);color:var(--codefg);font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace} pre code{background:transparent;padding:0;color:inherit}
+.small{font-size:13px;color:var(--muted)} .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px} .grid>div{border:1px solid var(--line);border-radius:10px;padding:12px;background:#fafbfc}
+@media(max-width:700px){main{padding:8px}.hero,.card{padding:17px}.hero h1{font-size:29px}}
+</style></head>
+<body><main>
+<section class="hero">
+<h1>Dealer Run + CP+ Feature Upgrade Plan</h1>
+<p>Column-aware design using the concrete CP+ fields now visible in the merged observation table. The main goal is to turn CP+ from “one more baseline column” into a disciplined point-in-time reference layer: self-quality checks, rates/credit decomposition, dealer-vs-CP+ residual features, historical calibration, and leakage-safe dynamics.</p>
+</section>
+
+<section class="card">
+<h2>1. CP+ columns currently available</h2>
+<p>The visible merged table contains the following CP+ fields:</p>
+<div class="tbl"><table>
+<tr><th>Column</th><th>Role</th><th>Recommendation</th></tr>
+<tr><td><code>BID_YIELD_CPP</code>, <code>ASK_YIELD_CPP</code></td><td>CP+ yield-side quote</td><td class="use">Use as reference context / yield-space features, but never subtract directly from dealer spread.</td></tr>
+<tr><td><code>BID_SPREAD_CPP_EXEC_TIME</code>, <code>ASK_SPREAD_CPP_EXEC_TIME</code>, <code>MID_SPREAD_CPP_EXEC_TIME</code></td><td>CP+ spread observed/aligned at execution time</td><td class="use">Primary CP+ spread reference candidate for dealer-spread interaction, subject to timestamp audit.</td></tr>
+<tr><td><code>LASTUPDATETIME_CPP</code></td><td>CP+ update timestamp</td><td class="use">Critical for age, staleness, and point-in-time eligibility.</td></tr>
+<tr><td><code>BID_SPREAD_CPP</code>, <code>ASK_SPREAD_CPP</code>, <code>MID_SPREAD_CPP</code></td><td>Another CP+ spread view/state</td><td class="audit">Audit against EXEC_TIME fields before modeling. If these are post-execution/latest values, they may leak.</td></tr>
+<tr><td><code>D_CPP_BM_SPREAD</code>, <code>D_CPP_BM_SPREAD_ASK</code>, <code>D_CPP_BM_SPREAD_BID</code></td><td>Derived CP+/benchmark quantities</td><td class="audit">Do not use until exact semantic definition and availability timing are confirmed.</td></tr>
+<tr><td><code>CPP_SIDED_ERROR</code>, <code>CPP_MID_ERROR</code></td><td>CP+ error/residual fields</td><td class="ban">Current-row values are leakage candidates if they use the realized trade. Quarantine from model inputs; use only lagged historical versions after strict point-in-time construction.</td></tr>
+</table></div>
+<div class="good callout"><b>Primary modeling reference:</b> for dealer-spread interactions, start from <code>BID_SPREAD_CPP_EXEC_TIME</code> / <code>ASK_SPREAD_CPP_EXEC_TIME</code>. Keep the non-EXEC_TIME spread fields in an audit/debug layer until their temporal semantics are proven.</div>
+</section>
+
+<section class="card">
+<h2>2. First required audit: EXEC_TIME vs non-EXEC_TIME CP+ fields</h2>
+<p>The sample rows appear to show the EXEC_TIME spread fields equal to <code>BID/ASK/MID_SPREAD_CPP</code>, but this must be measured over the full dataset.</p>
+<div class="codebox"><div class="codehead">Audit equality and divergence</div><pre><code>pairs = [
+    ("BID_SPREAD_CPP_EXEC_TIME", "BID_SPREAD_CPP"),
+    ("ASK_SPREAD_CPP_EXEC_TIME", "ASK_SPREAD_CPP"),
+    ("MID_SPREAD_CPP_EXEC_TIME", "MID_SPREAD_CPP"),
+]
+
+audit = {}
+for a, b in pairs:
+    valid = data[[a, b]].dropna()
+    diff = valid[a] - valid[b]
+    audit[f"{a}_vs_{b}"] = {
+        "n": len(valid),
+        "equal_rate": np.isclose(valid[a], valid[b], rtol=0, atol=1e-12).mean(),
+        "mean_abs_diff": diff.abs().mean(),
+        "p99_abs_diff": diff.abs().quantile(0.99),
+        "max_abs_diff": diff.abs().max(),
+    }</code></pre></div>
+<p>Interpretation:</p>
+<ul>
+<li>If equality is essentially 100%, keep one set only to avoid duplicated features.</li>
+<li>If they differ, determine whether the non-EXEC_TIME columns are a later/latest CP+ state. If yes, they are <b>debug-only</b> for execution-time prediction.</li>
+<li>If they represent distinct but point-in-time-valid concepts, name the distinction explicitly and feature them separately.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>3. CP+ self-quality features from the columns you already have</h2>
+<p>Before asking whether dealer quotes disagree with CP+, quantify whether CP+ itself is internally coherent.</p>
+<div class="codebox"><div class="codehead">Reference self-quality features</div><pre><code>df["cpp_spread_width_exec"] = (
+    df["BID_SPREAD_CPP_EXEC_TIME"]
+    - df["ASK_SPREAD_CPP_EXEC_TIME"]
+)
+
+df["cpp_spread_mid_reconstructed"] = 0.5 * (
+    df["BID_SPREAD_CPP_EXEC_TIME"]
+    + df["ASK_SPREAD_CPP_EXEC_TIME"]
+)
+
+df["cpp_spread_mid_consistency_error"] = (
+    df["MID_SPREAD_CPP_EXEC_TIME"]
+    - df["cpp_spread_mid_reconstructed"]
+)
+
+df["cpp_yield_width"] = (
+    df["BID_YIELD_CPP"] - df["ASK_YIELD_CPP"]
+)
+
+df["cpp_width_crossed"] = df["cpp_spread_width_exec"].lt(0)
+df["cpp_width_zero"] = df["cpp_spread_width_exec"].eq(0)
+df["cpp_two_sided"] = (
+    df["BID_SPREAD_CPP_EXEC_TIME"].notna()
+    &amp; df["ASK_SPREAD_CPP_EXEC_TIME"].notna()
+)</code></pre></div>
+<p>In the visible sample, bid spread is above ask spread, so the natural spread-width convention is <code>bid - ask</code>. These self-quality features should be retained even if CP+ remains the baseline.</p>
+</section>
+
+<section class="card">
+<h2>4. A useful new decomposition: infer the benchmark yield from CP+ yield and spread</h2>
+<p>The current columns contain both CP+ yield and CP+ spread. That lets us recover the benchmark component implied by CP+:</p>
+<p><code>benchmark_yield ≈ yield - spread</code>.</p>
+<p>In the visible sample, the bid- and ask-implied benchmark yields appear to line up very closely, which makes this an excellent consistency check and a potentially useful rates-context feature.</p>
+<div class="codebox"><div class="codehead">Implied benchmark-yield features</div><pre><code>df["cpp_implied_bm_yield_bid"] = (
+    df["BID_YIELD_CPP"] - df["BID_SPREAD_CPP_EXEC_TIME"]
+)
+
+df["cpp_implied_bm_yield_ask"] = (
+    df["ASK_YIELD_CPP"] - df["ASK_SPREAD_CPP_EXEC_TIME"]
+)
+
+df["cpp_implied_bm_yield_mid"] = 0.5 * (
+    df["cpp_implied_bm_yield_bid"]
+    + df["cpp_implied_bm_yield_ask"]
+)
+
+df["cpp_implied_bm_side_disagreement"] = (
+    df["cpp_implied_bm_yield_bid"]
+    - df["cpp_implied_bm_yield_ask"]
+)
+
+df["cpp_yield_width_minus_spread_width"] = (
+    df["cpp_yield_width"] - df["cpp_spread_width_exec"]
+)</code></pre></div>
+<p>This separates CP+ into:</p>
+<ul>
+<li><b>rates/benchmark component:</b> implied benchmark yield;</li>
+<li><b>credit component:</b> CP+ spread;</li>
+<li><b>liquidity/uncertainty component:</b> CP+ bid-ask width and age.</li>
+</ul>
+<div class="warn callout"><b>Do not compare yield and spread directly.</b> The benchmark decomposition is valid only after confirming units (e.g. percentage points vs bps) are consistent.</div>
+</section>
+
+<section class="card">
+<h2>5. CP+ timestamp and staleness features</h2>
+<p><code>LASTUPDATETIME_CPP</code> should be a first-class feature, not merely a filter.</p>
+<div class="codebox"><div class="codehead">Reference age and validity</div><pre><code>cpp_ts = pd.to_datetime(
+    df["LASTUPDATETIME_CPP"],
+    utc=True,
+    errors="coerce",
+)
+
+obs_ts = pd.to_datetime(
+    df["EFFECTIVE_DATETIME_TS"],
+    utc=True,
+    errors="coerce",
+)
+
+df["cpp_age_seconds"] = (obs_ts - cpp_ts).dt.total_seconds()
+
+df["cpp_timestamp_missing"] = cpp_ts.isna()
+df["cpp_timestamp_future"] = cpp_ts.gt(obs_ts)
+df["cpp_age_negative"] = df["cpp_age_seconds"].lt(0)
+
+for seconds in (60, 300, 900, 3600):
+    df[f"cpp_fresh_le_{seconds}s"] = (
+        df["cpp_age_seconds"].ge(0)
+        &amp; df["cpp_age_seconds"].le(seconds)
+    )</code></pre></div>
+<p>For the actual feature builder, compare CP+ time against the same <code>information_cutoff</code> used for dealer state, not necessarily raw trade time.</p>
+</section>
+
+<section class="card">
+<h2>6. Main dealer × CP+ feature family</h2>
+<p>For spread-based dealer-run features, use CP+ spread—not CP+ yield—as the direct reference. Compute all interactions at the observation cutoff and at common sizes (100k / 250k / 500k / 1mm, plus requested size if known).</p>
+<div class="tbl"><table>
+<tr><th>Feature</th><th>Definition</th><th>Interpretation</th></tr>
+<tr><td><code>same_side_edge</code></td><td>dealer bid − CP+ bid; CP+ ask − dealer ask (economic-value orientation)</td><td>Dealer improves CP+ on the same side.</td></tr>
+<tr><td><code>same_side_better_share</code></td><td>fraction of eligible dealers with positive same-side edge</td><td>Breadth of dealer disagreement before full crossing.</td></tr>
+<tr><td><code>cross_edge</code></td><td>dealer bid vs CP+ ask; dealer ask vs CP+ bid</td><td>Strongest static disagreement signal.</td></tr>
+<tr><td><code>cross_share</code></td><td>crossing dealers / eligible dealers</td><td>One dealer vs broad consensus.</td></tr>
+<tr><td><code>cross_edge_over_cpp_width</code></td><td>positive cross edge / CP+ width</td><td>Crossing strength normalized by reference liquidity.</td></tr>
+<tr><td><code>consensus_aggressive_edge</code></td><td>dealer median edge with sign normalized so positive = dealer more aggressive</td><td>Continuous residual around the baseline.</td></tr>
+<tr><td><code>reference_percentile</code></td><td>CP+ location in dealer cross-section</td><td>Whether CP+ is a cross-sectional outlier.</td></tr>
+<tr><td><code>fresh_weighted_cross_share</code></td><td>cross share weighted by dealer quote age</td><td>Discount stale dealer signals.</td></tr>
+</table></div>
+</section>
+
+<section class="card">
+<h2>7. Explicit metric contract: spread vs yield</h2>
+<p>The new columns make a previously ambiguous issue concrete: CP+ has both yield and spread. The interaction helper should reject metric mismatch.</p>
+<div class="codebox"><div class="codehead">Recommended metric guard</div><pre><code>def _validate_reference_metric(
+    dealer_metric: str,
+    reference_metric: str,
+) -&gt; None:
+    if dealer_metric != reference_metric:
+        raise ValueError(
+            "Dealer quote and CP+ reference must be in the same metric "
+            f"before interaction features are computed: "
+            f"{dealer_metric=} {reference_metric=}"
+        )</code></pre></div>
+<p>Recommended policy:</p>
+<ul>
+<li>Dealer spread ↔ <code>*_SPREAD_CPP_EXEC_TIME</code>.</li>
+<li>Dealer yield ↔ <code>BID_YIELD_CPP / ASK_YIELD_CPP</code>.</li>
+<li>Dealer price ↔ a point-in-time CP+ price only if one exists or after a validated conversion.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>8. Requested-size interactions</h2>
+<p>If requested RFQ size is available at prediction time, interpolate the dealer ladder at the requested size and compare directly with CP+.</p>
+<p>Keep the provenance fields introduced in the new code:</p>
+<ul>
+<li><code>is_exact</code>;</li>
+<li><code>is_interpolated</code>;</li>
+<li><code>is_extrapolated</code> (add this explicitly if extrapolation remains allowed);</li>
+<li><code>lower_qty</code>, <code>upper_qty</code>;</li>
+<li><code>log_bracket_span</code>;</li>
+<li>size-specific <code>age_seconds</code>.</li>
+</ul>
+<p>Recommended requested-size features:</p>
+<ul>
+<li><code>requested_size_dealer_coverage</code>;</li>
+<li><code>requested_size_exact_share</code>;</li>
+<li><code>requested_size_interpolated_share</code>;</li>
+<li><code>requested_size_cross_share</code>;</li>
+<li><code>requested_size_exact_cross_share</code>;</li>
+<li><code>requested_size_cross_edge_median</code>;</li>
+<li><code>requested_size_consensus_aggressive_edge</code>;</li>
+<li><code>requested_size_fresh_weighted_cross_share</code>.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>9. Use CP+ error columns only historically — never current-row</h2>
+<p><code>CPP_SIDED_ERROR</code> and <code>CPP_MID_ERROR</code> are potentially very valuable, but also the highest leakage risk in the table.</p>
+<div class="bad callout"><b>Default rule:</b> do not put the current row's <code>CPP_SIDED_ERROR</code> or <code>CPP_MID_ERROR</code> into the model until it is proven they are known before the prediction event. If they use realized trade information, they are labels/residuals.</div>
+<p>The safe and potentially powerful use is <b>lagged CP+ calibration</b> from strictly prior trades.</p>
+<div class="codebox"><div class="codehead">Lagged historical CP+ calibration</div><pre><code>df = df.sort_values(["CUSIP", "EFFECTIVE_DATETIME_TS"])
+
+g = df.groupby("CUSIP", sort=False)
+
+df["cpp_mid_error_lag1"] = g["CPP_MID_ERROR"].shift(1)
+df["cpp_sided_error_lag1"] = g["CPP_SIDED_ERROR"].shift(1)
+
+# Simple expanding prior-only bias estimates.
+df["cpp_mid_error_prior_mean"] = g["CPP_MID_ERROR"].transform(
+    lambda s: s.shift(1).expanding(min_periods=3).mean()
+)
+
+df["cpp_mid_abs_error_prior_mean"] = g["CPP_MID_ERROR"].transform(
+    lambda s: s.abs().shift(1).expanding(min_periods=3).mean()
+)
+
+df["cpp_sided_error_prior_mean"] = g["CPP_SIDED_ERROR"].transform(
+    lambda s: s.shift(1).expanding(min_periods=3).mean()
+)</code></pre></div>
+<p>More useful production versions would use time-decay / rolling time windows and hierarchical fallback:</p>
+<p><code>CUSIP → issuer → sector → global</code>, always based on strictly prior observations.</p>
+</section>
+
+<section class="card">
+<h2>10. High-value historical CP+ calibration features</h2>
+<div class="tbl"><table>
+<tr><th>Feature</th><th>Economic interpretation</th></tr>
+<tr><td><code>prior_cpp_mid_bias</code></td><td>Does CP+ systematically run rich/cheap for this bond recently?</td></tr>
+<tr><td><code>prior_cpp_sided_bias</code></td><td>Does CP+ have a persistent side-specific execution bias?</td></tr>
+<tr><td><code>prior_cpp_abs_error</code></td><td>Recent baseline reliability / uncertainty.</td></tr>
+<tr><td><code>prior_cpp_error_n</code></td><td>Confidence/support for the bias estimate.</td></tr>
+<tr><td><code>time_since_last_cpp_error_obs</code></td><td>Recency of calibration evidence.</td></tr>
+<tr><td><code>dealer_cpp_edge_minus_prior_bias</code></td><td>Dealer disagreement after correcting for known historical CP+ bias.</td></tr>
+</table></div>
+<p>This is a natural residual-modeling framework: dealer-run signals should explain when CP+ is wrong, while prior CP+ errors estimate whether it has been systematically wrong in the same direction.</p>
+</section>
+
+<section class="card">
+<h2>11. D_CPP_BM_SPREAD* columns: treat as quarantined until semantics are verified</h2>
+<p>The fields <code>D_CPP_BM_SPREAD</code>, <code>D_CPP_BM_SPREAD_ASK</code>, and <code>D_CPP_BM_SPREAD_BID</code> look economically promising, but their names alone are not sufficient to determine whether they are:</p>
+<ul>
+<li>CP+ minus benchmark spread;</li>
+<li>a benchmark-move adjustment;</li>
+<li>a post-event delta;</li>
+<li>or another derived diagnostic.</li>
+</ul>
+<p>Before modeling them, document:</p>
+<ol>
+<li>exact formula;</li>
+<li>source timestamps used;</li>
+<li>whether any realized trade/target enters the calculation;</li>
+<li>whether they are available before <code>information_cutoff</code>.</li>
+</ol>
+<p>If they are genuinely point-in-time benchmark-relative deltas, then good features would include:</p>
+<ul>
+<li><code>d_cpp_bm_mid</code>, <code>d_cpp_bm_bid</code>, <code>d_cpp_bm_ask</code>;</li>
+<li><code>d_cpp_bm_bid_minus_ask</code>;</li>
+<li><code>d_cpp_bm_mid_minus_side_avg</code>;</li>
+<li>interaction with dealer-consensus residual;</li>
+<li>interaction with implied benchmark-yield movement.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2>12. CP+ age × dealer age interactions</h2>
+<p>Now that CP+ has its own timestamp, explicitly compare information freshness across sources.</p>
+<div class="codebox"><div class="codehead">Relative freshness</div><pre><code>record["dealer_minus_cpp_age_seconds"] = (
+    dealer_age_median_seconds - cpp_age_seconds
+)
+
+record["fresh_dealer_vs_stale_cpp"] = (
+    dealer_age_median_seconds &lt;= 60
+    and cpp_age_seconds &gt; 300
+)
+
+record["stale_dealer_vs_fresh_cpp"] = (
+    dealer_age_median_seconds &gt; 300
+    and cpp_age_seconds &lt;= 60
+)</code></pre></div>
+<p>A large dealer-vs-CP+ disagreement is much more interesting when the dealer state is fresh and CP+ is stale than in the opposite configuration.</p>
+</section>
+
+<section class="card">
+<h2>13. CP+ reference-width normalization needs a floor</h2>
+<p>Normalizing crossing by CP+ width is useful, but a tiny positive width can explode the ratio.</p>
+<div class="codebox"><div class="codehead">Usable-width guard</div><pre><code>ref_width = ref_bid_spread - ref_ask_spread
+
+ref_width_usable = (
+    pd.notna(ref_width)
+    and ref_width &gt; min_reference_width
+)
+
+normalized_cross = (
+    cross_edge / ref_width
+    if cross_edge &gt; 0 and ref_width_usable
+    else np.nan
+)</code></pre></div>
+<p>Calibrate <code>min_reference_width</code> from the empirical CP+ quote resolution/distribution; do not choose it arbitrarily.</p>
+</section>
+
+<section class="card">
+<h2>14. Suggested new feature families from these columns</h2>
+<div class="tbl"><table>
+<tr><th>Family</th><th>Core features</th><th>Priority</th></tr>
+<tr><td>CP+ self-quality</td><td>width, age, two-sided flag, mid consistency, crossed/zero-width</td><td class="p0">P0</td></tr>
+<tr><td>Rates/credit decomposition</td><td>implied benchmark yield, benchmark side disagreement, yield-width vs spread-width consistency</td><td class="p1">P1</td></tr>
+<tr><td>Dealer × CP+ state</td><td>same-side edge/breadth, cross edge/share, consensus aggressive edge, reference percentile</td><td class="p0">P0</td></tr>
+<tr><td>Dealer × CP+ × size</td><td>100k/250k/500k/1mm and requested-size crossing, exact/interpolated coverage</td><td class="p0">P0</td></tr>
+<tr><td>Dealer × CP+ × freshness</td><td>fresh-weighted crossing, dealer-age minus CP+-age</td><td class="p1">P1</td></tr>
+<tr><td>Historical CP+ calibration</td><td>prior bias, prior abs error, error support, lagged sided error</td><td class="p1">P1</td></tr>
+<tr><td>Reference dynamics</td><td>CP+ spread/yield changes, dealer–CP+ residual change, cross-breadth change</td><td class="p1">P1</td></tr>
+</table></div>
+</section>
+
+<section class="card">
+<h2>15. Builder changes</h2>
+<p>The public observation builder should expose the concrete CP+ columns explicitly instead of passing an ambiguous generic reference pair.</p>
+<div class="codebox"><div class="codehead">Recommended builder arguments</div><pre><code>reference_bid_spread_col: str = "BID_SPREAD_CPP_EXEC_TIME"
+reference_ask_spread_col: str = "ASK_SPREAD_CPP_EXEC_TIME"
+reference_mid_spread_col: str = "MID_SPREAD_CPP_EXEC_TIME"
+
+reference_bid_yield_col: str = "BID_YIELD_CPP"
+reference_ask_yield_col: str = "ASK_YIELD_CPP"
+
+reference_timestamp_col: str = "LASTUPDATETIME_CPP"
+
+cpp_mid_error_col: str | None = "CPP_MID_ERROR"
+cpp_sided_error_col: str | None = "CPP_SIDED_ERROR"
+
+requested_size_col: str | None = None</code></pre></div>
+<p>Then construct a small CP+ state object/record once per observation and pass it to the reference interaction helper.</p>
+<div class="codebox"><div class="codehead">CP+ state at observation time</div><pre><code>cpp_state = {
+    "bid_spread": observation.get(reference_bid_spread_col, np.nan),
+    "ask_spread": observation.get(reference_ask_spread_col, np.nan),
+    "mid_spread": observation.get(reference_mid_spread_col, np.nan),
+    "bid_yield": observation.get(reference_bid_yield_col, np.nan),
+    "ask_yield": observation.get(reference_ask_yield_col, np.nan),
+    "timestamp": observation.get(reference_timestamp_col, pd.NaT),
+}
+
+_add_cpp_state_quality_features(
+    record,
+    cpp_state,
+    information_cutoff=information_cutoff,
+)
+
+_add_reference_interaction_features(
+    record,
+    state_rows,
+    ref_bid=cpp_state["bid_spread"],
+    ref_ask=cpp_state["ask_spread"],
+    ref_timestamp=cpp_state["timestamp"],
+    reference_metric="spread",
+    dealer_metric="spread",
+    ...
+)</code></pre></div>
+</section>
+
+<section class="card">
+<h2>16. Data-quality tests to run immediately</h2>
+<div class="tbl"><table>
+<tr><th>Audit</th><th>What to check</th></tr>
+<tr><td>EXEC_TIME vs current CP+ spread</td><td>Equality rate, p99/max difference, and timestamp relationship.</td></tr>
+<tr><td>CP+ mid consistency</td><td><code>MID ≈ (BID + ASK)/2</code>.</td></tr>
+<tr><td>Yield/spread width consistency</td><td><code>BID_YIELD-ASK_YIELD ≈ BID_SPREAD-ASK_SPREAD</code>.</td></tr>
+<tr><td>Implied benchmark consistency</td><td><code>BID_YIELD-BID_SPREAD ≈ ASK_YIELD-ASK_SPREAD</code>.</td></tr>
+<tr><td>CP+ timestamp validity</td><td>No future timestamp relative to information cutoff; age distribution by date/source.</td></tr>
+<tr><td>Error leakage</td><td>Confirm exact definition of <code>CPP_MID_ERROR</code>/<code>CPP_SIDED_ERROR</code>.</td></tr>
+<tr><td>D_CPP_BM semantics</td><td>Reconstruct formula on a few rows and trace source timestamps.</td></tr>
+<tr><td>Missingness regime</td><td>Missing rates by date, CUSIP liquidity bucket, tenor, dealer activity, and time of day.</td></tr>
+</table></div>
+</section>
+
+<section class="card">
+<h2>17. Recommended ablation sequence</h2>
+<ol>
+<li>CP+ spread baseline only.</li>
+<li>+ CP+ self-quality (width, age, two-sided, mid consistency).</li>
+<li>+ implied benchmark/rates component.</li>
+<li>+ existing dealer current-state features.</li>
+<li>+ common-size dealer–CP+ consensus edge.</li>
+<li>+ same-side-better breadth.</li>
+<li>+ opposite-side crossing breadth/penetration.</li>
+<li>+ requested-size features.</li>
+<li>+ dealer/CP+ relative freshness.</li>
+<li>+ lagged historical CP+ error calibration.</li>
+<li>+ signed quote revision flow.</li>
+<li>+ dealer–CP+ residual dynamics.</li>
+</ol>
+<div class="good callout"><b>Main hypothesis:</b> these columns make CP+ useful not only as a baseline level, but as a decomposable reference state. The strongest dealer-run alpha should come from fresh, size-supported, cross-dealer disagreement with CP+ after controlling for CP+ age, width, benchmark movement, and its own recent calibration error.</div>
+</section>
+
+<p class="small">Implementation note: <code>CPP_SIDED_ERROR</code>, <code>CPP_MID_ERROR</code>, and <code>D_CPP_BM_SPREAD*</code> remain quarantined from current-row model features until their formulas and information timing are verified.</p>
+</main></body></html>

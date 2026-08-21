@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Time Series ML Research & Iteration Framework</title><style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#657083;--line:#dce2ec;--accent:#245da8;--good:#edf8f1;--warn:#fff7df}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.58}
+.wrap{max-width:1120px;margin:0 auto;padding:24px}.hero{padding:32px;border-radius:20px;color:#fff;background:linear-gradient(135deg,#152c50,#315f95 58%,#6448a8);margin-bottom:18px}
+.hero h1{font-size:32px;line-height:1.15;margin:0 0 10px}.hero p{margin:6px 0;color:#e8effa}.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:22px;margin:15px 0;box-shadow:0 2px 10px rgba(20,35,60,.04)}
+.card h2{margin:0 0 10px;font-size:22px}.card h3{margin:18px 0 8px;font-size:17px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.pill{display:inline-block;padding:4px 9px;border-radius:999px;background:#e9f1fc;color:#184c8d;font-size:12px;font-weight:700;margin:2px 4px 2px 0}
+.callout{padding:13px 15px;border-left:4px solid var(--accent);background:#edf4ff;border-radius:9px;margin:12px 0}.good{background:var(--good);border-left-color:#37945a}.warn{background:var(--warn);border-left-color:#c99317}
+table{border-collapse:collapse;width:100%;font-size:13px;display:block;overflow-x:auto;white-space:nowrap}th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}th{background:#f0f3f8}
+code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}pre{background:#101827;color:#ecf3ff;border-radius:10px;padding:14px;overflow:auto;font-size:12px}
+.small{font-size:13px;color:var(--muted)}.flow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.flow span{background:#eef3fa;border:1px solid #d8e1ef;border-radius:9px;padding:8px 10px;font-size:13px}.flow b{color:#79869a}
+ul,ol{padding-left:22px}li{margin:6px 0}.stage{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}.stage:first-of-type{border-top:0;margin-top:0}
+@media(max-width:760px){.wrap{padding:12px}.hero{padding:22px}.hero h1{font-size:26px}.grid{grid-template-columns:1fr}}
+</style></head>
+<body><div class="wrap">
+<section class="hero">
+<h1>Time Series ML Research & Iteration Framework</h1>
+<p>A versatile, model-agnostic workflow for building, diagnosing, comparing, and improving machine-learning systems on temporal and irregularly sampled data.</p>
+<p class="small" style="color:#dfe9f7">A living research artifact—not a pipeline for any single asset class, dataset, or prediction problem.</p>
+</section>
+
+<section class="card"><h2>Core idea</h2>
+<div class="flow"><span>Point-in-time data</span><b>→</b><span>Time-aware split</span><b>→</b><span>Baseline</span><b>→</b><span>Diagnostics</span><b>→</b><span>Features</span><b>→</b><span>Model comparison</span><b>→</b><span>Residual analysis</span><b>→</b><span>Robustness</span><b>→</b><span>Next iteration</span></div>
+<div class="callout good"><b>Primary principle:</b> every improvement should correspond to a falsifiable hypothesis about information, dynamics, or model misspecification, and should be evaluated on future/out-of-sample data.</div>
+</section>
+
+<section class="card"><h2>Design principles</h2><div class="grid">
+<div><span class="pill">Point-in-time</span><p>Features must be available at prediction time. Model time, event time, and observation time may differ.</p></div>
+<div><span class="pill">Irregular-time aware</span><p>Use actual elapsed time when sampling is irregular; event lags alone can mix very different horizons.</p></div>
+<div><span class="pill">Paired evaluation</span><p>Compare models on the same observations and inspect the distribution of improvements, not just one aggregate score.</p></div>
+<div><span class="pill">Residual-driven</span><p>Residual structure is a map of what the model has not learned yet.</p></div>
+<div><span class="pill">Segment-aware</span><p>Always identify regimes/entities/horizons where aggregate improvements fail.</p></div>
+<div><span class="pill">Iterative</span><p>Each run should produce a concrete next hypothesis rather than an open-ended list of experiments.</p></div>
+</div></section>
+
+<section class="card"><h2>End-to-end pipeline</h2><div class="stage"><h3>0. Problem Definition</h3><ul><li>Define the prediction target, prediction timestamp, forecast horizon, entity/index structure, loss function, and operational decision.</li><li>Write down exactly what information is available at prediction time.</li><li>Separate economic/event time, observation/report time, and prediction/decision time when they differ.</li></ul></div><div class="stage"><h3>1. Point-in-Time Data Construction</h3><ul><li>Build features using only information observable at the prediction timestamp.</li><li>Audit joins, as-of logic, delayed labels, revisions, duplicate/tied events, and timestamp resolution.</li><li>Create data-quality summaries for missingness, staleness, coverage, sampling intensity, and reporting delay.</li></ul></div><div class="stage"><h3>2. Time-Aware Splitting &amp; Backtesting</h3><ul><li>Use chronological train/validation/test splits or walk-forward evaluation.</li><li>Avoid random splits when temporal dependence or regime drift matters.</li><li>Choose an evaluation unit and preserve it in paired comparisons.</li></ul></div><div class="stage"><h3>3. Baseline Models</h3><ul><li>Start with simple persistence, seasonal/rolling baselines, linear models, and a strong tree-based baseline.</li><li>Record baseline metrics and segment-level failures before adding complexity.</li><li>Keep a frozen reference run for paired comparisons.</li></ul></div><div class="stage"><h3>4. Exploratory Temporal Structure</h3><ul><li>Study target dynamics in event time and clock time separately.</li><li>For irregular timestamps, condition dependence on actual elapsed time rather than relying only on integer lags.</li><li>Inspect seasonality, structural breaks, regime shifts, cross-entity dependence, missingness, and sampling intensity.</li></ul></div><div class="stage"><h3>5. Feature Engineering</h3><ul><li>Create lagged states, continuous-time decay/EWMA states, rolling statistics, calendar/regime features, and cross-entity aggregates.</li><li>Prefer causal/point-in-time transformations whose availability can be proven.</li><li>Add feature families incrementally so model improvements remain attributable.</li></ul></div><div class="stage"><h3>6. Residual Diagnostics</h3><ul><li>Define residual = y_true - y_pred using out-of-sample / out-of-fold predictions.</li><li>Check conditional bias, event-lag dependence, elapsed-time dependence, sign persistence, magnitude persistence, and cumulative drift.</li><li>Use residual analysis to identify missing state, stale information, regime dependence, heteroskedasticity, and segment-specific misspecification.</li></ul></div><div class="stage"><h3>7. Residual-to-Feature Loop</h3><ul><li>If residual structure is predictable using information available before the current prediction, convert it into candidate state features.</li><li>Test simple last-residual/age features before complex second-stage residual models.</li><li>Require strict point-in-time construction for all residual-derived features.</li></ul></div><div class="stage"><h3>8. Model Comparison</h3><ul><li>Compare runs on the exact same observations whenever possible.</li><li>Report paired loss differences overall and by segment; include distributions, win rates, and confidence intervals or clustered bootstrap where appropriate.</li><li>Do not keep a model merely because the aggregate metric improved if a critical segment deteriorated materially.</li></ul></div><div class="stage"><h3>9. Interpretation &amp; Failure Analysis</h3><ul><li>Use feature importance, SHAP/permutation diagnostics, calibration curves, and targeted slices.</li><li>Focus on actionable failures: where, when, and under what information state the model misses.</li><li>Distinguish stable structural effects from artifacts caused by preprocessing or evaluation.</li></ul></div><div class="stage"><h3>10. Robustness</h3><ul><li>Stress different time periods, regimes, entities, horizons, missing-data states, and data-source variants.</li><li>Check sensitivity to lookback windows, decay parameters, outlier rules, and timestamp definitions.</li><li>Repeat key conclusions on later unseen periods.</li></ul></div><div class="stage"><h3>11. Production &amp; Monitoring</h3><ul><li>Version data, features, model, and evaluation artifacts.</li><li>Monitor target drift, feature drift, residual drift, latency/availability, missingness, and segment-level error.</li><li>Keep research diagnostics compatible with online information constraints.</li></ul></div><div class="stage"><h3>12. Iteration Log</h3><ul><li>For every run, store hypothesis, code/data version, feature changes, metrics, plots, interpretation, and next action.</li><li>Maintain one living HTML report as the research source of truth.</li><li>Use the report as the handoff artifact between notebooks, collaborators, and future AI-assisted sessions.</li></ul></div></section>
+
+<section class="card"><h2>Residual analysis for temporal ML</h2>
+<p>Let an out-of-sample residual be <code>e_i = y_i - ŷ_i</code>. Residual diagnostics should answer four questions:</p>
+<table><thead><tr><th>Question</th><th>Diagnostic</th><th>Typical implication</th></tr></thead><tbody>
+<tr><td>Is the model systematically biased?</td><td>Mean/median residual, sign rate, conditional residual slices</td><td>Calibration or missing nonlinear effect</td></tr>
+<tr><td>Is there temporal memory?</td><td>Event-lag dependence + correlation versus actual elapsed time</td><td>Missing dynamic state / stale information</td></tr>
+<tr><td>Does difficulty cluster?</td><td>|residual|, robust scale, tail loss versus elapsed time/regime</td><td>Heteroskedasticity / uncertainty state</td></tr>
+<tr><td>Does performance drift?</td><td>Time-bucket summaries, rolling bias, CUSUM-style diagnostics</td><td>Regime change / feature drift</td></tr>
+</tbody></table>
+<div class="callout warn">For irregular timestamps, a standard integer-lag ACF can be misleading because “lag 1” may mean seconds for one entity and days for another. Pair event-lag diagnostics with elapsed-time-conditioned diagnostics.</div>
+</section>
+
+<section class="card"><h2>Point-in-time residual state</h2>
+<p>If historical residuals become observable at <code>available_time_j</code> and the current prediction is made at <code>prediction_time_i</code>, only observations satisfying</p>
+<p style="text-align:center;font-size:18px"><b>available_time_j &lt; prediction_time_i</b></p>
+<p>may enter a residual-derived feature. A generic continuous-time state is:</p>
+<pre>S_i(τ) =
+Σ_j exp(-(prediction_time_i - available_time_j)/τ) · residual_j
+----------------------------------------------------------------
+Σ_j exp(-(prediction_time_i - available_time_j)/τ)</pre>
+<p>Useful variants include entity-level state, group-ex-current-entity state, market/global state, and robust absolute-residual state.</p>
+</section>
+
+<section class="card"><h2>Recommended experiment ladder</h2><ol>
+<li><b>Baseline:</b> freeze the current reference model and exact evaluation sample.</li>
+<li><b>Diagnose:</b> identify one specific residual or segment pattern.</li>
+<li><b>Simple feature:</b> add the smallest feature that should remove that pattern.</li>
+<li><b>Paired OOS test:</b> compare against baseline on the same future observations.</li>
+<li><b>Residual re-check:</b> verify that the targeted residual structure actually weakened.</li>
+<li><b>Robustness:</b> repeat over later windows and important segments.</li>
+<li><b>Keep or revert:</b> retain the change only if the gain is stable and interpretable.</li>
+</ol></section>
+
+<section class="card"><h2>Run record schema</h2>
+<pre>run_id:
+timestamp:
+hypothesis:
+data_version:
+train_window:
+validation_window:
+test_window:
+target:
+prediction_time_definition:
+feature_changes:
+model_changes:
+overall_metrics:
+segment_metrics:
+paired_comparison:
+residual_findings:
+robustness_checks:
+decision: keep | revert | investigate
+next_experiment:</pre>
+</section>
+
+<section class="card"><h2>Handoff protocol</h2>
+<p>This repository should function as the project’s source of truth. A future session can start by reading the latest framework and experiment log, then continue from the latest unresolved hypothesis.</p>
+<pre>run experiment
+→ summarize metrics/plots
+→ update framework + experiment log
+→ commit to GitHub
+→ next session reads latest GitHub state
+→ propose / implement next experiment</pre>
+</section>
+
+<section class="card"><h2>Scope</h2>
+<p>This framework is intentionally broad. It is suitable for forecasting, event-driven prediction, temporal panel data, irregularly sampled observations, market/microstructure data, demand or operational forecasting, sensors, and other sequential ML tasks.</p>
+<p class="small">Domain-specific rules should live in separate experiment notes or modules so the core framework remains reusable.</p>
+</section>
+</div></body></html>

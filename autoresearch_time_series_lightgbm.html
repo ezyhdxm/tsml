@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Leakage-Safe Autoresearch for Time-Series LightGBM</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#657083;--line:#dce2ec;--blue:#235ea8;--good:#edf8f1;--warn:#fff6df;--bad:#fff0f0;--code:#101827}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.58}.wrap{max-width:1120px;margin:0 auto;padding:24px}.hero{padding:32px;border-radius:20px;color:white;background:linear-gradient(135deg,#142c50,#315f95 55%,#6948aa);margin-bottom:18px}.hero h1{margin:0 0 10px;font-size:32px;line-height:1.14}.hero p{margin:7px 0;color:#e7effa}.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:22px;margin:15px 0;box-shadow:0 2px 10px rgba(20,35,60,.04)}.card h2{margin:0 0 10px;font-size:22px}.card h3{font-size:17px;margin:20px 0 8px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.tile{border:1px solid var(--line);border-radius:12px;padding:15px;background:#fbfcfe}.pill{display:inline-block;padding:4px 9px;border-radius:999px;background:#e9f1fc;color:#184c8d;font-size:12px;font-weight:700;margin-right:5px}.callout{padding:13px 15px;border-left:4px solid var(--blue);background:#edf4ff;border-radius:9px;margin:12px 0}.good{background:var(--good);border-left-color:#3c9258}.warn{background:var(--warn);border-left-color:#c58d11}.bad{background:var(--bad);border-left-color:#bf4545}.flow{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.flow span{border:1px solid #d8e1ef;background:#eef3fa;border-radius:9px;padding:8px 10px;font-size:13px}.flow b{color:#8290a4}table{width:100%;border-collapse:collapse;font-size:13px;display:block;overflow-x:auto;white-space:nowrap}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#f0f3f8}code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}pre{background:var(--code);color:#ecf3ff;border-radius:10px;padding:14px;overflow:auto;font-size:12px;line-height:1.5}.small{font-size:13px;color:var(--muted)}a{color:#1b5fae}ul,ol{padding-left:22px}li{margin:6px 0}@media(max-width:760px){.wrap{padding:12px}.hero{padding:22px}.hero h1{font-size:26px}.grid{grid-template-columns:1fr}}
+</style></head>
+<body><div class="wrap">
+<section class="hero"><h1>Leakage-Safe Autoresearch for Time-Series LightGBM</h1><p>How to adapt the autonomous “propose → train → evaluate → keep/revert” loop to temporal, panel, event-driven, and irregularly sampled data without turning the research agent into a leakage generator.</p><p class="small" style="color:#dce8f7">The central design goal is maximum safe autonomy under a frozen point-in-time evaluation contract.</p></section>
+
+<section class="card"><h2>1. The idea</h2><p>Karpathy’s <i>autoresearch</i> reduces research to a small loop: keep data/evaluation fixed, let an agent modify the trainable system, run an experiment, inspect a frozen validation metric, keep improvements, revert regressions, and repeat.</p><div class="flow"><span>Read current best</span><b>→</b><span>Form hypothesis</span><b>→</b><span>Edit candidate</span><b>→</b><span>Train</span><b>→</b><span>Evaluate</span><b>→</b><span>Keep / revert</span><b>→</b><span>Log belief</span></div><div class="callout good"><b>Time-series adaptation:</b> keep the loop, but move the safety boundary outward. Splits, information availability, label availability, purge rules, fold-specific fitting, evaluation metrics, and leakage tests must be immutable.</div></section>
+
+<section class="card"><h2>2. Why temporal autoresearch is harder</h2><div class="grid"><div class="tile"><span class="pill">Feature leakage</span><p>Rolling statistics, group aggregates, normalization, residual features, and as-of joins can silently see the future.</p></div><div class="tile"><span class="pill">Label overlap</span><p>Forward-looking labels near a split boundary can overlap the evaluation period.</p></div><div class="tile"><span class="pill">Adaptive validation</span><p>Thousands of agent queries to one visible validation set create research-overfitting even without row-level leakage.</p></div><div class="tile"><span class="pill">Irregular time</span><p>Lag 1 may mean seconds for one entity and days for another; actual elapsed time must be explicit.</p></div><div class="tile"><span class="pill">Delayed availability</span><p>Event time, report/publication time, label-availability time, and prediction time may differ.</p></div><div class="tile"><span class="pill">Panel structure</span><p>Cross-entity features can leak current or future rows unless exclusion and timing rules are explicit.</p></div></div></section>
+
+<section class="card"><h2>3. Freeze the research contract</h2><p>The agent optimizes <b>inside</b> a sealed temporal evaluation system; it cannot improve the benchmark itself.</p><table><thead><tr><th>Component</th><th>Mutable?</th><th>Role</th></tr></thead><tbody><tr><td><code>data_contract.yaml</code></td><td><b>No</b></td><td>Target, entity, prediction time, label availability, source availability, forbidden columns.</td></tr><tr><td><code>splits.json</code></td><td><b>No</b></td><td>Frozen chronological folds, purge/embargo, shadow holdout, final test.</td></tr><tr><td><code>prepare.py</code></td><td><b>No</b></td><td>Frozen data snapshot and immutable row IDs / timestamps.</td></tr><tr><td><code>leakage_tests.py</code></td><td><b>No</b></td><td>Reject future-dependent candidates before model training.</td></tr><tr><td><code>evaluate.py</code></td><td><b>No</b></td><td>Fold training, early-stop windows, metrics, segment gates, runtime limits.</td></tr><tr><td><code>experiment.py</code></td><td><b>Yes</b></td><td>LightGBM parameters, feature selection, approved feature recipes.</td></tr><tr><td><code>program.md</code></td><td>Human-controlled</td><td>Research priorities, allowed search space, forbidden behavior, stop rules.</td></tr><tr><td><code>results.jsonl</code></td><td>Append-only</td><td>Hypothesis, diff, metrics, failure reason, keep/revert decision.</td></tr></tbody></table><pre>tsml_autoresearch/
+├── program.md
+├── data_contract.yaml
+├── splits.json
+├── prepare.py
+├── leakage_tests.py
+├── evaluate.py
+├── experiment.py        # ONLY agent-editable code
+├── results.jsonl
+└── shadow/              # not readable by research agent</pre></section>
+
+<section class="card"><h2>4. Use four evaluation levels</h2><pre>historical time ─────────────────────────────────────────────────────────────►
+
+[ fit ][ purge ][ early-stop ][ gap ][ score ]      research fold 1
+       [ fit ........ ][ purge ][ early-stop ][ gap ][ score ]   fold 2
+                  [ fit ............ ][ purge ][ early-stop ][ gap ][ score ] fold 3
+
+                                      [ SEALED SHADOW HOLDOUT ]
+                                                   [ FINAL TEST ]</pre><ul><li><b>Fit:</b> model fitting and all learned preprocessing.</li><li><b>Early-stop:</b> chooses LightGBM best iteration. Strict mode keeps this separate from the research score period.</li><li><b>Research score:</b> visible to the agent and used for keep/revert.</li><li><b>Shadow holdout:</b> queried only for promotion and kept out of the agent prompt.</li><li><b>Final test:</b> opened once after the campaign ends.</li></ul><div class="callout warn"><b>Do not let the agent redefine dates after seeing results.</b> Changing the split is changing the benchmark.</div></section>
+
+<section class="card"><h2>5. Purge by information overlap</h2><pre>keep training row i only if:
+
+label_end_time_i &lt; evaluation_start_time
+
+and every feature satisfies:
+
+feature_available_time &lt;= prediction_time_i</pre><p>For irregular timestamps, define purge/embargo in clock time or directly through label-interval overlap—not by dropping an arbitrary number of rows.</p></section>
+
+<section class="card"><h2>6. Expand agent freedom in tiers</h2><table><thead><tr><th>Tier</th><th>Agent may change</th><th>Risk</th><th>Use</th></tr></thead><tbody><tr><td>0</td><td>LightGBM hyperparameters only</td><td>Low</td><td>First campaign</td></tr><tr><td>1</td><td>Parameters + safe feature selection</td><td>Low–medium</td><td>Default practical mode</td></tr><tr><td>2</td><td>Feature recipes in a restricted temporal DSL</td><td>Medium</td><td>Feature discovery</td></tr><tr><td>3</td><td>Arbitrary feature code</td><td>High</td><td>Only with strong tests + human promotion</td></tr></tbody></table><h3>Example temporal DSL</h3><pre>Lag("x", entity="id", events=1)
+TimeSinceLast("event", entity="id")
+RollingPast("x", entity="id", window="5min", agg="mean", closed="left")
+EWMPast("x", entity="id", half_life="2min", available_time="report_time")
+AsOf("source", on="prediction_time", direction="backward")
+GroupState("x", group="sector", exclude_current_entity=True, half_life="10min")
+MissingAge("source_timestamp", now="prediction_time")</pre><p>The agent selects recipes; immutable code compiles them. This is safer than free-form joins and rolling code.</p></section>
+
+<section class="card"><h2>7. Run leakage tests before every fit</h2><h3>A. Future-append invariance</h3><pre>past = raw[raw.event_time &lt;= cutoff]
+X_past = build_features(past, predictions_up_to_cutoff)
+X_full = build_features(raw, predictions_up_to_cutoff)
+assert_equivalent(X_past, X_full)</pre><h3>B. Source-time audit</h3><pre>assert (feature_source_available_time &lt;= prediction_time).all()</pre><h3>C. Label firewall</h3><pre>FORBIDDEN = {"target", "future_target", "label_end_time", "post_event_value"}
+assert not (set(X.columns) &amp; FORBIDDEN)</pre><h3>D. Fold-fit scope</h3><p>Encoders, imputers, category maps, target statistics, feature selection, learned bias/residual baselines, and any fitted transformation must use the training portion of the fold only.</p><h3>E. Residual availability</h3><p>A residual is usable only after its true label becomes observable: <code>residual_available_time &lt; prediction_time</code>.</p><h3>F. Split-hash guard</h3><p>Hash evaluation row IDs and timestamps. Any candidate that changes evaluation membership fails.</p></section>
+
+<section class="card"><h2>8. Use one frozen score plus hard gates</h2><pre>For research fold f:
+relative_loss_f = candidate_loss_f / frozen_baseline_loss_f
+
+research_score = median(relative_loss_f)     # lower is better
+
+accept only if:
+  research_score &lt; best_score - epsilon
+  AND candidate wins on enough folds
+  AND no critical segment exceeds regression tolerance
+  AND runtime / memory constraints pass
+  AND all leakage tests pass</pre><p>Use paired observations for candidate-vs-baseline comparisons. Save expensive block/bootstrap uncertainty checks for promotion candidates.</p></section>
+
+<section class="card"><h2>9. The autonomous loop</h2><pre>while experiment_budget_remaining:
+    read(program.md, current best, recent results)
+    hypothesis = propose_one_change()
+    edit(experiment.py)
+
+    if not run_leakage_tests().pass:
+        log("reject: leakage")
+        revert()
+        continue
+
+    result = run_frozen_walk_forward_evaluation()
+
+    if result.score_improved and result.all_gates_pass:
+        commit_candidate_as_best()
+        log("keep", hypothesis, result)
+    else:
+        revert()
+        log("reject", hypothesis, result)
+
+    update_beliefs_from_outcome()</pre><div class="callout good"><b>One experiment, one main hypothesis.</b> Large multi-change edits make wins hard to attribute and reduce research efficiency.</div></section>
+
+<section class="card"><h2>10. LightGBM-specific search space</h2><table><thead><tr><th>Family</th><th>Candidates</th><th>Notes</th></tr></thead><tbody><tr><td>Tree complexity</td><td><code>num_leaves</code>, <code>max_depth</code>, <code>min_data_in_leaf</code></td><td>Bound ranges; strong interactions.</td></tr><tr><td>Regularization</td><td><code>lambda_l1</code>, <code>lambda_l2</code>, <code>min_gain_to_split</code>, <code>path_smooth</code></td><td>Useful for noisy panel features.</td></tr><tr><td>Subsampling</td><td><code>feature_fraction</code>, <code>bagging_fraction</code>, <code>bagging_freq</code></td><td>Fix seeds for fair comparisons.</td></tr><tr><td>Boosting</td><td><code>learning_rate</code>, max rounds, early-stop patience</td><td>Keep stopping semantics frozen.</td></tr><tr><td>Histogram</td><td><code>max_bin</code></td><td>Quality/runtime trade-off.</td></tr><tr><td>Alternative</td><td><code>extra_trees</code></td><td>Bounded research branch.</td></tr></tbody></table><h3>Reproducibility defaults</h3><pre>BASE_PARAMS = {
+    "objective": "...",       # freeze unless objective research is intentional
+    "metric": "...",          # freeze primary metric
+    "verbosity": -1,
+    "seed": 20260817,
+    "feature_fraction_seed": 20260817,
+    "bagging_seed": 20260817,
+    "data_random_seed": 20260817,
+    "deterministic": True,
+    "force_col_wise": True,   # or force_row_wise; choose one on CPU
+}</pre><div class="callout">When tuning <code>min_data_in_leaf</code> while reusing a LightGBM <code>Dataset</code>, account for <code>feature_pre_filter</code>. LightGBM documents that features can be filtered based on <code>min_data_in_leaf</code>; either rebuild the Dataset for each candidate or deliberately configure around this behavior.</div><p>If early stopping is part of the harness, freeze metric ordering and consider <code>first_metric_only</code> so adding diagnostics does not alter stopping behavior. Treat <code>dart</code> as a separate branch because LightGBM’s standard early-stopping callback does not operate in DART mode.</p></section>
+
+<section class="card"><h2>11. Feature autoresearch candidates</h2><div class="grid"><div class="tile"><span class="pill">Recency</span><p>Time since last observation, source age, staleness flags.</p></div><div class="tile"><span class="pill">Continuous-time state</span><p>EWMA / exponential decay using actual elapsed time.</p></div><div class="tile"><span class="pill">Event state</span><p>Previous values, event counts, bursts, recent direction.</p></div><div class="tile"><span class="pill">Group state</span><p>Past-only cross-entity signals, ideally excluding the current entity.</p></div><div class="tile"><span class="pill">Calendar regime</span><p>Time-of-day, seasonality, schedules, known regime variables.</p></div><div class="tile"><span class="pill">Data quality</span><p>Missingness, source count, freshness, disagreement, uncertainty proxies.</p></div></div><h3>Residual-to-feature research</h3><pre>S_i(tau) =
+sum_j exp(-(prediction_time_i - residual_available_time_j)/tau) * residual_j
+------------------------------------------------------------------------
+sum_j exp(-(prediction_time_i - residual_available_time_j)/tau)
+
+where residual_available_time_j &lt; prediction_time_i</pre><p>Search a small ladder of half-lives first. Do not optimize a continuous half-life to arbitrary precision on the same visible research folds.</p></section>
+
+<section class="card"><h2>12. Prevent autoresearch-overfitting</h2><ol><li>Use several chronological research folds.</li><li>Keep a sealed shadow period outside the agent-readable workspace.</li><li>Limit shadow queries to promoted candidates or campaign checkpoints.</li><li>Do not feed detailed shadow metrics back into the autonomous prompt.</li><li>Keep one final test period unopened until the campaign ends.</li><li>Record the total number of attempted experiments; a tiny gain after 3 trials is different evidence from the same gain after 3,000 adaptive trials.</li></ol></section>
+
+<section class="card"><h2>13. Two-speed research</h2><table><thead><tr><th>Stage</th><th>Purpose</th><th>Setup</th></tr></thead><tbody><tr><td>Fast screen</td><td>Kill weak ideas cheaply</td><td>Subset of research folds, reduced rounds, hard time budget</td></tr><tr><td>Full research</td><td>Keep/revert decision</td><td>All research folds, full feature computation, frozen score</td></tr><tr><td>Promotion</td><td>Check generalization</td><td>Sealed shadow holdout + paired diagnostics</td></tr><tr><td>Final</td><td>Estimate final performance</td><td>One untouched test evaluation</td></tr></tbody></table></section>
+
+<section class="card"><h2>14. Experiment ledger</h2><pre>{
+  "run_id": "ar_0042",
+  "parent": "ar_0039",
+  "hypothesis": "30s decayed entity state captures short-lived missing dynamics",
+  "changed_files": ["experiment.py"],
+  "feature_recipe_hash": "...",
+  "params": {...},
+  "fold_losses": [...],
+  "relative_score": 0.9921,
+  "fold_win_rate": 0.80,
+  "critical_segment_max_regression": 0.004,
+  "runtime_sec": 47.2,
+  "leakage_tests": "PASS",
+  "decision": "KEEP",
+  "belief_update": "short-horizon state appears useful; test nearby half-life"
+}</pre><p>The ledger gives the agent memory and discourages repeated failed ideas.</p></section>
+
+<section class="card"><h2>15. Example <code>program.md</code></h2><pre># Objective
+Improve frozen time-series research_score for LightGBM.
+
+# You may edit
+- experiment.py only.
+
+# You may change
+- bounded LightGBM parameters
+- feature selection from SAFE_FEATURES
+- feature recipes from the approved temporal DSL
+
+# You may not change
+- prepare.py
+- evaluate.py
+- leakage_tests.py
+- data_contract.yaml
+- splits.json
+- primary metric
+- research fold dates
+- purge / embargo rules
+- shadow or final holdout files
+
+# Research rules
+1. One main hypothesis per experiment.
+2. Run leakage tests before training.
+3. Never use information whose available_time is after prediction_time.
+4. Never use shadow/final scores to guide the loop.
+5. Keep only if the frozen score improves and all gates pass.
+6. Revert failed experiments.
+7. Append every result and belief update to results.jsonl.
+8. Prefer simple explanations before adding complexity.
+9. Stop if improvements plateau or the experiment budget is reached.</pre></section>
+
+<section class="card"><h2>16. Recommended campaign order</h2><ol><li><b>Campaign 1 — LightGBM-only:</b> bounded tree complexity, regularization, sampling, learning rate, early stopping on frozen safe features.</li><li><b>Campaign 2 — feature selection:</b> add/drop already point-in-time-safe feature families.</li><li><b>Campaign 3 — temporal DSL:</b> autonomously search lags, rolling windows, continuous-time decay, recency, group states.</li><li><b>Campaign 4 — residual research:</b> build residual-derived states from historical OOS residuals with explicit availability times.</li><li><b>Campaign 5 — specialized objectives/interactions:</b> only after the harness survives earlier campaigns.</li></ol><div class="callout good"><b>Expand autonomy gradually.</b> First prove the benchmark is hard to cheat; then enlarge the search space.</div></section>
+
+<section class="card"><h2>17. Promotion checklist</h2><ul><li>Leakage tests pass.</li><li>Primary research score improves.</li><li>Gain is not driven by one temporal fold.</li><li>Critical segments remain within regression tolerances.</li><li>Result is robust to reasonable timestamp / delay / missingness definitions.</li><li>The residual pattern targeted by the hypothesis weakens.</li><li>Runtime and memory constraints pass.</li><li>Shadow holdout supports the result.</li><li>Final test is still untouched.</li></ul></section>
+
+<section class="card"><h2>18. Summary architecture</h2><pre>Human program.md
+      │
+      ▼
+Research agent ── edits experiment.py only
+      │
+      ▼
+Immutable leakage firewall
+(PIT / labels / split / fit scope)
+      │ PASS
+      ▼
+Frozen walk-forward evaluation
+(fit → early stop → score)
+      │
+      ▼
+score + hard gates
+      │
+      ├── KEEP → commit + ledger → repeat
+      └── REJECT → revert + ledger → repeat
+
+occasional promotion → sealed shadow holdout
+campaign complete    → final test</pre></section>
+
+<section class="card"><h2>19. References</h2><ul><li><a href="https://github.com/karpathy/autoresearch">Karpathy — autoresearch</a>: original autonomous experiment-loop pattern.</li><li><a href="https://github.com/karpathy/autoresearch/blob/master/program.md">Karpathy — program.md</a>: fixed evaluation/data-preparation constraints and keep/revert instructions.</li><li><a href="https://lightgbm.readthedocs.io/en/latest/Parameters.html">LightGBM — Parameters</a>: parameter semantics, determinism, and <code>feature_pre_filter</code>.</li><li><a href="https://lightgbm.readthedocs.io/en/stable/pythonapi/lightgbm.early_stopping.html">LightGBM — early stopping</a>: stopping behavior and metric handling.</li></ul></section>
+</div></body></html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dealer Run Feature Engineering Framework</title>
+<style>
+:root{
+  --bg:#f6f8fb; --card:#ffffff; --text:#172033; --muted:#5d6677;
+  --line:#dfe5ee; --accent:#3357d5; --accent2:#eef2ff;
+  --good:#087443; --goodbg:#ecfdf3; --warn:#b54708; --warnbg:#fffaeb;
+  --bad:#b42318; --badbg:#fef3f2; --code:#111827;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.62}
+main{max-width:1040px;margin:0 auto;padding:28px 18px 64px}
+.hero{background:linear-gradient(135deg,#152044,#3157d5);color:white;border-radius:22px;padding:34px 30px;margin-bottom:20px;box-shadow:0 12px 30px rgba(31,44,88,.14)}
+.hero h1{font-size:clamp(29px,5vw,46px);line-height:1.08;margin:0 0 12px}.hero p{margin:0;max-width:850px;color:#e8ecff;font-size:17px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:750;color:#c7d2fe;margin-bottom:8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;margin:18px 0;box-shadow:0 4px 16px rgba(28,39,69,.04)}
+h2{font-size:26px;margin:3px 0 14px;line-height:1.2}h3{font-size:20px;margin:25px 0 9px;line-height:1.25}h4{font-size:17px;margin:20px 0 7px}
+p{margin:9px 0 13px}.muted{color:var(--muted)}
+.toc a{color:var(--accent);text-decoration:none}.toc ol{columns:2;column-gap:38px;padding-left:22px}.toc li{break-inside:avoid;margin:6px 0}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
+.tile{border:1px solid var(--line);border-radius:14px;padding:15px;background:#fbfcff}.tile strong{display:block;margin-bottom:4px}.tile p{margin:3px 0;color:var(--muted);font-size:14px}
+.callout{border-left:4px solid var(--accent);background:var(--accent2);padding:14px 16px;border-radius:10px;margin:15px 0}.good{border-left-color:var(--good);background:var(--goodbg)}.warn{border-left-color:var(--warn);background:var(--warnbg)}.bad{border-left-color:var(--bad);background:var(--badbg)}
+code{background:#eef1f6;padding:1px 5px;border-radius:5px;font-size:.92em}pre{overflow:auto;background:var(--code);color:#e5e7eb;border-radius:12px;padding:15px;font-size:13px;line-height:1.5}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px;margin:14px 0}table{border-collapse:collapse;width:100%;min-width:700px;background:white}th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}th{background:#f6f8fc;font-size:13px}td{font-size:14px}
+ul,ol{padding-left:23px}li{margin:5px 0}.formula{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#f7f8fb;border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow:auto;margin:10px 0}.tag{display:inline-block;border:1px solid #cad3f7;background:#f3f5ff;color:#2942a4;padding:2px 8px;border-radius:999px;font-size:12px;margin:2px 3px 2px 0}.priority{font-weight:750}.p0{color:var(--bad)}.p1{color:var(--warn)}.p2{color:var(--accent)}
+.small{font-size:13px}.footer{color:var(--muted);font-size:13px;text-align:center;margin-top:28px}
+@media(max-width:760px){main{padding:14px 10px 42px}.hero{padding:25px 20px;border-radius:16px}.card{padding:18px 16px;border-radius:15px}.toc ol{columns:1}.grid,.grid2{grid-template-columns:1fr}h2{font-size:23px}h3{font-size:19px}.table-wrap{margin-left:-4px;margin-right:-4px}}
+</style>
+</head>
+<body>
+<main>
+<section class="hero">
+  <div class="eyebrow">Reusable framework for irregular market data</div>
+  <h1>Dealer Run Feature Engineering</h1>
+  <p>Dealer run is an unusually rich but difficult market-data type: many dealers, asynchronous updates, bid/ask sides, multiple quote conventions, sparse or heterogeneous quantity fields, stale observations, and strong selection effects. This document develops a reusable feature-engineering framework around those structural properties rather than around one specific model or dataset.</p>
+</section>
+
+<section class="card toc">
+<h2>Contents</h2>
+<ol>
+  <li><a href="#why">Why dealer run deserves its own framework</a></li>
+  <li><a href="#representation">Represent the data correctly first</a></li>
+  <li><a href="#pit">Point-in-time construction</a></li>
+  <li><a href="#three-layers">The three-layer feature architecture</a></li>
+  <li><a href="#quote">Quote-level and dealer-level features</a></li>
+  <li><a href="#crosssection">Cross-dealer consensus and disagreement</a></li>
+  <li><a href="#quantity">Quantity and displayed-size features</a></li>
+  <li><a href="#dynamics">Rolling dynamics and event flow</a></li>
+  <li><a href="#relative">Relative-value and reference features</a></li>
+  <li><a href="#quality">Freshness, coverage, and confidence</a></li>
+  <li><a href="#pitfalls">Common feature-engineering mistakes</a></li>
+  <li><a href="#architecture">Recommended implementation architecture</a></li>
+  <li><a href="#evaluation">How to evaluate feature families</a></li>
+  <li><a href="#roadmap">Suggested rollout order</a></li>
+</ol>
+</section>
+
+<section class="card" id="why">
+<h2>1. Why dealer run deserves its own framework</h2>
+<p>Dealer run should not be treated as an ordinary rectangular panel. It is better viewed as an <strong>irregular multi-agent event stream</strong>. A row says that one dealer revealed or updated one piece of market state at one time; it does not necessarily mean that the whole market changed at that moment.</p>
+<div class="grid">
+  <div class="tile"><strong>Asynchronous</strong><p>Different dealers and different sides update at different times.</p></div>
+  <div class="tile"><strong>Sparse</strong><p>Coverage varies by instrument, dealer, side, time of day, and market regime.</p></div>
+  <div class="tile"><strong>Stateful</strong><p>A quote can remain economically relevant after its last update, but it can also become stale.</p></div>
+  <div class="tile"><strong>Cross-sectional</strong><p>The distribution across dealers often matters more than any single quote.</p></div>
+  <div class="tile"><strong>Multi-dimensional</strong><p>Bid/ask, price/spread/yield, quantity tiers, and firm indications can coexist.</p></div>
+  <div class="tile"><strong>Selective</strong><p>Who chooses to quote, how often, and with what size are themselves informative.</p></div>
+</div>
+<div class="callout"><strong>Core principle.</strong> The useful information in dealer run is not just the quote level. It is the joint state of <em>level, dispersion, breadth, freshness, quantity, and update behavior</em> across dealers.</div>
+</section>
+
+<section class="card" id="representation">
+<h2>2. Represent the data correctly before engineering features</h2>
+<p>The first step is to preserve the economic meaning of each field. The safest internal representation is usually a long event table with a stable schema such as:</p>
+<div class="formula">instrument × dealer × timestamp × side × quote_type × quantity_tier → quote_value, quantity, metadata</div>
+<h3>2.1 Keep semantically different objects separate</h3>
+<ul>
+  <li><strong>Bid and ask</strong> are different sides, not interchangeable observations.</li>
+  <li><strong>Price, spread, and yield</strong> are different units. They should not be pooled into the same numerical summary unless transformed to a common economic scale.</li>
+  <li><strong>Quantity tiers</strong> are often a cross-section at one time, not simply repeated observations through time.</li>
+  <li><strong>Missing quantity</strong>, <strong>zero quantity</strong>, and <strong>positive displayed quantity</strong> can have different meanings and should not automatically be collapsed.</li>
+</ul>
+<h3>2.2 Distinguish state from event</h3>
+<p>A dealer quote update is an event. The most recent valid quote from that dealer is a state. These support different feature families:</p>
+<div class="grid2">
+  <div class="tile"><strong>State question</strong><p>What does the dealer market look like right now?</p></div>
+  <div class="tile"><strong>Flow question</strong><p>How has dealer behavior changed over the last few minutes or hours?</p></div>
+</div>
+</section>
+
+<section class="card" id="pit">
+<h2>3. Point-in-time construction is non-negotiable</h2>
+<p>For a prediction made at time <em>t</em>, every feature must be a function only of information that was observable at or before <em>t</em>. This sounds simple, but dealer run creates several subtle failure modes.</p>
+<h3>3.1 Evaluate windows at the prediction timestamp</h3>
+<p>A statistic defined over <span class="tag">(t − W, t]</span> should be evaluated at <em>t</em>, not only at historical quote-update timestamps and then carried forward. Otherwise an observation that has already fallen out of the window can remain embedded in the feature until the next quote event.</p>
+<h3>3.2 Apply explicit quote-age rules</h3>
+<p>The latest quote is not automatically a valid current quote. Define an age policy per use case, for example:</p>
+<div class="formula">active(d,t) = 1{ t − last_update(d) ≤ A }</div>
+<p>where <em>A</em> can be fixed, instrument-dependent, dealer-dependent, or learned through freshness features rather than hard filtering.</p>
+<h3>3.3 Use event-time cutoffs consistently</h3>
+<p>When the dealer-run source has multiple timestamps—source time, ingestion time, vendor time, correction time—the feature pipeline needs one explicit information-availability timestamp. Backfills and corrected records require special care.</p>
+<div class="callout bad"><strong>Leakage test:</strong> shifting the prediction timestamp backward by one second should never expose any observation stamped after the new cutoff.</div>
+</section>
+
+<section class="card" id="three-layers">
+<h2>4. The three-layer feature architecture</h2>
+<p>A clean dealer-run framework separates features into three layers. This makes the feature semantics easier to understand and prevents rolling statistics from accidentally mixing current market state with historical activity.</p>
+<div class="grid">
+  <div class="tile"><strong>1. Current state</strong><p>Latest active quote per dealer/side/tier, then cross-sectional market summaries.</p></div>
+  <div class="tile"><strong>2. Trailing flow</strong><p>Quote updates, revisions, entries/exits, and changes over rolling windows.</p></div>
+  <div class="tile"><strong>3. Data quality</strong><p>Freshness, dealer coverage, missingness, staleness, and synchronization.</p></div>
+</div>
+<p>Most robust dealer-run feature sets can be organized almost entirely around these three layers.</p>
+</section>
+
+<section class="card" id="quote">
+<h2>5. Quote-level and dealer-level state features</h2>
+<p>Start from the latest active state for each dealer. Build quote features at the dealer level first, then aggregate across dealers. This avoids giving extra weight to dealers that happen to update more frequently.</p>
+<h3>5.1 Dealer-level quantities</h3>
+<ul>
+  <li>latest bid and ask;</li>
+  <li>dealer mid: <code>(bid + ask) / 2</code> when both sides are valid;</li>
+  <li>dealer bid-ask width;</li>
+  <li>one-sided / two-sided indicator;</li>
+  <li>age of bid, ask, and latest side;</li>
+  <li>dealer-specific displayed quantity;</li>
+  <li>distance from dealer quote to market consensus or external reference;</li>
+  <li>number of quantity tiers currently available.</li>
+</ul>
+<h3>5.2 Robust aggregation is usually preferable</h3>
+<p>Dealer quotes often contain outliers and stale levels. Useful market-state aggregators include median, trimmed mean, winsorized mean, weighted median, interquartile range, and median absolute deviation. Mean and standard deviation can still be retained, but they should not be the only summaries.</p>
+</section>
+
+<section class="card" id="crosssection">
+<h2>6. Cross-dealer consensus and disagreement</h2>
+<p>The dealer cross-section is one of the strongest distinctive advantages of dealer-run data. A model should know not only where the market is, but also how strongly dealers agree.</p>
+<h3>6.1 Location</h3>
+<div class="table-wrap"><table>
+<tr><th>Feature family</th><th>Examples</th><th>Interpretation</th></tr>
+<tr><td>Central level</td><td>median bid, median ask, median mid</td><td>Consensus location</td></tr>
+<tr><td>Best levels</td><td>best bid, best ask, best implied width</td><td>Most aggressive executable indication</td></tr>
+<tr><td>Quantiles</td><td>p10 / p25 / p75 / p90</td><td>Shape of dealer distribution</td></tr>
+<tr><td>Robust center</td><td>trimmed mean, weighted median</td><td>Less sensitive to outliers/stale dealers</td></tr>
+</table></div>
+<h3>6.2 Dispersion</h3>
+<ul>
+  <li>IQR and MAD of dealer bids, asks, or mids;</li>
+  <li>high-low range after trimming extremes;</li>
+  <li>cross-dealer standard deviation;</li>
+  <li>dispersion normalized by current quote width;</li>
+  <li>dispersion relative to the instrument's own recent history.</li>
+</ul>
+<h3>6.3 Breadth and concentration</h3>
+<ul>
+  <li>number of active dealers;</li>
+  <li>number of two-sided dealers;</li>
+  <li>share of all known dealers currently active;</li>
+  <li>effective dealer count from concentration weights;</li>
+  <li>fraction of consensus supported by fresh dealers.</li>
+</ul>
+<div class="callout good"><strong>Interpretation:</strong> the same median quote can mean very different things when 12 fresh dealers agree tightly versus when only 2 stale dealers remain.</div>
+</section>
+
+<section class="card" id="quantity">
+<h2>7. Quantity and displayed-size features</h2>
+<p>Quantity is often the hardest dealer-run field because it is sparse, dealer-dependent, instrument-dependent, and sometimes tiered. Raw quantity should therefore be treated as only one representation of size, not the final feature.</p>
+<h3>7.1 Preserve missingness semantics</h3>
+<p>At minimum keep separate indicators for:</p>
+<ul>
+  <li>quantity observed;</li>
+  <li>quantity missing;</li>
+  <li>quantity reported as zero;</li>
+  <li>positive displayed quantity;</li>
+  <li>number of dealers with usable quantity.</li>
+</ul>
+<h3>7.2 Normalize quantity across dealers and instruments</h3>
+<p>A raw size of 1mm can be large for one instrument and trivial for another. Better representations include:</p>
+<div class="formula">log_size = log(1 + quantity)</div>
+<div class="formula">dealer_relative_size = percentile(quantity | dealer, comparable history)</div>
+<div class="formula">instrument_relative_size = percentile(quantity | instrument, comparable history)</div>
+<div class="formula">robust_z = (log_size − rolling_median) / rolling_MAD</div>
+<p>When history is sparse, use hierarchical normalization: dealer × sector, dealer × rating bucket, instrument peer group, or other broader pools rather than forcing an unstable per-instrument estimate.</p>
+<h3>7.3 Separate three concepts that are often confused</h3>
+<div class="grid">
+  <div class="tile"><strong>Current depth</strong><p>How much size is displayed by active dealer states right now?</p></div>
+  <div class="tile"><strong>Historical capacity</strong><p>How much size have dealers shown recently, such as rolling maxima?</p></div>
+  <div class="tile"><strong>Quote activity</strong><p>How frequently are quantity-bearing quotes being updated?</p></div>
+</div>
+<p>These are economically different and should not share the same feature name.</p>
+<h3>7.4 Cross-dealer size structure</h3>
+<ul>
+  <li>sum / median / p75 / max of current displayed quantity;</li>
+  <li>dealer size concentration (HHI);</li>
+  <li>largest dealer share and top-k dealer share;</li>
+  <li>effective number of size-contributing dealers;</li>
+  <li>bid-vs-ask displayed-size imbalance;</li>
+  <li>share of dealers above an instrument-relative size threshold;</li>
+  <li>fraction of quote coverage with known quantity.</li>
+</ul>
+<div class="formula">size_imbalance = (Q_bid − Q_ask) / (Q_bid + Q_ask + ε)</div>
+<h3>7.5 Quantity ladders and quote curves</h3>
+<p>If multiple price/size tiers are available simultaneously, treat them as a quote curve. Useful features include slope, convexity, price deterioration from small to large size, number of tiers, and size required to move the quote by a fixed amount. A curve should be estimated within one quote convention and one side.</p>
+</section>
+
+<section class="card" id="dynamics">
+<h2>8. Rolling dynamics and event-flow features</h2>
+<p>Trailing windows are most useful for measuring <strong>market activity and change</strong>, not for reconstructing current state.</p>
+<h3>8.1 Update intensity</h3>
+<ul>
+  <li>number of quote updates over 1m / 5m / 30m / 1h;</li>
+  <li>number of unique dealers updating;</li>
+  <li>updates per active dealer;</li>
+  <li>bid-side versus ask-side update counts;</li>
+  <li>quantity-bearing update count;</li>
+  <li>time since most recent update.</li>
+</ul>
+<h3>8.2 Revision direction and breadth</h3>
+<ul>
+  <li>share of dealers revising tighter / wider;</li>
+  <li>share moving bid or ask in the same direction;</li>
+  <li>median dealer revision;</li>
+  <li>cross-dealer revision breadth;</li>
+  <li>number of dealer entries and exits;</li>
+  <li>ratio of quote additions to quote withdrawals.</li>
+</ul>
+<h3>8.3 Multi-horizon change</h3>
+<p>For a state summary <em>x(t)</em>, compare short- and long-horizon changes:</p>
+<div class="formula">Δ_W x(t) = x(t) − x(t − W)</div>
+<div class="formula">acceleration = Δ_short x(t) − c · Δ_long x(t)</div>
+<p>This captures both direction and whether the dealer market is accelerating away from its recent state.</p>
+<h3>8.4 Adaptive rather than only fixed windows</h3>
+<p>Fixed clock windows are easy to interpret, but activity-normalized windows can be useful too: last 10 dealer updates, last 5 unique dealer changes, or exponentially decayed summaries. A strong framework usually contains both clock-time and event-time views.</p>
+</section>
+
+<section class="card" id="relative">
+<h2>9. Relative-value and reference features</h2>
+<p>Dealer run becomes much more informative when interpreted relative to another contemporaneous reference. The reference can be a composite quote, benchmark curve, model value, ETF/CDX proxy, peer instrument, or another independently constructed fair-value signal.</p>
+<h3>9.1 Location relative to reference</h3>
+<ul>
+  <li>dealer median minus reference;</li>
+  <li>best bid / ask distance from reference;</li>
+  <li>reference percentile inside dealer cross-section;</li>
+  <li>robust z-score of reference relative to dealer distribution;</li>
+  <li>fraction of dealers above/below the reference.</li>
+</ul>
+<h3>9.2 Disagreement between sources</h3>
+<p>Cross-source disagreement can be predictive even when neither source is universally superior. Useful features include absolute gap, signed gap, gap normalized by dealer dispersion, and persistence of the gap across windows.</p>
+<div class="formula">normalized_gap = (dealer_consensus − reference) / (dealer_MAD + ε)</div>
+</section>
+
+<section class="card" id="quality">
+<h2>10. Freshness, coverage, and confidence are first-class features</h2>
+<p>Dealer-run datasets have time-varying information quality. Instead of hiding that fact through imputation, expose it to the model.</p>
+<div class="grid2">
+  <div class="tile"><strong>Freshness</strong><p>Median quote age, oldest active quote, freshest quote, age dispersion, fresh-dealer share.</p></div>
+  <div class="tile"><strong>Coverage</strong><p>Active dealers, known-quantity dealers, bid/ask coverage, two-sided coverage.</p></div>
+  <div class="tile"><strong>Synchronization</strong><p>Bid/ask age difference, fraction of dealers whose two sides were refreshed close together.</p></div>
+  <div class="tile"><strong>Reliability</strong><p>Missingness rate, outlier share, stale share, duplicated updates, inconsistent tiers.</p></div>
+</div>
+<p>These features also make model diagnostics easier: error can be stratified by the quality of the dealer-run state available at prediction time.</p>
+</section>
+
+<section class="card" id="pitfalls">
+<h2>11. Common feature-engineering mistakes</h2>
+<div class="table-wrap"><table>
+<tr><th>Mistake</th><th>Why it is problematic</th><th>Better approach</th></tr>
+<tr><td>Pooling all quote rows directly</td><td>Frequent dealers receive more weight</td><td>Build latest dealer state first, then aggregate dealers</td></tr>
+<tr><td>Carrying a rolling statistic forward indefinitely</td><td>Expired observations remain inside an old window statistic</td><td>Evaluate windows at prediction time or maintain exact expiry logic</td></tr>
+<tr><td>Summing rolling dealer maxima and calling it depth</td><td>Maxima may occur at different times</td><td>Call it historical capacity; compute current depth from active states</td></tr>
+<tr><td>Mixing price/spread/yield numerically</td><td>Different units have no common raw scale</td><td>Separate quote types or transform to a common value space</td></tr>
+<tr><td>Collapsing missing and zero quantity</td><td>Missingness itself can be informative</td><td>Preserve explicit missing/zero/known indicators</td></tr>
+<tr><td>Exact-timestamp bid/ask pairing only</td><td>Two sides frequently update asynchronously</td><td>Use latest-side state with age/synchronization features</td></tr>
+<tr><td>Ignoring dealer identity</td><td>Dealers have persistent scale and behavior differences</td><td>Dealer normalization, reliability weights, or hierarchical statistics</td></tr>
+<tr><td>Computing large numbers of highly correlated summaries</td><td>Feature explosion with little incremental information</td><td>Organize features by economic family and ablate systematically</td></tr>
+</table></div>
+</section>
+
+<section class="card" id="architecture">
+<h2>12. Recommended implementation architecture</h2>
+<p>A reusable pipeline benefits from keeping raw normalization, state construction, and feature aggregation separate.</p>
+<pre>raw dealer-run events
+        │
+        ▼
+normalize schema / units / timestamps
+        │
+        ├──► dealer latest-state engine
+        │        └──► cross-dealer state features
+        │
+        ├──► rolling event-flow engine
+        │        └──► update / revision / entry-exit features
+        │
+        ├──► quantity normalization engine
+        │        └──► current depth / capacity / concentration features
+        │
+        └──► quality engine
+                 └──► age / coverage / missingness features
+                         │
+                         ▼
+                 point-in-time feature table</pre>
+<h3>12.1 Prefer state tables over repeated full-window scans</h3>
+<p>For large datasets, repeatedly slicing every historical window for every prediction row becomes expensive. Maintain per-dealer latest state and incremental rolling statistics where possible. Vectorized as-of joins, indexed event arrays, deques, or a streaming state machine are usually more scalable than nested Python loops.</p>
+<h3>12.2 Name features by their economic meaning</h3>
+<p>Feature names should distinguish <code>current_*</code>, <code>rolling_update_*</code>, <code>historical_capacity_*</code>, <code>coverage_*</code>, and <code>freshness_*</code>. This simple naming convention prevents semantic drift later in research.</p>
+</section>
+
+<section class="card" id="evaluation">
+<h2>13. How to evaluate dealer-run feature families</h2>
+<p>Feature engineering should be treated as a sequence of economic hypotheses rather than an unrestricted feature dump.</p>
+<h3>13.1 Ablate by family</h3>
+<ol>
+  <li>baseline without dealer run;</li>
+  <li>+ current consensus level;</li>
+  <li>+ cross-dealer dispersion and breadth;</li>
+  <li>+ freshness and coverage;</li>
+  <li>+ quantity / depth features;</li>
+  <li>+ rolling update-flow features;</li>
+  <li>+ relative-value features;</li>
+  <li>+ dealer normalization / advanced quote-curve features.</li>
+</ol>
+<h3>13.2 Evaluate conditional performance</h3>
+<p>Average accuracy can hide where dealer run helps. Report feature-family gains by:</p>
+<ul>
+  <li>dealer coverage;</li>
+  <li>quote freshness;</li>
+  <li>instrument liquidity;</li>
+  <li>time of day;</li>
+  <li>quantity availability;</li>
+  <li>market volatility regime;</li>
+  <li>number of two-sided dealers;</li>
+  <li>short versus long time since last market event.</li>
+</ul>
+<h3>13.3 Inspect feature stability, not just importance</h3>
+<p>For each important feature, examine missingness, temporal drift, distribution by instrument/dealer, SHAP direction, monotonicity, and stability across train/test periods. A feature that is highly predictive but unstable may be less valuable than a weaker but persistent one.</p>
+</section>
+
+<section class="card" id="roadmap">
+<h2>14. Suggested rollout order</h2>
+<div class="table-wrap"><table>
+<tr><th>Priority</th><th>Build</th><th>Reason</th></tr>
+<tr><td class="priority p0">P0</td><td>Point-in-time state engine, quote age, active dealer definition, side/type separation</td><td>Correctness foundation</td></tr>
+<tr><td class="priority p0">P0</td><td>Dealer-level state followed by dealer-weighted cross-sectional aggregation</td><td>Prevents row-frequency bias</td></tr>
+<tr><td class="priority p1">P1</td><td>Consensus, robust dispersion, breadth, two-sided coverage</td><td>Highest-value generic dealer-run structure</td></tr>
+<tr><td class="priority p1">P1</td><td>Quantity missingness + normalized current size + bid/ask size imbalance</td><td>Makes heterogeneous quantity usable</td></tr>
+<tr><td class="priority p1">P1</td><td>Rolling update intensity and revision breadth</td><td>Adds market dynamics</td></tr>
+<tr><td class="priority p2">P2</td><td>Dealer-specific normalization and reliability weighting</td><td>Captures persistent dealer heterogeneity</td></tr>
+<tr><td class="priority p2">P2</td><td>Quote-curve / quantity-tier slope and convexity</td><td>Extracts price impact from depth ladders</td></tr>
+<tr><td class="priority p2">P2</td><td>Relative-value features versus external references</td><td>Connects dealer state to broader market information</td></tr>
+</table></div>
+<div class="callout"><strong>Practical rule:</strong> begin with a small, semantically clean set of state, dispersion, freshness, and normalized quantity features. Only then add more elaborate rolling statistics. The information architecture matters more than the raw feature count.</div>
+</section>
+
+<section class="card">
+<h2>15. Bottom line</h2>
+<p>Dealer run is valuable precisely because it reveals a market as a collection of heterogeneous dealer opinions rather than as one consolidated number. The right feature-engineering abstraction is therefore:</p>
+<div class="formula">Dealer run = current multi-dealer state + disagreement + liquidity/size + update flow + information quality</div>
+<p>A reusable framework should preserve dealer identity long enough to construct economically meaningful dealer states, normalize heterogeneous quantity, evaluate all features point-in-time, and then summarize the dealer cross-section robustly. This makes the resulting features useful across different instruments, vendors, targets, and downstream time-series ML models.</p>
+</section>
+
+<div class="footer">Dealer Run Feature Engineering Framework · tsml</div>
+</main>
+</body>
+</html>

@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dealer Run Feature Engine Review — Detailed Implementation</title>
+<style>
+:root{
+  --bg:#f4f6f9; --card:#fff; --text:#182230; --muted:#667085; --line:#d9e0e8;
+  --accent:#2948b8; --accent2:#eef2ff; --good:#067647; --goodbg:#ecfdf3;
+  --warn:#b54708; --warnbg:#fffaeb; --bad:#b42318; --badbg:#fef3f2;
+  --codebg:#f8fafc; --codefg:#101828; --codeborder:#cfd8e3; --inline:#eef2f6;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:15.5px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+main{max-width:1080px;margin:auto;padding:20px 14px 56px}
+.hero,.card{border-radius:16px;margin:16px 0}
+.hero{padding:28px;background:linear-gradient(135deg,#172554,#2f55c7);color:#fff;box-shadow:0 12px 30px rgba(30,55,120,.16)}
+.hero h1{margin:0 0 10px;font-size:38px;line-height:1.12}.hero p{margin:0;color:#e8ecff;max-width:900px}
+.card{background:var(--card);border:1px solid var(--line);padding:24px;box-shadow:0 2px 8px rgba(16,24,40,.03)}
+h2{font-size:25px;margin:0 0 14px;line-height:1.25}h3{font-size:19px;margin:26px 0 10px;line-height:1.3}
+p{margin:9px 0 14px}ul,ol{padding-left:24px}li{margin:5px 0}a{color:var(--accent)}
+code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;background:var(--inline);color:#172033;padding:1px 5px;border-radius:5px;font-size:.92em}
+.callout{padding:13px 15px;border-radius:10px;border-left:4px solid;margin:13px 0}.good{background:var(--goodbg);border-color:var(--good)}.warn{background:var(--warnbg);border-color:var(--warn)}.bad{background:var(--badbg);border-color:var(--bad)}
+.tbl{overflow:auto;border:1px solid var(--line);border-radius:11px;margin:12px 0 18px}table{border-collapse:collapse;width:100%;min-width:780px}th,td{padding:10px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:13.5px}th{background:#f7f9fc}tr:last-child td{border-bottom:none}.p0{color:var(--bad);font-weight:800}.p1{color:var(--warn);font-weight:800}.p2{color:#175cd3;font-weight:800}
+.codebox{border:1px solid var(--codeborder);border-radius:12px;overflow:hidden;margin:12px 0 20px;background:var(--codebg)}
+.codehead{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#eef2f6;border-bottom:1px solid var(--codeborder);padding:8px 11px;color:#344054;font:600 12.5px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}.codehead .tag{font-weight:500;color:#667085}.copy{border:1px solid #b9c4d2;background:#fff;color:#344054;border-radius:7px;padding:4px 9px;font-size:12px;cursor:pointer}.copy:hover{background:#f8fafc}
+pre{margin:0;overflow:auto;padding:15px 17px;background:var(--codebg);color:var(--codefg);font:13px/1.62 "SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;tab-size:4;white-space:pre}pre code{background:transparent!important;color:inherit!important;padding:0!important;border-radius:0!important;font-size:inherit!important}
+.small{color:var(--muted);font-size:13px}.foot{text-align:center;color:#667085;font-size:12px;margin-top:26px}.toc{columns:2;column-gap:36px}.toc a{text-decoration:none}.toc li{break-inside:avoid;margin:7px 0}.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}.kpi>div{padding:13px;border:1px solid var(--line);border-radius:11px;background:#fafbfc}.kpi b{display:block;font-size:12px;color:#667085;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+@media(max-width:760px){main{padding:9px}.hero,.card{padding:18px}.hero h1{font-size:30px}.toc{columns:1}.kpi{grid-template-columns:1fr}pre{font-size:12px;padding:13px}.codehead{position:sticky;left:0}}
+</style>
+<script>
+function copyCode(btn){
+  const box=btn.closest('.codebox');
+  const text=box.querySelector('pre').innerText;
+  navigator.clipboard.writeText(text).then(()=>{const old=btn.textContent;btn.textContent='Copied';setTimeout(()=>btn.textContent=old,1200);});
+}
+</script>
+</head>
+<body><main>
+<section class="hero"><h1>Dealer Run Point-in-Time Feature Engine</h1><p>Detailed implementation review of the new state/flow design. This version emphasizes semantic correctness, common-size dealer comparison, quantity handling, leakage-safe normalization, event counting, regression tests, and code that is close to drop-in.</p></section>
+<section class="card">
+<h2>0. Executive summary</h2>
+<div class="kpi"><div><b>Architecture</b>Keep the observation-time state/flow split.</div><div><b>Highest-priority fix</b>Define a canonical quote event and common-size ladder state.</div><div><b>Next optimization</b>Only after semantics are frozen, replace repeated scans with timestamp indexing/state machines.</div></div>
+<p>The new implementation is substantially better than a quote-timestamp rolling table followed by <code>merge_asof</code>: features are now constructed at each observation time, current state is separated from trailing activity, and freshness is explicit. The remaining risks are mostly about <strong>what one row means</strong>, <strong>what one update means</strong>, and <strong>how quantity tiers should be compared across dealers</strong>.</p>
+<div class="callout good"><strong>Recommended design principle:</strong> represent dealer-run data as three objects: <em>current state</em>, <em>trailing event flow</em>, and <em>data-quality/freshness</em>. Do not let a raw vendor row play all three roles.</div>
+<h3>Contents</h3><ol class="toc"><li><a href="#issues">Main issues</a></li><li><a href="#canonical">Canonical row/event model</a></li><li><a href="#state">Current state reconstruction</a></li><li><a href="#ladder">Common-size ladder features</a></li><li><a href="#quantity">Quantity semantics and normalization</a></li><li><a href="#freshness">Freshness and synchronization</a></li><li><a href="#flow">Flow and repricing features</a></li><li><a href="#builder">Recommended builder structure</a></li><li><a href="#performance">Performance path</a></li><li><a href="#tests">Regression tests</a></li></ol>
+</section>
+<section class="card" id="issues"><h2>1. Main issues in the current implementation</h2><div class="tbl"><table>
+<tr><th>Priority</th><th>Current behavior</th><th>Risk</th><th>Recommendation</th></tr>
+<tr><td class="p0">P0</td><td><code>allow_exact_matches=True</code></td><td>An equal timestamp does not necessarily imply that the quote was observable before the target event.</td><td>Default to strict-before unless event sequence/order is known; optionally subtract an availability lag.</td></tr>
+<tr><td class="p0">P0</td><td><code>quote_update_count = len(rows)</code></td><td>A multi-tier ladder can generate many rows for one dealer message; price/spread representations can double-count activity.</td><td>Create a canonical event table and keep raw row count only as a diagnostic.</td></tr>
+<tr><td class="p0">P0</td><td>State key is dealer × side × price_type</td><td>This assumes each timestamp replaces the entire ladder. If the feed is incremental by tier, old still-live tiers can disappear.</td><td>Explicitly parameterize snapshot vs incremental feed semantics.</td></tr>
+<tr><td class="p0">P0</td><td>Dealer quote value is summarized across native tiers</td><td>Dealers with different size grids are not economically comparable by raw median.</td><td>Interpolate each dealer ladder to common target sizes before cross-dealer aggregation.</td></tr>
+<tr><td class="p0">P0</td><td><code>quote_qty_known</code> tracks positive quantity</td><td>Missing, zero, negative/invalid, and positive quantity are distinct states.</td><td>Create separate flags and preserve the raw value.</td></tr>
+<tr><td class="p1">P1</td><td><code>current_displayed_depth_sum</code> sums dealer maxima</td><td>This is a capacity proxy unless vendor semantics prove cumulative executable depth.</td><td>Rename to <code>current_capacity_sum</code> or <code>current_max_size_sum</code>.</td></tr>
+<tr><td class="p1">P1</td><td>Dealer freshness uses minimum age over all rows</td><td>A fresh bid can hide a stale ask.</td><td>Add side/type-specific age and pair synchronization measures.</td></tr>
+<tr><td class="p1">P1</td><td>Raw quantity dominates size features</td><td>Absolute quantity scale differs by dealer and instrument.</td><td>Add strictly point-in-time dealer-relative and instrument-relative log-size features.</td></tr>
+<tr><td class="p1">P1</td><td>Flow mostly measures update intensity</td><td>Cannot distinguish coordinated repricing from message churn.</td><td>Add event-level deltas, revision breadth, consensus movement, convergence/divergence, and dealer entry/exit.</td></tr>
+<tr><td class="p2">P2</td><td>Repeated filtering/groupby inside <code>iterrows()</code></td><td>Correct but potentially expensive.</td><td>Use <code>searchsorted</code> per instrument first; later move to an incremental state engine.</td></tr>
+</table></div></section>
+<section class="card" id="canonical"><h2>2. Canonical row and event model</h2><p>The first improvement should be to separate <strong>vendor rows</strong> from <strong>dealer update events</strong>. A row is useful for ladder construction; an event is useful for activity/repricing flow.</p>
+<h3>2.1 Revised quote preparation</h3>
+<div class="codebox"><div class="codehead"><span>_quantity_feature_utils.py <span class="tag">replacement for prepare_quantity_quote_rows</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def prepare_quantity_quote_rows(
+    quotes: pd.DataFrame,
+    *,
+    timestamp_col: str = "quote_timestamp_UTC",
+    cusip_col: str = "cusip",
+    firm_col: str = "firm",
+    side_col: str = "side",
+    price_type_col: str = "price_type",
+    quantity_col: str = "quantity",
+    price_col: str = "price",
+    spread_col: str = "spread",
+) -&gt; pd.DataFrame:
+    """Normalize long dealer-run rows without destroying source semantics."""
+    work = quotes.copy()
+    work[timestamp_col] = pd.to_datetime(work[timestamp_col], utc=True, errors="coerce")
+    work[cusip_col] = work[cusip_col].astype("string")
+    work[firm_col] = work[firm_col].astype("string")
+    work[side_col] = work[side_col].astype("string").str.lower()
+    work[price_type_col] = work[price_type_col].astype("string").str.lower()
+    work[quantity_col] = pd.to_numeric(work[quantity_col], errors="coerce")
+    work[price_col] = pd.to_numeric(work[price_col], errors="coerce")
+    work[spread_col] = pd.to_numeric(work[spread_col], errors="coerce")
+
+    valid = (
+        work[timestamp_col].notna()
+        &amp; work[cusip_col].notna()
+        &amp; work[firm_col].notna()
+        &amp; work[side_col].isin(["bid", "ask"])
+        &amp; work[price_type_col].isin(["price", "spread"])
+    )
+    work = work.loc[valid].copy()
+
+    q = work[quantity_col]
+    work["quote_qty_raw"] = q
+    work["quote_qty_observed"] = q.notna()
+    work["quote_qty_positive"] = q.gt(0)
+    work["quote_qty_zero"] = q.eq(0)
+    work["quote_qty_invalid_negative"] = q.lt(0)
+    work["quote_qty_clean"] = q.where(q.gt(0))
+    work["log_quote_qty_clean"] = np.log1p(work["quote_qty_clean"])
+
+    work["quote_price_value"] = work[price_col].where(work[price_type_col].eq("price"))
+    work["quote_spread_value"] = work[spread_col].where(work[price_type_col].eq("spread"))
+
+    return work.sort_values(
+        [cusip_col, timestamp_col, firm_col, side_col, price_type_col], kind="stable"
+    ).reset_index(drop=True)</code></pre></div>
+<h3>2.2 Event table: count messages, not ladder rows</h3>
+<p>The correct event key is vendor-specific. If there is a source message/sequence ID, use it. If not, define an explicit fallback and document the assumption.</p>
+<div class="codebox"><div class="codehead"><span>_quantity_feature_utils.py <span class="tag">new helper</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def build_quote_event_table(
+    rows: pd.DataFrame,
+    *,
+    firm_col: str,
+    timestamp_col: str,
+    side_col: str,
+    event_id_col: str | None = None,
+    collapse_price_spread_views: bool = True,
+    price_type_col: str = "price_type",
+) -&gt; pd.DataFrame:
+    """Return one representative row per dealer update event.
+
+    Prefer a vendor message/sequence id. The fallback below assumes rows
+    with the same dealer/timestamp/side belong to one logical update.
+    """
+    if rows.empty:
+        return rows.copy()
+    x = rows.sort_values(timestamp_col, kind="stable").copy()
+    if event_id_col and event_id_col in x.columns:
+        keys = [event_id_col]
+    else:
+        keys = [firm_col, timestamp_col, side_col]
+        if not collapse_price_spread_views:
+            keys.append(price_type_col)
+    return x.drop_duplicates(keys, keep="last").reset_index(drop=True)</code></pre></div>
+<div class="callout warn"><strong>Important:</strong> same timestamp = same event is only a fallback assumption. Verify vendor message semantics before using the resulting event-count features.</div></section>
+<section class="card" id="state"><h2>3. Reconstruct current state safely</h2><h3>3.1 Information cutoff</h3>
+<div class="codebox"><div class="codehead"><span>quantity_features.py <span class="tag">observation cutoff</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def information_cutoff(
+    observation_time: pd.Timestamp,
+    availability_lag: str | pd.Timedelta = "0ms",
+) -&gt; pd.Timestamp:
+    return observation_time - pd.Timedelta(availability_lag)
+
+cutoff = information_cutoff(observation_time, availability_lag="0ms")
+state_rows = _latest_quote_state_rows(
+    cusip_rows,
+    observation_time=cutoff,
+    timestamp_col=timestamp_col,
+    firm_col=firm_col,
+    side_col=side_col,
+    price_type_col=price_type_col,
+    max_age=dealer_state_max_age,
+    allow_exact_matches=False,
+)</code></pre></div>
+<h3>3.2 Snapshot-feed implementation</h3>
+<div class="codebox"><div class="codehead"><span>_quantity_feature_utils.py <span class="tag">snapshot semantics</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def latest_snapshot_state_rows(
+    rows: pd.DataFrame,
+    observation_time: pd.Timestamp,
+    *,
+    timestamp_col: str,
+    firm_col: str,
+    side_col: str,
+    price_type_col: str,
+    max_age: str | pd.Timedelta | None,
+    allow_exact_matches: bool = False,
+) -&gt; pd.DataFrame:
+    if rows.empty or pd.isna(observation_time):
+        return rows.iloc[0:0].copy()
+
+    eligible = (
+        rows[timestamp_col].le(observation_time)
+        if allow_exact_matches
+        else rows[timestamp_col].lt(observation_time)
+    )
+    if max_age is not None:
+        eligible &amp;= rows[timestamp_col].gt(observation_time - pd.Timedelta(max_age))
+
+    x = rows.loc[eligible].copy()
+    if x.empty:
+        return x
+
+    state_keys = [firm_col, side_col, price_type_col]
+    latest_ts = x.groupby(state_keys, dropna=False)[timestamp_col].transform("max")
+    state = x.loc[x[timestamp_col].eq(latest_ts)].copy()
+    state["quote_age_seconds"] = (
+        observation_time - state[timestamp_col]
+    ).dt.total_seconds()
+    return state</code></pre></div>
+<h3>3.3 Incremental-tier feed implementation</h3>
+<p>If only one quantity tier is updated at a time, the state key must include a stable tier identifier.</p>
+<div class="codebox"><div class="codehead"><span>_quantity_feature_utils.py <span class="tag">incremental semantics</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def latest_incremental_tier_state_rows(
+    rows: pd.DataFrame,
+    observation_time: pd.Timestamp,
+    *,
+    timestamp_col: str,
+    firm_col: str,
+    side_col: str,
+    price_type_col: str,
+    tier_id_col: str,
+    max_age: str | pd.Timedelta | None,
+) -&gt; pd.DataFrame:
+    x = rows.loc[rows[timestamp_col].lt(observation_time)].copy()
+    if max_age is not None:
+        x = x.loc[x[timestamp_col].gt(observation_time - pd.Timedelta(max_age))]
+    if x.empty:
+        return x
+
+    keys = [firm_col, side_col, price_type_col, tier_id_col]
+    idx = x.groupby(keys, dropna=False)[timestamp_col].idxmax()
+    state = x.loc[idx].copy()
+    state["quote_age_seconds"] = (
+        observation_time - state[timestamp_col]
+    ).dt.total_seconds()
+    return state.sort_values(keys)</code></pre></div></section>
+<section class="card" id="ladder"><h2>4. Common-size ladder features</h2><p>The most important cross-dealer correction is to compare quote values at the <strong>same displayed size</strong>.</p>
+<h3>4.1 Interpolate one dealer ladder</h3>
+<div class="codebox"><div class="codehead"><span>_quantity_feature_utils.py <span class="tag">new helper</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def quote_at_target_size(
+    rows: pd.DataFrame,
+    target_qty: float,
+    *,
+    qty_col: str = "quote_qty_clean",
+    value_col: str,
+    allow_extrapolation: bool = False,
+) -&gt; float:
+    x = (
+        rows[[qty_col, value_col]]
+        .dropna()
+        .groupby(qty_col, as_index=False)[value_col]
+        .median()
+        .sort_values(qty_col)
+    )
+    if len(x) &lt; 2 or target_qty &lt;= 0:
+        return np.nan
+
+    qty = x[qty_col].to_numpy(dtype="float64")
+    val = x[value_col].to_numpy(dtype="float64")
+    if not allow_extrapolation and not (qty[0] &lt;= target_qty &lt;= qty[-1]):
+        return np.nan
+
+    return float(np.interp(np.log(target_qty), np.log(qty), val))</code></pre></div>
+<h3>4.2 Dealer × common-size table</h3>
+<div class="codebox"><div class="codehead"><span>_quantity_feature_utils.py <span class="tag">new helper</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def dealer_values_at_common_sizes(
+    rows: pd.DataFrame,
+    *,
+    target_sizes: tuple[int, ...],
+    firm_col: str,
+    value_col: str,
+    qty_col: str = "quote_qty_clean",
+) -&gt; pd.DataFrame:
+    out = []
+    for firm, dealer_rows in rows.groupby(firm_col, dropna=True, sort=False):
+        rec = {firm_col: firm}
+        for size in target_sizes:
+            rec[f"value_{size}"] = quote_at_target_size(
+                dealer_rows,
+                target_qty=size,
+                qty_col=qty_col,
+                value_col=value_col,
+                allow_extrapolation=False,
+            )
+        out.append(rec)
+    return pd.DataFrame(out)</code></pre></div>
+<h3>4.3 Consensus, disagreement, and matched-size width</h3>
+<div class="codebox"><div class="codehead"><span>_quantity_feature_utils.py <span class="tag">feature block</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def mad(values: pd.Series) -&gt; float:
+    x = values.dropna()
+    if x.empty:
+        return np.nan
+    med = x.median()
+    return float(1.4826 * (x - med).abs().median())
+
+TARGET_SIZES = (100_000, 250_000, 500_000, 1_000_000)
+common = dealer_values_at_common_sizes(
+    side_rows,
+    target_sizes=TARGET_SIZES,
+    firm_col=firm_col,
+    value_col=quote_value_col,
+)
+for size in TARGET_SIZES:
+    v = common[f"value_{size}"].dropna()
+    record[f"{prefix}_dealer_count_at_{size}"] = len(v)
+    record[f"{prefix}_median_at_{size}"] = v.median() if len(v) else np.nan
+    record[f"{prefix}_mad_at_{size}"] = mad(v)
+    record[f"{prefix}_p25_at_{size}"] = v.quantile(.25) if len(v) else np.nan
+    record[f"{prefix}_p75_at_{size}"] = v.quantile(.75) if len(v) else np.nan
+
+# Bid/ask width: same dealer, same target size.
+bid = dealer_values_at_common_sizes(...)
+ask = dealer_values_at_common_sizes(...)
+pair = bid.merge(ask, on=firm_col, suffixes=("_bid", "_ask"))
+for size in TARGET_SIZES:
+    width = (pair[f"value_{size}_bid"] - pair[f"value_{size}_ask"]).dropna()
+    record[f"spread_width_median_at_{size}"] = width.median() if len(width) else np.nan</code></pre></div>
+<div class="callout good"><strong>Why this matters:</strong> common-size features separate quote level from ladder composition. Both can be predictive, but they should not be conflated.</div></section>
+<section class="card" id="quantity"><h2>5. Quantity features: preserve meaning, then normalize</h2><p>If each dealer contributes its maximum positive displayed quantity, prefer names such as <code>current_capacity_sum</code>, <code>current_capacity_median</code>, <code>capacity_hhi</code>, and <code>effective_capacity_dealers</code>.</p>
+<h3>5.1 Capacity concentration</h3>
+<div class="codebox"><div class="codehead"><span>_quantity_feature_utils.py <span class="tag">cleaned concentration helper</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def quantity_concentration(max_quantities: pd.Series) -&gt; dict[str, float]:
+    q = max_quantities.dropna().astype(float)
+    q = q[q &gt; 0]
+    total = q.sum()
+    if q.empty or total &lt;= 0:
+        return {
+            "largest_dealer_share": np.nan,
+            "top3_dealer_share": np.nan,
+            "capacity_hhi": np.nan,
+            "effective_capacity_dealers": np.nan,
+            "n_dealers_for_80pct_capacity": np.nan,
+        }
+
+    share = (q / total).sort_values(ascending=False)
+    hhi = float((share ** 2).sum())
+    return {
+        "largest_dealer_share": float(share.iloc[0]),
+        "top3_dealer_share": float(share.head(3).sum()),
+        "capacity_hhi": hhi,
+        "effective_capacity_dealers": 1.0 / hhi if hhi &gt; 0 else np.nan,
+        "n_dealers_for_80pct_capacity": int((share.cumsum() &lt; 0.8).sum() + 1),
+    }</code></pre></div>
+<h3>5.2 Leakage-safe relative quantity</h3>
+<div class="codebox"><div class="codehead"><span>feature preprocessing <span class="tag">strictly point-in-time</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def add_past_relative_quantity(
+    rows: pd.DataFrame,
+    *,
+    group_cols: list[str],
+    timestamp_col: str,
+    log_qty_col: str = "log_quote_qty_clean",
+    min_periods: int = 20,
+) -&gt; pd.DataFrame:
+    x = rows.sort_values([*group_cols, timestamp_col]).copy()
+    g = x.groupby(group_cols, dropna=False)[log_qty_col]
+
+    # strictly earlier observations only
+    past_median = g.transform(
+        lambda s: s.shift().expanding(min_periods=min_periods).median()
+    )
+    x["log_qty_minus_past_median"] = x[log_qty_col] - past_median
+    return x
+
+# Suggested hierarchy:
+# dealer × instrument × side -> dealer × side -> instrument × side</code></pre></div>
+<div class="callout bad"><strong>Avoid:</strong> full-sample dealer/bond quantity percentiles or z-scores. Those leak future distribution information.</div></section>
+<section class="card" id="freshness"><h2>6. Freshness and pair synchronization</h2><p>Overall dealer age is useful, but it should not replace side/type freshness.</p>
+<div class="codebox"><div class="codehead"><span>_quantity_feature_utils.py <span class="tag">slice freshness</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def add_slice_freshness(
+    record: dict[str, float],
+    rows: pd.DataFrame,
+    *,
+    prefix: str,
+    firm_col: str,
+    age_col: str = "quote_age_seconds",
+    buckets: tuple[str, ...] = ("1min", "5min", "15min"),
+) -&gt; None:
+    if rows.empty:
+        record[f"{prefix}_dealer_count"] = 0
+        return
+
+    age = rows.groupby(firm_col, dropna=True)[age_col].min().dropna()
+    record[f"{prefix}_dealer_count"] = len(age)
+    record[f"{prefix}_age_median_seconds"] = age.median() if len(age) else np.nan
+    record[f"{prefix}_age_p90_seconds"] = age.quantile(.9) if len(age) else np.nan
+    record[f"{prefix}_age_max_seconds"] = age.max() if len(age) else np.nan
+    for bucket in buckets:
+        sec = pd.Timedelta(bucket).total_seconds()
+        record[f"{prefix}_share_dealers_fresh_{bucket}"] = age.le(sec).mean() if len(age) else np.nan</code></pre></div>
+<h3>6.1 Two-sided synchronization</h3>
+<div class="codebox"><div class="codehead"><span>_quantity_feature_utils.py <span class="tag">pair quality</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def dealer_pair_quality(
+    spread_state_rows: pd.DataFrame,
+    *,
+    firm_col: str,
+    side_col: str,
+    timestamp_col: str,
+    max_pair_age: str | pd.Timedelta = "15min",
+) -&gt; pd.DataFrame:
+    out = []
+    max_gap = pd.Timedelta(max_pair_age).total_seconds()
+    for firm, g in spread_state_rows.groupby(firm_col, dropna=True, sort=False):
+        bid = g.loc[g[side_col].eq("bid")]
+        ask = g.loc[g[side_col].eq("ask")]
+        if bid.empty or ask.empty:
+            continue
+        bid_ts = bid[timestamp_col].max()
+        ask_ts = ask[timestamp_col].max()
+        gap = abs((bid_ts - ask_ts).total_seconds())
+        out.append({
+            firm_col: firm,
+            "pair_leg_gap_seconds": gap,
+            "pair_is_synchronized": gap &lt;= max_gap,
+        })
+    return pd.DataFrame(out)</code></pre></div></section>
+<section class="card" id="flow"><h2>7. Flow features: activity + direction + coordination</h2><h3>7.1 Window selection at observation time</h3>
+<div class="codebox"><div class="codehead"><span>quantity_features.py <span class="tag">flow window</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>for window in windows:
+    delta = pd.Timedelta(window)
+    start = observation_time - delta
+    window_rows = cusip_rows.loc[
+        cusip_rows[timestamp_col].gt(start)
+        &amp; cusip_rows[timestamp_col].lt(observation_time)
+    ]
+
+    events = build_quote_event_table(
+        window_rows,
+        firm_col=firm_col,
+        timestamp_col=timestamp_col,
+        side_col=side_col,
+        price_type_col=price_type_col,
+        collapse_price_spread_views=True,
+    )
+    record[f"bcq_flow_{window}_row_count"] = len(window_rows)
+    record[f"bcq_flow_{window}_event_count"] = len(events)
+    record[f"bcq_flow_{window}_unique_updating_dealers"] = (
+        events[firm_col].nunique() if len(events) else 0
+    )</code></pre></div>
+<h3>7.2 Event-level repricing</h3>
+<div class="codebox"><div class="codehead"><span>_quantity_feature_utils.py <span class="tag">revision features</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def add_revision_features(
+    record: dict[str, float],
+    event_values: pd.DataFrame,
+    *,
+    prefix: str,
+    firm_col: str,
+    side_col: str,
+    timestamp_col: str,
+    value_col: str = "event_common_size_value",
+) -&gt; None:
+    if event_values.empty:
+        return
+
+    keys = [firm_col, side_col]
+    x = event_values.sort_values([*keys, timestamp_col]).copy()
+    x["delta"] = x.groupby(keys, dropna=False)[value_col].diff()
+    d = x.dropna(subset=["delta"])
+    if d.empty:
+        return
+
+    record[f"{prefix}_revision_count"] = len(d)
+    record[f"{prefix}_revision_abs_median"] = d["delta"].abs().median()
+    record[f"{prefix}_revision_abs_p90"] = d["delta"].abs().quantile(.9)
+    record[f"{prefix}_revision_breadth"] = float(np.sign(d["delta"]).mean())
+
+    dealer_sign = d.groupby(firm_col)["delta"].mean().pipe(np.sign)
+    record[f"{prefix}_dealer_revision_breadth"] = (
+        float(dealer_sign.mean()) if len(dealer_sign) else np.nan
+    )</code></pre></div>
+<h3>7.3 Convergence / divergence</h3>
+<div class="codebox"><div class="codehead"><span>feature idea <span class="tag">coordination</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>record[f"{prefix}_consensus_change"] = end_median - start_median
+record[f"{prefix}_dispersion_change"] = end_mad - start_mad
+record[f"{prefix}_convergence_flag"] = (
+    float(end_mad &lt; start_mad)
+    if pd.notna(start_mad) and pd.notna(end_mad)
+    else np.nan
+)</code></pre></div></section>
+<section class="card" id="builder"><h2>8. Recommended builder structure</h2><p>The public function can remain compact. Put semantics in helpers and keep one clear path from observation → current state → current-state features → trailing flow.</p>
+<div class="codebox"><div class="codehead"><span>quantity_features.py <span class="tag">recommended skeleton</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def build_dealer_run_observation_features(
+    quotes: pd.DataFrame,
+    observations: pd.DataFrame,
+    *,
+    windows: tuple[str, ...] = ("5min", "30min", "60min"),
+    target_sizes: tuple[int, ...] = (100_000, 250_000, 500_000, 1_000_000),
+    dealer_state_max_age: str | pd.Timedelta = "60min",
+    allow_exact_matches: bool = False,
+    feed_semantics: str = "snapshot",   # or "incremental"
+    tier_id_col: str | None = None,
+    ...,
+) -&gt; pd.DataFrame:
+    quote_rows = prepare_quantity_quote_rows(quotes, ...)
+    obs = observations.copy().reset_index(drop=True)
+    obs["_obs_id"] = np.arange(len(obs))
+    obs["_obs_ts_utc"] = _to_utc_timestamp(obs[observation_time_col], ...)
+
+    quote_groups = {
+        key: g.sort_values(timestamp_col, kind="stable").reset_index(drop=True)
+        for key, g in quote_rows.groupby(cusip_col, sort=False)
+    }
+
+    records = []
+    for row in obs.itertuples(index=False):
+        obs_id = getattr(row, "_obs_id")
+        cusip = getattr(row, "_obs_cusip")
+        t = getattr(row, "_obs_ts_utc")
+        rows = quote_groups.get(cusip)
+        rec = {"_obs_id": obs_id}
+
+        if rows is None or pd.isna(t):
+            records.append(rec)
+            continue
+
+        state = build_current_state(
+            rows,
+            t,
+            feed_semantics=feed_semantics,
+            tier_id_col=tier_id_col,
+            max_age=dealer_state_max_age,
+            allow_exact_matches=allow_exact_matches,
+            ...,
+        )
+        add_current_state_features(rec, state, target_sizes=target_sizes, ...)
+        add_trailing_flow_features(rec, rows, t, windows=windows, target_sizes=target_sizes, ...)
+        records.append(rec)
+
+    features = pd.DataFrame(records)
+    return (
+        obs.merge(features, on="_obs_id", how="left")
+        .drop(columns=["_obs_id", "_obs_ts_utc"], errors="ignore")
+    )</code></pre></div><p class="small"><code>itertuples()</code> is preferable to <code>iterrows()</code> for the clear baseline implementation. The bigger performance gain comes from avoiding repeated full-history scans.</p></section>
+<section class="card" id="performance"><h2>9. Performance path without changing semantics</h2><h3>9.1 First optimization: timestamp slicing with searchsorted</h3>
+<div class="codebox"><div class="codehead"><span>_quantity_feature_utils.py <span class="tag">fast local slicing</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def slice_time_window(
+    rows: pd.DataFrame,
+    times_ns: np.ndarray,
+    *,
+    start: pd.Timestamp,
+    end: pd.Timestamp,
+    include_end: bool = False,
+) -&gt; pd.DataFrame:
+    left = np.searchsorted(times_ns, start.value, side="right")
+    right = np.searchsorted(
+        times_ns,
+        end.value,
+        side="right" if include_end else "left",
+    )
+    return rows.iloc[left:right]
+
+# Build once per sorted instrument.
+times_ns = cusip_rows[timestamp_col].astype("int64").to_numpy()
+window_rows = slice_time_window(
+    cusip_rows,
+    times_ns,
+    start=observation_time - pd.Timedelta("60min"),
+    end=observation_time,
+    include_end=False,
+)</code></pre></div>
+<h3>9.2 Second optimization: incremental state machine</h3><p>After snapshot/incremental semantics and feature definitions are frozen, process quotes and observations together in time order. Maintain a latest-state dictionary and rolling deques. This moves the design toward approximately linear processing in quotes plus observations.</p></section>
+<section class="card" id="tests"><h2>10. Semantic regression tests</h2><p>These tests lock the point-in-time contract and should be added before performance refactoring.</p>
+<div class="codebox"><div class="codehead"><span>test_quantity_features.py <span class="tag">minimum suite</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def test_no_future_quote_used(): ...
+def test_exact_timestamp_policy_is_explicit(): ...
+def test_one_multi_tier_message_counts_as_one_event(): ...
+def test_price_spread_views_do_not_double_count_event(): ...
+def test_snapshot_state_keeps_all_rows_from_latest_snapshot(): ...
+def test_incremental_state_keeps_older_live_tiers(): ...
+def test_common_size_width_uses_same_target_quantity(): ...
+def test_zero_missing_negative_and_positive_quantity_are_distinct(): ...
+def test_side_specific_freshness_detects_stale_ask(): ...
+def test_relative_quantity_uses_only_past_rows(): ...</code></pre></div>
+<h3>10.1 Fully specified leakage test</h3>
+<div class="codebox"><div class="codehead"><span>test_quantity_features.py <span class="tag">example</span></span><button class="copy" onclick="copyCode(this)">Copy</button></div><pre><code>def test_future_quotes_do_not_change_current_features():
+    quotes_now = pd.DataFrame({
+        "cusip": ["A", "A"],
+        "firm": ["D1", "D2"],
+        "side": ["bid", "bid"],
+        "price_type": ["spread", "spread"],
+        "quantity": [250_000, 500_000],
+        "spread": [100.0, 102.0],
+        "price": [np.nan, np.nan],
+        "quote_timestamp_UTC": pd.to_datetime(
+            ["2026-01-02 14:00:00Z", "2026-01-02 14:01:00Z"]
+        ),
+    })
+    future = quotes_now.copy()
+    future["quote_timestamp_UTC"] = pd.to_datetime([
+        "2026-01-02 14:10:00Z", "2026-01-02 14:11:00Z"
+    ])
+    future["spread"] = [500.0, 600.0]
+
+    obs = pd.DataFrame({
+        "CUSIP": ["A"],
+        "EFFECTIVE_DATETIME_TS": pd.to_datetime(["2026-01-02 14:05:00Z"]),
+    })
+
+    f1 = build_dealer_run_observation_features(quotes_now, obs, ...)
+    f2 = build_dealer_run_observation_features(
+        pd.concat([quotes_now, future], ignore_index=True), obs, ...
+    )
+    feature_cols = [c for c in f1.columns if c.startswith("bcq_")]
+    pd.testing.assert_series_equal(
+        f1.loc[0, feature_cols], f2.loc[0, feature_cols], check_names=False
+    )</code></pre></div></section>
+<section class="card"><h2>11. Recommended implementation order</h2><ol><li><strong>Confirm feed semantics:</strong> full ladder snapshots vs incremental tier updates; zero-size meaning; price/spread relationship; event/message identifiers.</li><li><strong>Fix event counting and quantity flags.</strong></li><li><strong>Switch ladder-based cross-dealer features to common target sizes.</strong></li><li><strong>Make exact-timestamp policy explicit and add leakage tests.</strong></li><li><strong>Add side/type freshness and pair synchronization.</strong></li><li><strong>Add past-relative quantity and event-level repricing features.</strong></li><li><strong>Only then optimize with searchsorted/incremental state.</strong></li></ol><div class="callout good"><strong>Bottom line:</strong> the current implementation is directionally correct. The next improvements should make state/event semantics exact and make dealers comparable at a common quantity. That is more valuable than adding another large batch of generic rolling moments.</div></section>
+<div class="foot">Dealer Run Point-in-Time Feature Engine Review · detailed implementation edition · tsml</div>
+</main></body></html>
