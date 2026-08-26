@@ -32,7 +32,7 @@
 
 - [ ] [Lausen & Schumacher (1992), *Maximally Selected Rank Statistics*](https://doi.org/10.2307/2532740) — 理解 threshold maximization 不是固定检验。
 - [ ] [Hothorn, Hornik & Zeileis (2006), *Unbiased Recursive Partitioning*](https://doi.org/10.1198/106186006X133933) — 看 multiplicity-adjusted variable selection 与 stopping。
-- [ ] [Zeileis, Hothorn & Hornik (2008), *Model-Based Recursive Partitioning*](https://doi.org/10.1198/106186008X319331) — 把 score fluctuation、Brownian bridge 与 recursive splitting 连起来。
+- [ ] [Zeileis, Hothorn & Hornik (2008), *Model-Based Recursive Partitioning*](https://doi.org/10.1198/106186008X319331) — 把 score fluctuation、Brownian bridge 与 recursive splitting连起来。
 
 ### B3. Search degrees of freedom 与选择后推断
 
@@ -58,6 +58,12 @@
   - [ ] 比较 rectangular slotting、Gaussian kernel 与 S-ACF 实际平均的 observation pairs。
   - [ ] 复核 pair dependence、bootstrap unit、positive-semidefinite 与 informative sampling caveats。
   - [ ] 用自己的 out-of-sample residual 跑 event-time、clock-time、support 与 target-overlap diagnostics。
+- [ ] [Exponential Weighting: EMA, State Space, EWMA Covariance and Irregular Sampling — HTML](reports/time-series/exponential-weighting/index.html) · [Markdown](reports/time-series/exponential-weighting/SOURCE.md)
+  - [ ] 复核 normalized finite-history EWA 与 recursive EMA 的初始化差异。
+  - [ ] 自己推导 half-life、mean age、Kish ESS 和 tail-mass horizon，并解释 pandas 的 `com`/`span`。
+  - [ ] 推导 local-level model 下 $q=\alpha^2/(1-\alpha)$ 与 SES–ARIMA$(0,1,1)$ 等价。
+  - [ ] 区分 weighted sample covariance、RiskMetrics conditional covariance 与 IGARCH 边界模型。
+  - [ ] 在 bond residual/quote 数据上比较 event-time、clock-time 和 label-availability-time recursions。
 
 ### C2. Market microstructure / queue models
 

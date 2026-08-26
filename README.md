@@ -10,6 +10,8 @@
 - [第一棵 LightGBM 树的统计理论：HTML](reports/machine-learning/lightgbm-first-tree-theory/index.html)
 - [Irregular sampling autocorrelation：Markdown](reports/time-series/irregular-autocorrelation/SOURCE.md)
 - [Irregular sampling autocorrelation：HTML](reports/time-series/irregular-autocorrelation/index.html)
+- [Exponential weighting theory：Markdown](reports/time-series/exponential-weighting/SOURCE.md)
+- [Exponential weighting theory：HTML](reports/time-series/exponential-weighting/index.html)
 
 ## 目录结构
 
@@ -24,6 +26,7 @@
     │   ├── lightgbm-first-tree-theory/
     │   └── autoresearch_time_series_lightgbm.html
     ├── time-series/
+    │   ├── exponential-weighting/
     │   ├── irregular-autocorrelation/
     │   └── time_series_ml_pipeline.html
     ├── market-microstructure/
