@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TSML – 连续时间模型、resampling 与 inference</title><link rel="stylesheet" href="../style.css"><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>
+<body>
+<p class="note"><a href="../index.html">← 返回报告目录</a> · <a href="../SOURCE.md">编辑 Markdown source</a></p>
+<header id="title-block-header"><h1 class="title">连续时间模型、resampling 与 inference</h1></header>
+<nav id="TOC"><ul><li><a href="#models">6. 连续时间参数模型</a></li><li><a href="#resampling">7. 为什么先 resample 再 ACF 经常误导</a></li><li><a href="#inference">8. 统计推断</a></li></ul></nav>
+<h1 id="models">6. 第三类方法：连续时间参数模型</h1>
+<h2>6.1 OU / continuous-time AR(1)</h2>
+<p>最简单的 mean-reverting model 是</p>
+<p><span class="math display">\[dX_t=-\lambda X_t\,dt+\sigma\,dW_t,\qquad \lambda&gt;0,\]</span></p>
+<p>stationary ACF 为</p><p><span class="math display">\[\rho_c(\tau)=e^{-\lambda|\tau|}.\]</span></p>
+<p>任意 irregular interval <span class="math inline">\(\Delta_j=t_j-t_{j-1}\)</span> 上的 exact transition 是</p>
+<p><span class="math display">\[X_{t_j}=e^{-\lambda\Delta_j}X_{t_{j-1}}+\eta_j,\qquad \operatorname{Var}(\eta_j)=\frac{\sigma^2}{2\lambda}\left(1-e^{-2\lambda\Delta_j}\right).\]</span></p>
+<p>所以不需要 resample。常用摘要是 <span class="math inline">\(\tau_{1/2}=\log 2/\lambda\)</span>。</p>
+<h2>6.2 IAR formulation</h2>
+<p>Irregular autoregressive model 可写成</p>
+<p><span class="math display">\[y_{t_j}=\phi^{\Delta_j}y_{t_{j-1}}+\sigma\sqrt{1-\phi^{2\Delta_j}}\,\varepsilon_{t_j},\qquad 0&lt;\phi&lt;1,\]</span></p>
+<p>从而 <span class="math inline">\(\rho_c(\tau)=\phi^\tau\)</span>。令 <span class="math inline">\(\phi=e^{-\lambda}\)</span> 即与 OU decay 对应。IAR 的价值在于给出能直接处理 irregular gaps 的 likelihood 与 residual-checking framework。</p>
+<h2>6.3 什么时候 OU 不够？</h2>
+<p>若经验 ACF 有负相关、振荡、先快降后长尾，或不同 regime 有不同 decay，单指数太僵硬。可考虑 two-scale decay</p>
+<p><span class="math display">\[\rho(\tau)=a_1e^{-\lambda_1\tau}+a_2e^{-\lambda_2\tau},\]</span></p>
+<p>或 CARMA/state-space model。参数模型用结构假设换取 gap interpolation、unsupported-lag extrapolation 与低维 summary；因此先画 nonparametric curve 和 support，再决定模型是否可信。</p>
+<h1 id="resampling">7. 为什么“先 resample 再 ACF”经常误导？</h1>
+<h2>7.1 Forward fill 会制造 piecewise-constant persistence</h2>
+<p>10:00 有 observation、下一笔在 13:00 时，1-minute forward fill 会生成 179 个相同伪值。普通 ACF 看到长平台，自然产生很高的短 lag correlation。只有当研究对象本身就是“最新可见状态”——例如持有到下一次更新的 displayed quote state——last observation carried forward 才可能符合 estimand。</p>
+<h2>7.2 Linear interpolation 会加入 smooth-path assumption</h2>
+<p>Linear interpolation 假定 gap 内沿直线变化；spline 假定更强 smoothness。gap 与 process time scale 同量级时，插值规则本身会决定 ACF。DCF 的出发点就是只在真实 measured pairs 支持的 lag 上估计；Rehfeld et al. 的 benchmark 也显示高度 irregular 时 interpolation 会把 persistence 往上推。</p>
+<h2>7.3 固定 seed 的合成实验</h2>
+<p>报告模拟 stationary OU：5,000 个 observations，真实 half-life 30 分钟；gap median 2.42 分钟、mean 9.44 分钟、95% quantile 37.54 分钟，并加入 session-like long gaps。</p>
+<figure><img src="../figures/ou_simulation_acf.svg" alt="OU simulation ACF"><figcaption>真实 OU ACF 与 Gaussian pair-kernel estimate。</figcaption></figure>
+<table><thead><tr><th>quantity</th><th>value</th></tr></thead><tbody><tr><td>true ρ(5m)</td><td>0.891</td></tr><tr><td>Gaussian-kernel estimate</td><td>0.880</td></tr><tr><td>1-minute forward-fill ACF</td><td>0.934</td></tr><tr><td>true / fitted half-life</td><td>30.0 / 33.2 min</td></tr><tr><td>empirical event-lag-1</td><td>0.873</td></tr><tr><td>E[exp(−λΔ)]</td><td>0.876</td></tr><tr><td>exp(−λEΔ)</td><td>0.804</td></tr></tbody></table>
+<p>这个实验展示三点：event lag 1 不等于 mean-gap clock lag；forward fill 可机械抬高短 lag correlation；每个 lag 的 empirical support 不同。</p>
+<figure><img src="../figures/pair_support.svg" alt="Pair support"><figcaption>Raw pair count 与 weight concentration 应与 ACF 一起报告。</figcaption></figure>
+<h1 id="inference">8. 统计推断：最容易出错的部分</h1>
+<h2>8.1 不能 bootstrap individual pairs</h2>
+<p>同一个 observation 会进入许多 pair products。独立重采样 pairs 会破坏 dependence graph，通常低估 uncertainty。多条短 series 可按整条 series bootstrap；sessions 可按 session 或 clock-time blocks；bond panel 同时有 CUSIP persistence 与 date common shock 时应考虑 date block、multiway cluster 或 multiplier bootstrap；一条长 series 则用 moving/stationary block bootstrap，并在每次重采样后重新构造 pairs。</p>
+<h2>8.2 Pointwise 与 simultaneous bands</h2>
+<p>逐 lag bootstrap quantiles 只是 pointwise intervals。若同时扫描许多 lags 并问“是否任何一点显著”，需要 max-t 或 sup-norm bootstrap，否则有 multiple-comparison inflation。</p>
+<h2>8.3 Pointwise kernel curve 未必是合法 covariance function</h2>
+<p>合法 stationary covariance 必须对任意时间点集合生成 positive-semidefinite matrix。逐 lag smoothing 即使每点在 [−1,1]，整体也未必 PSD。用于 residual diagnostic 通常可以；用于 GLS、GP 或 likelihood covariance matrix 时，应拟合或投影到 OU、Matérn、CARMA 或 nonnegative-spectrum family。</p>
+<h2>8.4 Nonstationarity</h2>
+<p>若 mean、variance 或 dependence 随时间变化，对象变成</p><p><span class="math display">\[\rho(t,\tau)=\operatorname{Corr}\{X(t),X(t+\tau)\}.\]</span></p>
+<p>交易 residual 常有 time-of-day、rating/sector/tenor、market regime、model version、side 与 quantity heterogeneity。至少先用 conditional mean/scale 得到 <span class="math inline">\(z_i=(e_i-\widehat\mu_i)/\widehat\sigma_i\)</span>，并在 dependence 随 regime 变化时分层估计。</p>
+<h1>References</h1><div class="references csl-bib-body hanging-indent"><div class="csl-entry">Bjørnstad, O. N., &amp; Falck, W. (2001). Nonparametric spatial covariance functions. <em>Environmental and Ecological Statistics</em>, 8, 53–70.</div><div class="csl-entry">Brockwell, P. J. (2014). Recent results in the theory and applications of CARMA processes. <em>AISM</em>, 66, 647–685.</div><div class="csl-entry">Eyheramendy, S., Elorrieta, F., &amp; Palma, W. (2018). An irregular discrete time-series model. <em>MNRAS</em>, 481, 4311–4322.</div><div class="csl-entry">Edelson, R. A., &amp; Krolik, J. H. (1988). The Discrete Correlation Function. <em>ApJ</em>, 333, 646–659.</div><div class="csl-entry">Rehfeld, K., et al. (2011). Comparison of correlation analysis techniques for irregularly sampled time series. <em>NPG</em>, 18, 389–404.</div></div>
+<p class="note"><a href="../index.html">← 返回报告目录</a> · <a href="../SOURCE.md">编辑 Markdown source</a></p>
+</body></html>

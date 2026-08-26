@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN" xml:lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="TSML Research Notes" />
+  <meta name="dcterms.date" content="2026-08-25" />
+  <title>TSML – 定义、estimands 与可识别性</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {font-size: inherit;width: 0.8em;margin: 0 0.8em 0.2em -1.6em;vertical-align: middle;}
+    div.csl-bib-body { }
+    div.csl-entry {clear: both;margin-bottom: 0em;}
+    .hanging-indent div.csl-entry {margin-left:2em;text-indent:-2em;}
+    div.csl-left-margin {min-width:2em;float:left;}
+    div.csl-right-inline {margin-left:2em;padding-left:1em;}
+    div.csl-indent {margin-left: 2em;}
+  </style>
+  <link rel="stylesheet" href="../style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" type="text/javascript"></script>
+</head>
+<body>
+<p class="note"><a href="../index.html">← 返回报告目录</a> · <a href="../SOURCE.md">编辑 Markdown source</a></p>
+<header id="title-block-header">
+<h1 class="title">定义、estimands 与可识别性</h1>
+<p class="subtitle">定义、非参数估计、连续时间模型与交易残差诊断</p>
+<p class="author">TSML Research Notes</p>
+<p class="date">2026-08-25</p>
+<div class="abstract"><div class="abstract-title"></div>
+<p>非规则采样并不会使 autocorrelation 失去定义；它使“lag”重新变成真正的时间长度，并迫使我们说明如何从不规则观测对中估计这个对象。本文从两个不同的 estimand 开始：clock-time ACF 与 event-time ACF。随后统一介绍 pair-product、slotting/DCF、Gaussian-kernel、S-ACF、spectral 与 OU/IAR/CARMA 路线，重点说明每种方法究竟平均了哪些 observation pairs、需要什么假设、在什么地方会产生偏差。最后给出面向 corporate-bond trade residual 的完整工作流、合成实验和可复用 Python 实现。</p>
+</div></header>
+<nav id="TOC" role="doc-toc"><ul>
+<li><a href="#问题到底在哪里">1. 问题到底在哪里？</a></li>
+<li><a href="#两种自相关必须分开">2. 两种自相关必须分开</a><ul>
+<li><a href="#clock-time-autocorrelation">2.1 Clock-time autocorrelation</a></li>
+<li><a href="#event-time-autocorrelation">2.2 Event-time autocorrelation</a></li>
+<li><a href="#两者什么时候有关系">2.3 两者什么时候有关系？</a></li>
+<li><a href="#sampling-informative-时桥梁会断掉">2.4 Sampling informative 时，桥梁会断掉</a></li>
+</ul></li>
+<li><a href="#irregular-observations-能识别什么">3. Irregular observations 能识别什么？</a><ul>
+<li><a href="#acf-估计可以化成-pair-product-regression">3.1 ACF 估计可以化成 pair-product regression</a></li>
+<li><a href="#没有-pair-support就没有非参数识别">3.2 没有 pair support，就没有非参数识别</a></li>
+<li><a href="#pair-count-不是独立样本量">3.3 Pair count 不是独立样本量</a></li>
+</ul></li></ul></nav>
+<section id="先给结论" class="unnumbered unlisted takeaway">
+<h3 class="unnumbered unlisted">先给结论</h3>
+<p>对 irregularly sampled residuals，不能只问“ACF 怎么算”，而要按下面的顺序问：</p>
+<ol>
+<li><strong>你要的是 clock-time dependence，还是 event-time dependence？</strong> 前者的 lag 是 5 分钟、30 分钟、1 小时；后者的 lag 是下一笔、下两笔、下五笔 trade。</li>
+<li><strong>目标 lag 附近到底有没有 observation pairs？</strong> 没有 pair support 的地方，非参数方法无法凭空识别 ACF。</li>
+<li><strong>采样时点是否与过程本身有关？</strong> 对 trade data，答案通常是“有关”；因此直接估计的往往是“在已发生交易的条件下”的 residual persistence，而不是一个完全外生采样下的 latent-process ACF。</li>
+<li><strong>不要把所有 pair 当成独立样本。</strong> 同一个 observation 会反复出现在许多 pairs 中，置信区间必须按 series/session/date block 重采样，而不是 bootstrap pairs。</li>
+<li><strong>对 bond residual 的默认方案：</strong> 同一 CUSIP、同一 session 内做 Gaussian-kernel clock-time ACF，同时报告 event-time ACF、pair support、cluster/block bootstrap band 和 target-overlap audit；只有经验曲线近似单调且为正时，才用 OU/IAR half-life 做一维摘要。</li>
+</ol></section>
+<h1 id="问题到底在哪里">1. 问题到底在哪里？</h1>
+<p>假设我们观测到</p><p><span class="math display">\[(t_1,X_1),\ldots,(t_n,X_n),\qquad t_1&lt;t_2&lt;\cdots&lt;t_n,\]</span></p>
+<p>但相邻间隔</p><p><span class="math display">\[\Delta_i=t_i-t_{i-1}\]</span></p><p>并不相等。</p>
+<p>在 regular sampling 下，教科书把 sample ACF 写成</p><p><span class="math display">\[\widehat\rho(k)=\frac{\sum_{i=1}^{n-k}(X_i-\bar X)(X_{i+k}-\bar X)}{\sum_{i=1}^n(X_i-\bar X)^2}.\]</span></p>
+<p>之所以整数 lag <span class="math inline">\(k\)</span> 可以被解释成时间，是因为每一步都等长：</p><p><span class="math display">\[t_{i+k}-t_i=k\Delta.\]</span></p>
+<p>一旦 sampling irregular，<span class="math inline">\(k=1\)</span> 所对应的时间差可能是 2 秒、8 分钟或 4 小时。普通 <code>.shift(1)</code> 并没有“算错”；它只是回答了一个不同的问题。</p>
+<figure><img src="../figures/estimands.svg" alt="同一份 irregular data 上，event lag 与 clock-time lag 是两个不同对象。" /><figcaption>同一份 irregular data 上，event lag 与 clock-time lag 是两个不同对象。</figcaption></figure>
+<p>本文的第一原则是：<strong>先定义 estimand，再选 estimator。</strong></p>
+<h1 id="两种自相关必须分开">2. 两种自相关必须分开</h1>
+<h2 id="clock-time-autocorrelation">2.1 Clock-time autocorrelation</h2>
+<p>把数据看成连续时间过程 <span class="math inline">\(X(t)\)</span> 在随机或不规则时点上的观测。若 <span class="math inline">\(X(t)\)</span> 二阶平稳，令</p>
+<p><span class="math display">\[\mu=E[X(t)],\]</span></p>
+<p><span class="math display">\[\gamma_c(\tau)=\operatorname{Cov}\{X(t),X(t+\tau)\}=E[(X(t)-\mu)(X(t+\tau)-\mu)],\]</span></p>
+<p>以及</p><p><span class="math display">\[\rho_c(\tau)=\frac{\gamma_c(\tau)}{\gamma_c(0)}.\]</span></p>
+<p>这里的 <span class="math inline">\(\tau\)</span> 是真实时间，例如 5 分钟或 1 小时。这个定义与 sampling 是否 regular 无关。Edelson and Krolik 的 DCF 工作正是从连续时间 correlation function 出发，再处理“不恰好存在 <span class="math inline">\(t_i+\tau\)</span> 观测”的估计问题 <span class="citation">(<a href="#ref-edelson1988">Edelson 和 Krolik 1988</a>)</span>。</p>
+<p>Clock-time ACF 回答：</p><blockquote><p>当前 residual 为正以后，经过 30 分钟，残差是否仍倾向于为正？</p></blockquote>
+<h2 id="event-time-autocorrelation">2.2 Event-time autocorrelation</h2>
+<p>现在把观测顺序本身当作时间轴：</p><p><span class="math display">\[Y_i=X(t_i).\]</span></p>
+<p>则 event-time ACF 可定义为</p><p><span class="math display">\[\rho_e(k)=\operatorname{Corr}(Y_i,Y_{i+k}).\]</span></p>
+<p>它回答：</p><blockquote><p>当前 residual 为正以后，再过 <span class="math inline">\(k\)</span> 笔 observation，残差是否仍倾向于为正？</p></blockquote>
+<p>因此 <code>.shift(1)</code> 对应 <span class="math inline">\(\rho_e(1)\)</span>，并不对应一个固定的 <span class="math inline">\(\rho_c(\tau)\)</span>。</p>
+<h2 id="两者什么时候有关系">2.3 两者什么时候有关系？</h2>
+<p>假设 sampling times 与过程独立，并且 clock-time ACF 为 <span class="math inline">\(\rho_c(\tau)\)</span>。令</p><p><span class="math display">\[S_{i,k}=t_{i+k}-t_i\]</span></p>
+<p>表示第 <span class="math inline">\(i\)</span> 个 observation 到第 <span class="math inline">\(i+k\)</span> 个 observation 的真实时间间隔。那么在适当平稳条件下，</p><p><span class="math display">\[\rho_e(k)=E\left[\rho_c(S_{i,k})\right].\]</span></p>
+<p>所以 event-time correlation 是 clock-time correlation 在<strong>随机累计 duration</strong>上的平均，不是简单地把平均时间间隔代进去。</p>
+<p>例如 Ornstein–Uhlenbeck（OU）过程满足</p><p><span class="math display">\[\rho_c(\tau)=e^{-\lambda\tau}.\]</span></p><p>于是</p><p><span class="math display">\[\rho_e(1)=E[e^{-\lambda\Delta_i}],\]</span></p><p>一般并不等于</p><p><span class="math display">\[e^{-\lambda E[\Delta_i]}.\]</span></p>
+<p>由于 <span class="math inline">\(e^{-\lambda x}\)</span> 是凸函数，Jensen 不等式给出</p><p><span class="math display">\[E[e^{-\lambda\Delta_i}]\ge e^{-\lambda E[\Delta_i]}.\]</span></p><p>这说明“用平均 trade gap 把 event lag 换算成 clock lag”可能系统性失真。</p>
+<h2 id="sampling-informative-时桥梁会断掉">2.4 Sampling informative 时，桥梁会断掉</h2>
+<p>上面的关系要求 observation times 对 <span class="math inline">\(X(t)\)</span> 足够外生。金融交易通常不满足：volatility、news、inventory pressure 和 price disagreement 都会同时改变交易强度与 residual behavior。Engle and Russell 将 intertrade durations 本身建模为随机过程 <span class="citation">(<a href="#ref-engle1998">Engle 和 Russell 1998</a>)</span>；在更一般的 longitudinal setting 中，若 observation times 依赖 outcome，忽略这一点可能造成偏差 <span class="citation">(<a href="#ref-chen2015">Chen, Ning, 和 Cai 2015</a>)</span>。</p>
+<p>因此对 trade residual 更稳妥的表述是：</p><p><span class="math display">\[\rho_{\text{obs}}(\tau)=\operatorname{Corr}\bigl(e_i,e_j\mid t_j-t_i\approx\tau,\;i,j\text{ 均被观测}\bigr).\]</span></p>
+<p>它是一个有用的 operational diagnostic，但不应自动被解释为外生时钟下 latent fair-value error 的结构参数。</p>
+<h1 id="irregular-observations-能识别什么">3. Irregular observations 能识别什么？</h1>
+<h2 id="acf-估计可以化成-pair-product-regression">3.1 ACF 估计可以化成 pair-product regression</h2>
+<p>先假设 <span class="math inline">\(X_i\)</span> 已经中心化并标准化：</p><p><span class="math display">\[z_i=\frac{X_i-\mu}{\sigma}.\]</span></p>
+<p>对每个 <span class="math inline">\(i&lt;j\)</span> 定义</p><p><span class="math display">\[d_{ij}=t_j-t_i,\qquad U_{ij}=z_i z_j.\]</span></p>
+<p>若 sampling 外生且过程平稳，则直觉上</p><p><span class="math display">\[E[U_{ij}\mid d_{ij}=\tau]=\rho_c(\tau).\]</span></p>
+<p>因此 irregular ACF 的核心问题可以写成一个一维 smoothing problem：</p><p><span class="math display">\[U_{ij}=m(d_{ij})+\varepsilon_{ij},\qquad m(\tau)=\rho_c(\tau).\]</span></p>
+<p>这条表达式把后面的 slotting、kernel 和 spline estimator 统一起来了。</p>
+<h2 id="没有-pair-support就没有非参数识别">3.2 没有 pair support，就没有非参数识别</h2>
+<p>若目标 lag 是 30 分钟，但数据中几乎没有满足</p><p><span class="math display">\[t_j-t_i\approx30\text{ min}\]</span></p>
+<p>的同 series pairs，那么 <span class="math inline">\(\rho_c(30\text{ min})\)</span> 不能由数据直接估计。此时只有三种诚实选择：</p>
+<ul><li>不报告该 lag；</li><li>扩大 bandwidth，接受更强 smoothing bias；</li><li>引入 OU、CARMA、Gaussian process 等结构模型进行插值或外推。</li></ul>
+<p>“先 forward-fill 到规则网格”不是第四种无假设选择；它已经隐含了 piecewise-constant path assumption。</p>
+<h2 id="pair-count-不是独立样本量">3.3 Pair count 不是独立样本量</h2>
+<p>假设一个 observation <span class="math inline">\(z_i\)</span> 同时与 50 个后续 observations 构成 eligible pairs，那么这 50 个 pair products 共享同一个 <span class="math inline">\(z_i\)</span>。所以</p><p><span class="math display">\[\{U_{ij}\}\]</span></p>
+<p>之间高度依赖。原始 pair 数量 <span class="math inline">\(M\)</span> 可以描述计算规模和 support，却不能直接放进 <span class="math inline">\(1/\sqrt M\)</span> 类型标准误。</p>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-chen2015" class="csl-entry">Chen, Yong, Jing Ning, 和 Chunyan Cai. 2015. “Regression Analysis of Longitudinal Data with Irregular and Informative Observation Times.” <em>Biostatistics</em> 16 (4): 727–39. <a href="https://doi.org/10.1093/biostatistics/kxv008">DOI</a>.</div>
+<div id="ref-edelson1988" class="csl-entry">Edelson, R. A., 和 J. H. Krolik. 1988. “The Discrete Correlation Function: A New Method for Analyzing Unevenly Sampled Variability Data.” <em>The Astrophysical Journal</em> 333: 646–59. <a href="https://doi.org/10.1086/166773">DOI</a>.</div>
+<div id="ref-engle1998" class="csl-entry">Engle, Robert F., 和 Jeffrey R. Russell. 1998. “Autoregressive Conditional Duration: A New Model for Irregularly Spaced Transaction Data.” <em>Econometrica</em> 66 (5): 1127–62. <a href="https://doi.org/10.2307/2999632">DOI</a>.</div>
+</div>
+<p class="note"><a href="../index.html">← 返回报告目录</a> · <a href="../SOURCE.md">编辑 Markdown source</a></p>
+</body>
+</html>

@@ -53,6 +53,11 @@
 
 - [ ] [Autoresearch for Time-Series LightGBM](reports/machine-learning/autoresearch_time_series_lightgbm.html)
 - [ ] [Time-Series ML Pipeline](reports/time-series/time_series_ml_pipeline.html)
+- [ ] [Irregularly Sampled Time-Series Autocorrelation — HTML](reports/time-series/irregular-autocorrelation/index.html) · [Markdown](reports/time-series/irregular-autocorrelation/SOURCE.md)
+  - [ ] 明确区分 clock-time ACF 与 event-time ACF，并复核 OU 下 $E[e^{-\lambda\Delta}]$ 的关系。
+  - [ ] 比较 rectangular slotting、Gaussian kernel 与 S-ACF 实际平均的 observation pairs。
+  - [ ] 复核 pair dependence、bootstrap unit、positive-semidefinite 与 informative sampling caveats。
+  - [ ] 用自己的 out-of-sample residual 跑 event-time、clock-time、support 与 target-overlap diagnostics。
 
 ### C2. Market microstructure / queue models
 

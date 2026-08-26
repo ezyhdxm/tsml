@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="430" viewBox="0 0 800 430" role="img">
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Arial,sans-serif;fill:#17212d}
+.small{font-size:14px;fill:#5d6b79} .label{font-size:16px;font-weight:600} .title{font-size:20px;font-weight:700}
+.axis{stroke:#7b8794;stroke-width:1.2} .grid{stroke:#e3e8ee;stroke-width:1} .point{fill:#2447a8}
+</style>
+
+<text x="40" y="35" class="title">Lag support：raw eligible pairs 与 kernel weight concentration</text>
+<line x1="80" y1="350.0" x2="755" y2="350.0" class="grid"/><line x1="80" y1="278.8" x2="755" y2="278.8" class="grid"/><line x1="80" y1="207.5" x2="755" y2="207.5" class="grid"/><line x1="80" y1="136.2" x2="755" y2="136.2" class="grid"/><line x1="80" y1="65.0" x2="755" y2="65.0" class="grid"/><line x1="80" y1="350" x2="755" y2="350" class="axis"/><line x1="80" y1="65" x2="80" y2="350" class="axis"/>
+<polyline points="98.8,151.9 117.5,122.1 136.2,93.6 155.0,65.0 173.8,90.9 192.5,106.8 211.2,117.6 230.0,126.3 248.8,132.0 267.5,136.6 286.2,140.2 305.0,144.8 323.8,147.3 342.5,150.1 361.2,151.5 380.0,153.1 398.8,154.9 417.5,157.4 436.2,159.8 455.0,160.7 473.8,163.0 492.5,164.7 511.2,167.9 530.0,170.6 548.8,172.8 567.5,174.0 586.2,175.7 605.0,178.1 623.8,180.0 642.5,181.7 661.2,182.2 680.0,182.8 698.8,183.4 717.5,184.5 736.2,186.7 755.0,188.8" fill="none" stroke="#2447a8" stroke-width="3"/>
+<polyline points="98.8,227.5 117.5,211.2 136.2,221.4 155.0,233.2 173.8,240.8 192.5,245.9 211.2,248.9 230.0,251.0 248.8,253.2 267.5,255.4 286.2,258.0 305.0,259.8 323.8,261.2 342.5,262.2 361.2,262.6 380.0,262.9 398.8,263.2 417.5,263.5 436.2,264.7 455.0,266.3 473.8,268.1 492.5,268.9 511.2,269.7 530.0,269.6 548.8,270.5 567.5,271.8 586.2,273.4 605.0,274.3 623.8,275.1 642.5,275.4 661.2,276.0 680.0,276.2 698.8,276.2 717.5,276.3 736.2,276.7 755.0,277.2" fill="none" stroke="#287a50" stroke-width="3" stroke-dasharray="7 4"/>
+<line x1="510" y1="82" x2="555" y2="82" stroke="#2447a8" stroke-width="3"/><text x="565" y="87" class="small">raw pair count</text>
+<line x1="510" y1="109" x2="555" y2="109" stroke="#287a50" stroke-width="3" stroke-dasharray="7 4"/><text x="565" y="114" class="small">Kish weight support</text>
+<text x="417.5" y="412" text-anchor="middle" class="label">clock-time lag (minutes)</text>
+<text x="22" y="210" text-anchor="middle" class="label" transform="rotate(-90 22 210)">support measure</text>
+<text x="90" y="378" class="small">Support describes where the curve is informed by data; it is not an iid effective sample size.</text>
+
+</svg>

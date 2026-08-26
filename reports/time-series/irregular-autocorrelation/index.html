@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TSML – 非规则采样时间序列的自相关</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.chapter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:26px 0 38px}.chapter-card{display:block;padding:18px 20px;border:1px solid var(--line);border-radius:13px;background:#fff;text-decoration:none;box-shadow:0 5px 16px rgba(24,34,48,.04)}.chapter-card:hover{border-color:var(--accent);transform:translateY(-1px)}.chapter-card strong{display:block;margin-bottom:6px;color:var(--ink)}.chapter-card span{color:var(--muted);font-size:.94rem}.hero{margin-bottom:28px;padding:34px 36px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,#f8faff,#fff 62%)}
+</style>
+</head>
+<body>
+<main>
+<section class="hero">
+<h1 style="margin-top:0">非规则采样时间序列的自相关</h1>
+<p class="subtitle">定义、非参数估计、连续时间模型与交易残差诊断</p>
+<p>核心不是寻找一个“特殊 ACF 函数”，而是依次说明 lag 的含义、哪些 observation pairs 支持该 lag、如何加权这些 pairs，以及 observation process 是否外生。</p>
+</section>
+<section class="takeaway">
+<h2 style="margin-top:0">阅读主线</h2>
+<ol>
+<li>先区分 clock-time ACF 与 event-time ACF。</li>
+<li>再把 irregular ACF 写成 pair-product smoothing problem。</li>
+<li>比较 direct estimators、spectral route 与 continuous-time models。</li>
+<li>最后处理 bond residual 的 pooling、target overlap、informative trade times 与 inference。</li>
+</ol>
+</section>
+<div class="chapter-grid">
+<a class="chapter-card" href="chapters/00-foundations.html"><strong>01 · 定义与识别</strong><span>为什么普通 shift(1) 仍有意义，但不等于固定时间 lag。</span></a>
+<a class="chapter-card" href="chapters/01-direct-estimators.html"><strong>02 · Direct estimators</strong><span>DCF、slotting、Gaussian kernel、ZDCF、S-ACF 与 spectrum。</span></a>
+<a class="chapter-card" href="chapters/02-models-and-inference.html"><strong>03 · 模型与推断</strong><span>OU/IAR/CARMA、resampling bias、bootstrap 与 PSD。</span></a>
+<a class="chapter-card" href="chapters/03-bond-residuals.html"><strong>04 · Bond residual</strong><span>同 CUSIP pairing、pooling estimands、informative sampling 与 overlap。</span></a>
+<a class="chapter-card" href="chapters/04-workflow-and-code.html"><strong>05 · Workflow 与代码</strong><span>可审计的八步流程和可复用 Python 实现。</span></a>
+<a class="chapter-card" href="chapters/05-reading-and-recommendations.html"><strong>06 · 文献地图</strong><span>阅读顺序、方法选择表与最终建议。</span></a>
+</div>
+<p><a href="SOURCE.md">编辑 Markdown source</a> · <a href="irregular_acf.py">查看 Python implementation</a></p>
+</main>
+</body>
+</html>

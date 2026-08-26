@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TSML – Corporate-bond residual diagnostics</title><link rel="stylesheet" href="../style.css"><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>
+<body>
+<p class="note"><a href="../index.html">← 返回报告目录</a> · <a href="../SOURCE.md">编辑 Markdown source</a></p>
+<header id="title-block-header"><h1 class="title">Corporate-bond residual：如何把问题定义对</h1></header>
+<nav id="TOC"><ul><li><a href="#series">9.1 同一条 series 与 time clock</a></li><li><a href="#two">9.2 Event-time 与 clock-time</a></li><li><a href="#pool">9.3 两种 pooled estimand</a></li><li><a href="#sampling">9.4 Informative observation process</a></li><li><a href="#overlap">9.5 Overlapping targets</a></li><li><a href="#audit">9.6 数据与 pipeline audit</a></li><li><a href="#outputs">9.7 推荐输出</a></li></ul></nav>
+<p>设 out-of-sample prediction residual 为</p>
+<p><span class="math display">\[e_{b,i}=y_{b,i}-\widehat y_{b,i},\]</span></p>
+<p>其中 <span class="math inline">\(b\)</span> 表示 CUSIP，timestamp 为 <span class="math inline">\(t_{b,i}\)</span>。真正困难的不是把某个 ACF 函数跑出来，而是先确定哪些 rows 构成同一条 time series、lag 使用哪一种 clock、以及 pooling 对活跃 bonds 给了多少权重。</p>
+<h1 id="series">9.1 Pair 必须在同一条 series 内</h1>
+<p>最基本约束是</p><p><span class="math display">\[b_i=b_j.\]</span></p>
+<p>把 CUSIP A 在 10:00 的 residual 与 CUSIP B 在 10:30 的 residual 组成 pair，估计的是 cross-sectional 或 common-factor dependence，不是同 bond autocorrelation。</p>
+<p>还要明确是否允许跨 session：</p>
+<ul><li><strong>Calendar-clock：</strong>overnight 也算真实经过时间，适合研究 wall-clock persistence，但 closed hours 的经济含义要单独解释。</li><li><strong>Session-clock：</strong>只在同一交易日或 active session 内构造 pairs，适合研究交易发生后的 correction。</li><li><strong>Business-clock：</strong>用 <span class="math inline">\(s(t)=\int_0^t \mathbf 1\{u\text{ is active market time}\}\,du\)</span> 排除闭市时间。</li></ul>
+<p>这三种 clock 对同一数据可以产生不同 ACF；它们不是“参数选择”，而是不同 estimands。</p>
+<h1 id="two">9.2 同时报告 event-time 与 clock-time</h1>
+<table><thead><tr><th>curve</th><th>lag</th><th>业务解释</th></tr></thead><tbody><tr><td>event-time ACF</td><td>1, 2, 5 trades</td><td>需要几笔新交易，模型误差才被吸收？</td></tr><tr><td>clock-time ACF</td><td>5m, 30m, 1h</td><td>mispricing 在真实时间中持续多久？</td></tr></tbody></table>
+<p>若 event-time decay 很快而 clock-time decay 很慢，可能只是该 bond 很少交易；若 clock-time decay 快但 event-time decay 慢，可能说明活跃时段连续 trades 共享相似 microstructure effects。二者不应互相替代。</p>
+<h1 id="pool">9.3 Pooled ACF 有至少两种不同 estimand</h1>
+<h2>Pair-weighted pooling</h2>
+<p><span class="math display">\[\widehat\rho_{\mathrm{pair}}(\tau)\propto \sum_b\sum_{i&lt;j\in b}w_{bij}(\tau)z_{bi}z_{bj}.\]</span></p>
+<p>活跃 bonds 产生更多 pairs，所以主导结果。它回答：随机抽取一个 eligible observed pair 时，平均 dependence 是什么？</p>
+<h2>Bond-equal pooling</h2>
+<p>先估计每只 bond 的 curve，再平均：</p>
+<p><span class="math display">\[\widehat\rho_{\mathrm{bond}}(\tau)=\frac1B\sum_{b=1}^B\widehat\rho_b(\tau).\]</span></p>
+<p>它回答：随机抽取一只 bond 时，平均 dependence 是什么？但 sparse bonds 的单独 estimate 很噪，应设置 minimum support 或使用 hierarchical shrinkage。报告里应明确 weighting；仅写“pooled ACF”是不够的。</p>
+<h1 id="sampling">9.4 Observation process 是数据的一部分</h1>
+<p>交易强度会随 volatility、news、inventory pressure 和 disagreement 变化，因此 pair-weighted estimate 还隐含地提高了 high-activity states 的权重。建议至少比较：</p>
+<ol><li><strong>Raw pair-weighted：</strong>真实 observed-pair diagnostic。</li><li><strong>Anchor-balanced：</strong>每个 anchor、每个目标 lag 至多选择一个 nearest match，接近 S-ACF 的 weighting。</li><li><strong>Inverse-intensity weighted：</strong>只有在 observation-intensity model 可信时使用，并把它作为 sensitivity，而不是替代 raw result。</li></ol>
+<p>若 observation times informative，直接曲线更稳妥的解释是“条件于两端均有交易被观测时的 residual persistence”，而不是无条件 latent fair-value process 的结构 ACF。</p>
+<h1 id="overlap">9.5 Overlapping target 会机械制造 autocorrelation</h1>
+<p>若 target 是固定 horizon return 或 spread change</p>
+<p><span class="math display">\[Y_t^{(H)}=P_{t+H}-P_t,\]</span></p>
+<p>相邻 samples 的 target windows 可能重叠。即使 <span class="math inline">\(P_t\)</span> 有独立、同方差 increments，在 Brownian idealization 下，当 <span class="math inline">\(0&lt;\tau&lt;H\)</span> 时</p>
+<p><span class="math display">\[\operatorname{Corr}\!\left(Y_t^{(H)},Y_{t+\tau}^{(H)}\right)=1-\frac{\tau}{H}.\]</span></p>
+<p>推导来自两个 labels 共享长度 <span class="math inline">\(H-\tau\)</span> 的 future increment。它不是模型遗漏了 persistent signal，而是 label construction 的机械结果。</p>
+<section class="warning"><h3>Residual ACF 必做的 overlap audit</h3><ul><li>报告 eligible pairs 的 target-window overlap rate；</li><li>单独计算 non-overlapping subset ACF；</li><li>用“independent increments + 原始 sampling times + 同样 target construction”建立 mechanical null baseline。</li></ul></section>
+<h1 id="audit">9.6 Near-zero-lag correlation 先排查数据问题</h1>
+<p>异常高的短 lag residual correlation 可能来自：</p>
+<ul><li>dealer-to-dealer double reporting、duplicate 或 corrected/as-of trades；</li><li>同一 client trade 被拆成多个中间 reports；</li><li>stale benchmark、quote snapshot 或相同 prediction 被复用于邻近 rows；</li><li>bid/ask direction、quantity 或 transaction cost 未处理；</li><li>feature windows、prediction horizons 或 labels 在多个 rows 上重叠；</li><li>同一 market shock 对许多 bonds 同时产生 common residual。</li></ul>
+<p>所以 ACF 是定位 pipeline/model 问题的入口，不是自动的 economic conclusion。</p>
+<h1 id="outputs">9.7 推荐的主要输出</h1>
+<ol><li>Sampling-gap distribution 与每 CUSIP/session observation count。</li><li>Event-time ACF：<span class="math inline">\(k=1,2,3,5,10\)</span>。</li><li>Clock-time Gaussian-kernel ACF，例如 1 分钟到 4 小时。</li><li>每个 lag 的 pair count 与 weight-concentration curve。</li><li>Date/session block 或 multiway cluster bootstrap bands。</li><li>Pair-weighted 与 bond-equal/shrunk pooling。</li><li>Same-session、calendar-clock 与 business-clock sensitivity。</li><li>Target-overlap audit、non-overlap curve 与 mechanical null。</li><li>按 side、liquidity、tenor、rating、time-of-day 分层。</li><li>仅在曲线正、近似单调且单指数合理时报告 OU half-life。</li></ol>
+<h1>References</h1><div class="references csl-bib-body hanging-indent"><div class="csl-entry">Chen, Y., Ning, J., &amp; Cai, C. (2015). Regression analysis of longitudinal data with irregular and informative observation times. <em>Biostatistics</em>, 16, 727–739.</div><div class="csl-entry">Engle, R. F., &amp; Russell, J. R. (1998). Autoregressive Conditional Duration. <em>Econometrica</em>, 66, 1127–1162.</div><div class="csl-entry">Kreutzer, L. T., et al. (2023). S-ACF: A selective estimator for irregularly sampled time series. <em>MNRAS</em>, 522, 5049–5061.</div></div>
+<p class="note"><a href="../index.html">← 返回报告目录</a> · <a href="../SOURCE.md">编辑 Markdown source</a></p>
+</body></html>

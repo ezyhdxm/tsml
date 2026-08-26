@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TSML – Workflow 与 Python implementation</title><link rel="stylesheet" href="../style.css"><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>
+<body>
+<p class="note"><a href="../index.html">← 返回报告目录</a> · <a href="../SOURCE.md">编辑 Markdown source</a></p>
+<header id="title-block-header"><h1 class="title">一套不跳步的 workflow 与 Python implementation</h1></header>
+<nav id="TOC"><ul><li><a href="#workflow">10. 八步工作流</a></li><li><a href="#code">11. Python 实现</a></li><li><a href="#complexity">11.1 复杂度</a></li><li><a href="#decisions">11.2 代码无法替你决定的事情</a></li></ul></nav>
+<h1 id="workflow">10. 一套不跳步的实务流程</h1>
+<section class="decision"><h3>Step 1：先写一句 estimand</h3><blockquote><p>在同一 CUSIP、同一交易 session 内，对 variance-standardized out-of-sample residual，估计随机 observed trade pair 在 clock-time lag <span class="math inline">\(\tau\)</span> 附近的 pair-weighted correlation。</p></blockquote><p>这句话一次确定了 series、session、conditioning、pooling weight 和 time clock。若其中任何一项改变，估计对象也随之改变。</p></section>
+<h2>Step 2：构造可审计 residual</h2>
+<ul><li>只使用真正 point-in-time、out-of-sample predictions；</li><li>固定 sign convention，例如 <span class="math inline">\(e=y-\widehat y\)</span>；</li><li>去除或标记 duplicates、as-of/corrected trades；</li><li>使用预测 conditional scale 或稳定 group scale 得到 <span class="math inline">\(z=e/\widehat\sigma\)</span>；</li><li>保留 side、quantity、liquidity、target interval 与 model version 等 audit columns。</li></ul>
+<h2>Step 3：先看 sampling，再看 ACF</h2>
+<ul><li>相邻 gap distribution 与长 gap；</li><li>每 CUSIP/session observation count；</li><li>每个目标 lag 的 eligible pair support；</li><li>active bursts、overnight gaps 与交易时段结构。</li></ul>
+<h2>Step 4：计算 event-time ACF</h2>
+<p>这是最简单的 sanity check，也与普通 <code>.shift(k)</code> 对齐。它应明确命名为 event lag 1/2/5，而不能被改写成“5-minute ACF”。</p>
+<h2>Step 5：计算 clock-time kernel ACF</h2>
+<ul><li>pairs 限制在同一 CUSIP/session；</li><li>使用业务可解释的 lag grid；</li><li>Gaussian bandwidth 可先设为相邻 grid spacing 的 0.5–1 倍，再做 sensitivity；</li><li>同时输出 weighted product mean 与 local-normalized ACF。</li></ul>
+<h2>Step 6：把 support 和 uncertainty 与曲线放在一起</h2>
+<p>任何不报告 support 的 irregular ACF 都是不完整的。置信区间必须按 series/session/date blocks，而不是独立重采样 pair products。</p>
+<h2>Step 7：做 confound audits</h2>
+<p>至少检查 target overlap、duplicates/clustered reports、common market factor、informative sampling、regime/heteroskedasticity，以及 calendar time 与 business time 的差异。</p>
+<h2>Step 8：最后才拟合 half-life</h2>
+<p>只有经验 curve 与</p><p><span class="math display">\[\rho(\tau)=e^{-\lambda\tau}\]</span></p><p>大致一致时才报告 <span class="math inline">\(\log 2/\lambda\)</span>。若有 fast + slow 两段 decay，考虑 two-scale model；若 curve 变负或振荡，使用 CARMA/state-space，而不是对负 correlation 取 log。</p>
+<h1 id="code">11. Python 实现</h1>
+<p>同目录的 <a href="../irregular_acf.py"><code>irregular_acf.py</code></a> 提供：</p>
+<table><thead><tr><th>function</th><th>用途</th></tr></thead><tbody><tr><td><code>standardize_within</code></td><td>在指定 group 内中心化和标准化。</td></tr><tr><td><code>build_within_series_pairs</code></td><td>只构造 max-lag window 内、同 series 的 pairs。</td></tr><tr><td><code>kernel_acf_from_pairs</code></td><td>Gaussian、rectangular 或 Epanechnikov clock-time ACF。</td></tr><tr><td><code>event_time_acf</code></td><td>按 observation index 计算 event-time ACF。</td></tr><tr><td><code>cluster_bootstrap_acf_from_pairs</code></td><td>按 cluster 汇总 pair contributions 后快速 bootstrap。</td></tr><tr><td><code>ou_half_life_from_acf</code></td><td>对正且近似单调的 curve 做 descriptive OU fit。</td></tr></tbody></table>
+<p>最小使用方式：</p>
+<pre><code class="language-python">from irregular_acf import (
+    build_within_series_pairs,
+    cluster_bootstrap_acf_from_pairs,
+    event_time_acf,
+    kernel_acf_from_pairs,
+    standardize_within,
+)
+
+# Point-in-time residual and session key.
+df["resid"] = df["y_true"] - df["y_pred"]
+df["trade_date"] = pd.to_datetime(
+    df["EFFECTIVE_DATETIME_TS"]
+).dt.date
+df["series_session"] = (
+    df["CUSIP"].astype(str)
+    + "|"
+    + df["trade_date"].astype(str)
+)
+
+# Illustration only: a predicted conditional scale is often better.
+df = standardize_within(
+    df,
+    value_col="resid",
+    group_cols=["CUSIP"],
+    output_col="z",
+)
+
+event = event_time_acf(
+    df.sort_values(["series_session", "EFFECTIVE_DATETIME_TS"]),
+    value_col="z",
+    series_cols=["series_session"],
+    max_event_lag=10,
+)
+
+pairs, summary = build_within_series_pairs(
+    df,
+    time_col="EFFECTIVE_DATETIME_TS",
+    value_col="z",
+    series_cols=["series_session"],
+    cluster_cols=["trade_date"],
+    max_lag=260,
+    time_unit="minutes",
+)
+
+lags = [0, 1, 2, 5, 10, 15, 30, 60, 120, 180, 240]
+clock = kernel_acf_from_pairs(
+    pairs,
+    lags=lags,
+    bandwidth=5,
+    kernel="gaussian",
+)
+
+clock_ci = cluster_bootstrap_acf_from_pairs(
+    pairs,
+    cluster_col="trade_date",
+    lags=lags,
+    bandwidth=5,
+    n_boot=500,
+    random_state=7,
+)</code></pre>
+<p><a href="../make_figures.py"><code>make_figures.py</code></a> 固定 random seed 复现 OU simulation、三张 SVG 图和 simulation CSV。</p>
+<h1 id="complexity">11.1 复杂度</h1>
+<p>Naive all-pairs 是 <span class="math inline">\(O(n^2)\)</span>。实现先按 series/time 排序，并用 <code>searchsorted</code> 只枚举</p><p><span class="math display">\[d_{ij}\le L_{\max}\]</span></p><p>的 pairs，因此工作量更接近</p><p><span class="math display">\[O(n+P_L),\]</span></p><p>其中 <span class="math inline">\(P_L\)</span> 是 max-lag window 内真实 eligible pair 数。极高频 burst 中 <span class="math inline">\(P_L\)</span> 仍可能很大；生产版本应使用 Numba/C++、fine-lag-bin 预聚合，或业务上限制 session/max lag。</p>
+<h1 id="decisions">11.2 代码无法替你决定的事情</h1>
+<ul><li>什么才是一条 series；</li><li>是否允许 overnight pairs；</li><li>用哪一种 conditional scale；</li><li>bootstrap unit 是 CUSIP、session、date 还是 multiway cluster；</li><li>pooling 是 pair-weighted 还是 bond-equal；</li><li>observation-time endogeneity 是否可忽略；</li><li>target overlap 是否机械制造 persistence。</li></ul>
+<p>这些都是 estimand 和识别假设的一部分，不能藏进函数默认值。</p>
+<p class="note"><a href="../index.html">← 返回报告目录</a> · <a href="../SOURCE.md">编辑 Markdown source</a></p>
+</body></html>

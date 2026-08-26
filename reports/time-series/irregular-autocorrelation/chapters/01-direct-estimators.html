@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TSML – Direct pair estimators 与 spectral route</title>
+<link rel="stylesheet" href="../style.css">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<p class="note"><a href="../index.html">← 返回报告目录</a> · <a href="../SOURCE.md">编辑 Markdown source</a></p>
+<header id="title-block-header"><h1 class="title">Direct pair estimators 与 spectral route</h1></header>
+<nav id="TOC"><ul><li><a href="#direct">4. 直接对 observation pairs 平滑</a><ul><li><a href="#kernel">4.1 统一 kernel estimator</a></li><li><a href="#dcf">4.2 Slotting / DCF</a></li><li><a href="#gaussian">4.3 Gaussian kernel</a></li><li><a href="#bandwidth">4.4 Bandwidth 与 support</a></li><li><a href="#normalization">4.5 Normalization</a></li><li><a href="#bins">4.6 Equal-population bins</a></li><li><a href="#sacf">4.7 S-ACF</a></li></ul></li><li><a href="#spectral">5. Spectral route</a></li></ul></nav>
+<h1 id="direct">4. 第一类方法：直接对 observation pairs 平滑</h1>
+<h2 id="kernel">4.1 统一 kernel estimator</h2>
+<p>给定目标 lag <span class="math inline">\(\tau\)</span> 和 bandwidth <span class="math inline">\(h\)</span>，定义</p>
+<p><span class="math display">\[w_{ij}(\tau)=K\!\left(\frac{d_{ij}-\tau}{h}\right).\]</span></p>
+<p>最直接的 covariance estimator 是</p>
+<p><span class="math display">\[\widehat\gamma_h(\tau)=\frac{\sum_{i&lt;j}w_{ij}(\tau)(X_i-\widehat\mu)(X_j-\widehat\mu)}{\sum_{i&lt;j}w_{ij}(\tau)},\qquad \widehat\rho_h(\tau)=\frac{\widehat\gamma_h(\tau)}{\widehat\gamma(0)}.\]</span></p>
+<p>含义很直接：pair 的实际时间差越接近目标 lag，贡献越大。</p>
+<h2 id="dcf">4.2 Rectangular kernel：slotting / DCF</h2>
+<p>取 <span class="math inline">\(K(u)=\mathbf 1\{|u|\le1\}\)</span>，就得到固定 lag bin 内 pair products 的平均：</p>
+<p><span class="math display">\[\widehat\gamma_h(\tau)=\operatorname{average}\{(X_i-\widehat\mu)(X_j-\widehat\mu):|d_{ij}-\tau|\le h\}.\]</span></p>
+<p>Edelson–Krolik DCF 先构造每个 pair 的 unbinned discrete correlation，再按 pairwise lag 分箱，因此不需要时间插值。它容易解释和审计，但 bin 边界不连续，bandwidth 仍决定 bias–variance trade-off。</p>
+<h2 id="gaussian">4.3 Gaussian kernel：fuzzy slotting</h2>
+<p>取 <span class="math inline">\(K(u)=e^{-u^2/2}\)</span> 后，目标 lag 邻近的 pairs 平滑贡献。Rehfeld et al. 比较 interpolation、Lomb–Scargle、slotting 与 kernel methods；在其高度 irregular 的模拟里，Gaussian kernel 对 lag-1 ACF 的 RMSE 比 linear interpolation 低约 40%，而 interpolation 会明显高估 persistence time。</p>
+<p>重点不是把 40% 当作普遍常数，而是机制：插值生成的伪观测可能主导普通 ACF；pair estimator 只使用真实 observations。</p>
+<h2 id="bandwidth">4.4 Bandwidth 是 estimand-resolution 的一部分</h2>
+<p>小 bandwidth 提高 temporal resolution，但 eligible pairs 少、曲线更噪；大 bandwidth 降低方差，却可能把短时 microstructure decay 与长时 stale-model decay 混在一起。因此至少同时报告 ACF、raw pair count、weight concentration 与 bandwidth sensitivity。</p>
+<p>权重集中度可用</p>
+<p><span class="math display">\[n_{\text{Kish}}(\tau)=\frac{(\sum w_{ij}(\tau))^2}{\sum w_{ij}(\tau)^2}.\]</span></p>
+<p>它只是 weighting support diagnostic，不是考虑 pair dependence 后的 inferential effective sample size。</p>
+<h2 id="normalization">4.5 Global normalization 还是 local correlation？</h2>
+<p>若 residual 已在 series 内标准化，可以估计 weighted product mean：</p>
+<p><span class="math display">\[\widehat\rho_{\text{prod}}(\tau)=\frac{\sum w_{ij}z_i z_j}{\sum w_{ij}}.\]</span></p>
+<p>也可以使用逐 lag 的 weighted Pearson normalization：</p>
+<p><span class="math display">\[\widehat\rho_{\text{local}}(\tau)=\frac{\sum w_{ij}z_i z_j}{\sqrt{\sum w_{ij}z_i^2}\sqrt{\sum w_{ij}z_j^2}}.\]</span></p>
+<p>后者逐点处于 <span class="math inline">\([-1,1]\)</span>，但不同 lag 的 endpoint composition 会改变 local scale。两者差异很大时，本身就是 composition 或 heteroskedasticity 警报。</p>
+<h2 id="bins">4.6 Equal-width bins 与 equal-population bins</h2>
+<p>固定时间宽度保留统一 temporal resolution，但远端 lag 可能 pair 很少。ZDCF 使用 equal-population bins 与 Fisher <span class="math inline">\(z\)</span> transform 改善 sparse uneven light curves 的有限样本表现。代价是不同 lag 位置的 temporal resolution 不同。交易 residual 可把 equal-width kernel 作为主图，把 equal-population bin 作为 robustness check。</p>
+<h2 id="sacf">4.7 S-ACF 不是“另一个 kernel 名字”</h2>
+<p>S-ACF 对每个 anchor <span class="math inline">\(t_i\)</span> 和目标 <span class="math inline">\(t_i+\tau\)</span> 选择最接近的 observed time，并按 mismatch distance 加权；regular sampling 下退化为标准 ACF。</p>
+<ul><li><strong>All-pairs kernel：</strong>目标 lag 附近所有 pairs 都贡献，交易密集区会产生很多 pairs。</li><li><strong>S-ACF：</strong>每个 anchor 通常只选一个近邻 observation，anchor 的影响更均衡。</li></ul>
+<p>因此二者对应不同的 finite-sample averaging scheme。对 bond residual 的 conditional pair persistence，可先用 all-pairs kernel，再做 anchor-balanced/S-ACF sensitivity。</p>
+<h1 id="spectral">5. 第二类方法：先估计 spectrum，再反变换</h1>
+<p>连续时间弱平稳过程的 autocovariance 与 spectral density 由 Fourier transform 联系。Scargle 发展了 unevenly spaced data 的 Fourier、autocorrelation 与 cross-correlation 工具；之后也有专门的 irregular spectral estimators。</p>
+<p>Spectral route 适合周期性和多尺度频率结构；若 spectrum 被约束为非负，反变换 covariance 更容易满足 positive-semidefinite 要求。但 window、aliasing 与 smoothing 并不简单，交易时点内生和日内非平稳也不会自动消失。对“30 分钟后 residual 还剩多少”这种诊断，time-domain pair estimator 通常更直接。</p>
+<h1>References</h1>
+<div class="references csl-bib-body hanging-indent">
+<div class="csl-entry">Alexander, T. (2013). <em>Improved AGN Light Curve Analysis with the z-Transformed Discrete Correlation Function</em>. arXiv:1302.1508.</div>
+<div class="csl-entry">Edelson, R. A., &amp; Krolik, J. H. (1988). The Discrete Correlation Function. <em>ApJ</em>, 333, 646–659.</div>
+<div class="csl-entry">Kreutzer, L. T., Gillen, E., Briegal, J. T., &amp; Queloz, D. (2023). S-ACF. <em>MNRAS</em>, 522, 5049–5061.</div>
+<div class="csl-entry">Rehfeld, K., Marwan, N., Heitzig, J., &amp; Kurths, J. (2011). Comparison of correlation analysis techniques for irregularly sampled time series. <em>NPG</em>, 18, 389–404.</div>
+<div class="csl-entry">Scargle, J. D. (1989). Studies in Astronomical Time Series Analysis III. <em>ApJ</em>, 343, 874–887.</div>
+<div class="csl-entry">Stoica, P., &amp; Sandgren, N. (2006). Spectral analysis of irregularly-sampled data. <em>Digital Signal Processing</em>, 16, 712–734.</div>
+</div>
+<p class="note"><a href="../index.html">← 返回报告目录</a> · <a href="../SOURCE.md">编辑 Markdown source</a></p>
+</body></html>
