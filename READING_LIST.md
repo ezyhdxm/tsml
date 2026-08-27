@@ -71,8 +71,21 @@
 - [ ] [Order Book Master Equation — HTML](reports/market-microstructure/order_book_master_equation_derivation.html) · [Markdown](reports/market-microstructure/order_book_master_equation_derivation.md)
 - [ ] [Single Queue Stationary Distribution and First Hitting Times — Markdown](reports/market-microstructure/single_queue_stationary_and_first_hitting_times_guide.md)
 
-### C3. Corporate-bond modeling：dealer-run features
+### C3. Corporate-bond modeling：dealer runs 与 quote quantity
 
+- [ ] [Quote quantity separability and interactions — HTML](reports/corporate-bond-modeling/quote-quantity-interactions/index.html) · [Markdown](reports/corporate-bond-modeling/quote-quantity-interactions/SOURCE.md)
+  - [ ] 复核 additive null 与 naive residual correction 的 attenuation 推导。
+  - [ ] 将 candidate interactions 分成 liquidity scale、risk amplitude 与 genuine shape 三类。
+  - [ ] 对 quantity semantic（requested / good-up-to / ladder / missing）完成数据审计。
+  - [ ] 实现 cross-fitted orthogonalized quantity basis，并画 conditional contrast curves。
+  - [ ] 用 common-support 与 same dealer–bond–side matched pairs 比较 $\mathcal M_0$–$\mathcal M_4$。
+  - [ ] [Edwards, Harris & Piwowar (2007)](https://doi.org/10.1111/j.1540-6261.2007.01240.x) — pooled corporate-bond transaction-cost size gradient。
+  - [ ] [Pinter, Wang & Zou (2024)](https://doi.org/10.1093/rfs/hhae007) — pooled size discount 与 within-client size penalty 的反转。
+  - [ ] [Reichenbacher & Schuster (2022)](https://doi.org/10.1016/j.jfineco.2022.07.010) — size-adapted bond liquidity measures。
+  - [ ] [Hendershott et al. (2026)](https://doi.org/10.1111/jofi.70048) — BondCliQ dealer-run quotes、quote competition 与 displayed-size 语义。
+  - [ ] [Jacobsen & Venkataraman (2025)](https://doi.org/10.1016/j.jfineco.2025.104061) — corporate-bond block receivers、inventory 与 information risk。
+  - [ ] [Robinson (1988)](https://doi.org/10.2307/1912705) — partially linear double residualization。
+  - [ ] [Chernozhukov et al. (2018)](https://doi.org/10.1111/ectj.12097) — orthogonal scores 与 cross-fitting。
 - [ ] [Dealer-run feature engineering framework](reports/corporate-bond-modeling/dealer-runs/dealer_run_feature_engineering_framework.html)
 - [ ] [Dealer-run implementation review](reports/corporate-bond-modeling/dealer-runs/dealer_run_implementation_review.html)
 - [ ] [Dealer-run / CPP interaction update plan](reports/corporate-bond-modeling/dealer-runs/dealer_run_cpp_interaction_update_plan.html)
