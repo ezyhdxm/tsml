@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>利率期限结构模型</title><style>body{max-width:760px;margin:10vh auto;padding:0 1.2rem;font:17px/1.6 system-ui,sans-serif;color:#17202a}.status{padding:1rem 1.2rem;border-left:4px solid #2a6f97;background:#f5f8fa}a{color:#2a6f97}</style></head>
+<body><div class="status" id="status">Loading embedded report…</div>
+<script>window.__REPORT_PARTS=[];</script>
+<script src="payloads/index_part_1.js"></script>
+<script src="payloads/index_part_2.js"></script>
+<script src="payloads/index_part_3.js"></script>
+<script>
+(async()=>{try{const b64=window.__REPORT_PARTS.join('');const binary=atob(b64);const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));const fullHtml=await new Response(stream).text();document.open();document.write(fullHtml);document.close();}catch(err){document.getElementById('status').innerHTML='请改读可编辑 Markdown。 <a href="SOURCE.md">SOURCE.md</a><br><small>'+String(err)+'</small>';}})();
+</script></body></html>
