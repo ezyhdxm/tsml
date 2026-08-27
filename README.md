@@ -1,11 +1,13 @@
 # TSML Research Notes
 
-这个仓库保存可公开分享的时间序列、树模型、市场微观结构和 corporate-bond modeling 技术报告。
+这个仓库保存可公开分享的时间序列、树模型、利率期限结构、市场微观结构和 corporate-bond modeling 技术报告。
 
 ## 阅读与编辑入口
 
 - [阅读列表与完成标记](READING_LIST.md)
+- [English report index](ENGLISH_REPORT_INDEX.md)
 - [报告编辑与渲染流程](meta/REPORT_EDITING_WORKFLOW.md)
+- **利率期限结构模型**：[中文 HTML](reports/interest-rates/term-structure-models/index.html) · [中文 Markdown](reports/interest-rates/term-structure-models/SOURCE.md) · [English HTML](reports/interest-rates/term-structure-models/index.en.html) · [English Markdown](reports/interest-rates/term-structure-models/SOURCE.en.md)
 - [第一棵 LightGBM 树的统计理论：Markdown](reports/machine-learning/lightgbm-first-tree-theory/SOURCE.md)
 - [第一棵 LightGBM 树的统计理论：HTML](reports/machine-learning/lightgbm-first-tree-theory/index.html)
 - [Irregular sampling autocorrelation：Markdown](reports/time-series/irregular-autocorrelation/SOURCE.md)
@@ -19,9 +21,12 @@
 .
 ├── README.md
 ├── READING_LIST.md
+├── ENGLISH_REPORT_INDEX.md
 ├── meta/
 │   └── REPORT_EDITING_WORKFLOW.md
 └── reports/
+    ├── interest-rates/
+    │   └── term-structure-models/
     ├── machine-learning/
     │   ├── lightgbm-first-tree-theory/
     │   └── autoresearch_time_series_lightgbm.html
@@ -40,7 +45,7 @@
 
 ## Source 与 rendered artifact
 
-新的长报告应把可编辑 Markdown 和渲染 HTML 放在同一目录。Markdown 是 source of truth；HTML 供直接阅读。详细命令见 [`meta/REPORT_EDITING_WORKFLOW.md`](meta/REPORT_EDITING_WORKFLOW.md)。
+新的长报告应把可编辑 Markdown 和渲染 HTML 放在同一目录。Markdown 是 source of truth；HTML 供直接阅读。完整报告可以按章节拆分到 `manuscript/`，并由 `SOURCE.md` 作为可编辑入口。详细命令见 [`meta/REPORT_EDITING_WORKFLOW.md`](meta/REPORT_EDITING_WORKFLOW.md)。
 
 ## 公开仓库边界
 

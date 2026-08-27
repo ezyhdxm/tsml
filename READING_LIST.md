@@ -84,6 +84,21 @@
 - [ ] [MarketAxess CP+ reconstruction](reports/corporate-bond-modeling/vendor-models/marketaxess_cpplus_model_reconstruction.html)
 - [ ] [Trumid FVMP reconstruction](reports/corporate-bond-modeling/vendor-models/trumid_fvmp_model_reconstruction.html)
 
+### C5. Rates term-structure models
+
+**报告入口：** [中文 HTML](reports/interest-rates/term-structure-models/index.html) · [中文 Markdown](reports/interest-rates/term-structure-models/SOURCE.md) · [English HTML](reports/interest-rates/term-structure-models/index.en.html) · [English Markdown](reports/interest-rates/term-structure-models/SOURCE.en.md)
+
+- [ ] 第 1–3 节：固定记号，独立推导 $P(t,T)=E_t^{\mathbb Q}[e^{-\int_t^T r_sds}]$、Girsanov 漂移变化和 affine Riccati 方程。
+- [ ] Vasicek：手算 exact transition、$\int r_sds$ 的方差/协方差以及 $A(\tau),B(\tau)$ 债券公式。
+- [ ] CIR：理解 Feller condition 只决定零边界是否可达，并复核 noncentral-$\chi^2$ 精确转移。
+- [ ] Hull–White：从 shifted OU 推导 $\phi(t)$ 与 $\theta(t)$，解释为何 deterministic shift 只拟合今天的曲线而不增加风险因子。
+- [ ] G2++：复核积分方差和 endpoint innovation covariance，确认 endpoint correlation 一般不等于瞬时 $\rho$。
+- [ ] HJM：从 $\log P(t,T)=-\int_t^T f(t,u)du$ 完整推导 drift restriction，而不是直接背公式。
+- [ ] LMM/BGM：从 numeraire change 推导 terminal-measure drift 的负号、求和范围和跨 maturity 耦合。
+- [ ] SOFR/OIS 与 multi-curve：明确 discount numeraire、forecast pseudo-curve 和 basis 的不同角色。
+- [ ] 预测与定价：写清 DNS/AFNS/Gaussian ATSM 中 $\mathbb P$ 和 $\mathbb Q$ 参数分别负责什么。
+- [ ] 运行 `validate_report.py`，复核 13 个 synthetic checks；再补一个 discounted-bond martingale Monte Carlo test。
+
 ## D. 阅读记录模板
 
 复制下面的小节到本文件底部，或者直接写进对应报告的 Markdown：

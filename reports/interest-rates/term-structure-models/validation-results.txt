@@ -1,0 +1,14 @@
+PASS  Vasicek exact mean            error=6.050e-05  tol=2.500e-03
+PASS  Vasicek exact variance        error=2.464e-03  tol=8.000e-03
+PASS  CIR exact mean                error=1.619e-04  tol=5.000e-03
+PASS  CIR exact variance            error=1.730e-03  tol=1.500e-02
+PASS  CIR nonnegativity             error=0.000e+00  tol=0.000e+00
+PASS  G2++ Var[x]                   error=4.743e-04  tol=1.200e-02
+PASS  G2++ Var[y]                   error=2.894e-03  tol=1.200e-02
+PASS  G2++ Cov[x,y]                 error=6.260e-03  tol=2.000e-02
+PASS  Vasicek bond PDE              error=8.239e-11  tol=2.000e-06
+PASS  CIR bond PDE                  error=9.831e-11  tol=2.000e-06
+PASS  HJM drift restriction         error=1.465e-10  tol=2.000e-08
+PASS  Hull-White initial-curve fit  error=1.632e-14  tol=2.000e-10
+PASS  G2++ initial-curve fit        error=1.965e-14  tol=2.000e-10
+All 13 numerical checks passed.
