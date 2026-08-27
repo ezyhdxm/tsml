@@ -6,6 +6,8 @@
 
 - [阅读列表与完成标记](READING_LIST.md)
 - [报告编辑与渲染流程](meta/REPORT_EDITING_WORKFLOW.md)
+- [Quote quantity interactions：Markdown](reports/corporate-bond-modeling/quote-quantity-interactions/SOURCE.md)
+- [Quote quantity interactions：HTML](reports/corporate-bond-modeling/quote-quantity-interactions/index.html)
 - [第一棵 LightGBM 树的统计理论：Markdown](reports/machine-learning/lightgbm-first-tree-theory/SOURCE.md)
 - [第一棵 LightGBM 树的统计理论：HTML](reports/machine-learning/lightgbm-first-tree-theory/index.html)
 - [Irregular sampling autocorrelation：Markdown](reports/time-series/irregular-autocorrelation/SOURCE.md)
@@ -35,6 +37,7 @@
     │   └── single_queue_stationary_and_first_hitting_times_guide.md
     └── corporate-bond-modeling/
         ├── dealer-runs/
+        ├── quote-quantity-interactions/
         └── vendor-models/
 ```
 
