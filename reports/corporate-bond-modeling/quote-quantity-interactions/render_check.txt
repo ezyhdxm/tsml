@@ -1,0 +1,1 @@
+Rendered from the Markdown manuscript with Pandoc, citeproc, and MathML on 2026-08-26. The checked artifact is index.html plus payloads/report_part_*.js.
