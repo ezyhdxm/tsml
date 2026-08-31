@@ -7,7 +7,7 @@ lang: zh-CN
 
 > **Source of truth:** edit this Markdown file. The rendered artifact is `order_book_master_equation_derivation.html`.
 
-> 这一页的核心并不复杂：queue volume $V$ 在连续时间里做一个 nearest-neighbor birth-death process。新 limit order 把 $V$ 加 1；execution/cancellation 把 $V$ 减 1；到 0 后立即按 $\rho(V)$ 重新生成。Master equation 只是“概率流入 − 概率流出”的记账式。
+> 这一页的核心是一个 **birth-death dynamics + boundary reset**。在 $V\ge 2$ 的内部状态，queue volume 只做 nearest-neighbor jump：arrival 令 $V\to V+1$，execution/cancellation 令 $V\to V-1$。但在边界 $V=1$，一次 downward event 会先使 queue depletion 到 0，然后模型立刻按 $\rho(V)$ 把 queue reset 到新的正 volume。因此，**内部 dynamics 是 nearest-neighbor；完整过程在边界允许一次 nonlocal reset**。Master equation 只是把这些概率流逐项记账。
 
 ## 0. 模型先翻译成人话
 
@@ -34,57 +34,195 @@ $$
 
 注意这不等于“从来没有 hitting 0”；恰恰相反，hitting 0 发生时会产生 depletion flux $J(t)$，然后瞬间 reinject。
 
-## 1. 式 (5.2)：从一个很短的 $dt$ 推出来
+## 1. 式 (5.2)：先把 \(V=1\) 和 \(V\ge2\) 分开，\(J(t)\) 就不会突然出现
 
-在 $dt$ 很小时，三个 Poisson clocks 给出
+你提出的疑问是对的：如果只看三个 Poisson clocks，那么在一个足够短的 \(dt\) 内，一阶上至多发生一个 clock event；而在普通内部状态，这个 event 只会让 queue volume 改变一个单位。
 
-$$
-\Pr(\text{arrival in }dt)=\lambda dt+o(dt),
-$$
+因此，**最自然的推导方式确实是先把边界 \(V=1\) 和内部 \(V\ge2\) 分开。**
 
-$$
-\Pr(\text{execution in }dt)=\mu dt+o(dt),
-$$
+### 1.1 先看内部状态：\(V\ge2\)
+
+令
 
 $$
-\Pr(\text{cancellation in }dt)=\nu dt+o(dt).
+c:=\mu+\nu.
 $$
 
-所以任意一种 event 发生的总一阶概率是
+当当前状态 \(V\ge2\) 时：
+
+- arrival：\(V\to V+1\)，rate 为 \(\lambda\)；
+- execution/cancellation：\(V\to V-1\)，rate 为 \(c\)。
+
+所以如果暂时不考虑从边界 reinject 进来的概率，在 \(dt\) 内确实只有 nearest-neighbor movement。
+
+要在 \(t+dt\) 时处于 \(V\ge2\)，局部的三条路是
 
 $$
-(\lambda+\mu+\nu)dt=(\lambda+c)dt.
+P(V,t)\bigl[1-(\lambda+c)dt\bigr],
 $$
 
-要在 $t+dt$ 时处于状态 $V$，一阶上有四条路。
-
-### 路径 1：本来就在 $V$，而且这段时间没有 event
-
 $$
-P(V,t)\left[1-(\lambda+c)dt\right].
+\lambda dt\,P(V-1,t),
 $$
 
-### 路径 2：本来在 $V-1$，来了一笔新的 limit order
-
-$$
-\lambda dt\,P(V-1,t).
-$$
-
-### 路径 3：本来在 $V+1$，发生 execution 或 cancellation
+和
 
 $$
 c\,dt\,P(V+1,t).
 $$
 
-### 路径 4：别的 queue depletion，然后新 queue 被 reinject 到 $V$
+到这里完全没有 \(J(t)\)。
 
-若总 depletion rate 为 $J(t)$，重生 volume 为 $V$ 的概率为 $\rho(V)$，贡献为
+### 1.2 真正特殊的是 \(V=1\)
+
+当系统已经在 \(V=1\) 时，一个 downward event 不再只是普通的
 
 $$
-J(t)\rho(V)dt.
+1\to0.
 $$
+
+书里额外规定：
+
+> queue 一旦到 0，就**立即**生成一个新的 queue volume \(U\)，其中
+> \[
+> \Pr(U=V)=\rho(V).
+> \]
+
+所以 boundary event 实际上是
+
+$$
+1
+\;\xrightarrow{\text{departure, rate }c}\;
+0
+\;\xrightarrow{\text{instant reset}}\;
+U\sim\rho.
+$$
+
+这里最重要的一点是：
+
+> **这不是在 \(dt\) 内发生了两个独立 Poisson events。**
+
+只有第一个
+
+$$
+1\to0
+$$
+
+是 Poisson clock 触发的随机 event。后面的
+
+$$
+0\to U
+$$
+
+是模型规定的**瞬时 boundary reset rule**，没有额外等待时间，也不是第四个 Poisson clock。
+
+所以，“一个很短的 \(dt\) 内至多发生一个 Poisson event”仍然成立；但是由于这个 event 一旦击中边界，会触发一个 nonlocal reset，**观测到的状态可以从 1 直接变成 \(U>2\)**。
+
+这正是看起来和“每次只移动一个单位”冲突的地方。
+
+### 1.3 \(J(t)\) 其实不是新参数；它就是从 \(V=1\) 流到 0 的 boundary flux
+
+在当前这个 single-unit downward-jump 模型里，只有处在 \(V=1\) 时，一个 departure 才能把 queue depletion 到 0。
+
+因此在时刻 \(t\)：
+
+- 系统处于 \(V=1\) 的概率是 \(P(1,t)\)；
+- conditional on \(V=1\)，downward hazard 是 \(c=\mu+\nu\)。
+
+所以 depletion probability per unit time 是
+
+$$
+\boxed{
+J(t)=cP(1,t)=(\mu+\nu)P(1,t).
+}
+$$
+
+也就是说，\(J(t)\) **不是突然多出来的第四个 intensity**；它是由 \(V=1\) 的概率质量决定的 boundary probability flux。
+
+书里后面在 stationary case 写的
+
+$$
+J_0=(\mu+\nu)P_{\mathrm{st}}(1)
+$$
+
+就是这条关系的稳态版本。
+
+### 1.4 现在分别写 \(V=1\) 和 \(V\ge2\) 的 \(dt\) balance
+
+先写 \(V=1\)。
+
+要在 \(t+dt\) 时看到 \(V=1\)，一阶上有三种可能：
+
+1. 原来就在 1，而且没有任何 Poisson event；
+2. 原来在 2，发生一个 downward event；
+3. 原来在 1，发生 depletion，然后 reset 又恰好抽到 \(U=1\)。
+
+所以
+
+$$
+\begin{aligned}
+P(1,t+dt)
+={}&P(1,t)\bigl[1-(\lambda+c)dt\bigr]\\
+&+c\,dt\,P(2,t)\\
+&+c\,dt\,P(1,t)\rho(1)
++o(dt).
+\end{aligned}
+$$
+
+注意这里**没有**
+
+$$
+\lambda dt\,P(0,t),
+$$
+
+因为 0 不是一个会停留的状态；模型规定到 0 后立刻 reset。
+
+再看任意 \(V\ge2\)。
+
+除了普通的 local inflow，还可能有一条来自边界的路径：
+
+- 原来在 \(V=1\)；
+- 发生一个 downward event；
+- queue depletion；
+- reset volume 恰好抽到当前这个 \(V\)。
 
 因此
+
+$$
+\begin{aligned}
+P(V,t+dt)
+={}&P(V,t)\bigl[1-(\lambda+c)dt\bigr]\\
+&+\lambda dt\,P(V-1,t)\\
+&+c\,dt\,P(V+1,t)\\
+&+c\,dt\,P(1,t)\rho(V)
++o(dt),
+\qquad V\ge2.
+\end{aligned}
+$$
+
+这时 \(J(t)\rho(V)\) 的来源已经完全清楚了，因为
+
+$$
+cP(1,t)\rho(V)
+=
+J(t)\rho(V).
+$$
+
+### 1.5 最后才把两种情况压成书里的统一写法
+
+定义
+
+$$
+P(0,t)=0
+$$
+
+以及
+
+$$
+J(t):=cP(1,t).
+$$
+
+那么对所有 \(V\ge1\)，上面的两组方程可以统一写成
 
 $$
 \begin{aligned}
@@ -92,35 +230,118 @@ P(V,t+dt)
 ={}&P(V,t)\left[1-(\lambda+c)dt\right]\\
 &+\lambda dt\,P(V-1,t)\\
 &+c\,dt\,P(V+1,t)\\
-&+J(t)\rho(V)dt+o(dt).
+&+J(t)\rho(V)dt
++o(dt).
 \end{aligned}
 $$
 
-减去 $P(V,t)$，除以 $dt$，令 $dt\to0$：
+减去 \(P(V,t)\)，除以 \(dt\)，再令 \(dt\to0\)：
 
 $$
 \boxed{
 \frac{\partial P(V,t)}{\partial t}
-=-(\lambda+c)P(V,t)
+=
+-(\lambda+c)P(V,t)
 +\lambda P(V-1,t)
 +cP(V+1,t)
 +J(t)\rho(V)
 }.
 $$
 
-再代回 $c=\mu+\nu$ 就是书中的式 (5.2)：
+代回 \(c=\mu+\nu\)：
 
 $$
 \boxed{
 \frac{\partial P(V,t)}{\partial t}
-=-(\lambda+\mu+\nu)P(V,t)
+=
+-(\lambda+\mu+\nu)P(V,t)
 +\lambda P(V-1,t)
 +(\mu+\nu)P(V+1,t)
 +J(t)\rho(V)
 }.
 $$
 
-**最值得记的结构：**对每个状态 $V$，导数 = inflow from $V-1$ + inflow from $V+1$ + reinjection − outflow from $V$。
+所以书里的写法不是错，而是**已经把 boundary case \(V=1\) 压缩进 \(J(t)\rho(V)\) 这一项里了**。
+
+从教学角度看，先把 \(V=1\) 分开推，再合并成统一公式，确实更容易理解。
+
+### 1.6 固定 reinjection 到 \(V_0\) 时，这一点尤其清楚
+
+若
+
+$$
+\rho(V)=\mathbf 1\{V=V_0\},
+$$
+
+那么
+
+$$
+J(t)\rho(V)
+=
+J(t)\mathbf 1\{V=V_0\}.
+$$
+
+也就是说：
+
+- \(V=1\) 是 **depletion boundary**；
+- \(V=V_0\) 是 **reinjection source**；
+- 其它状态只满足普通 nearest-neighbor birth-death equation。
+
+如果 \(V_0>1\)，动态方程可以明确写成
+
+$$
+\frac{\partial P(1,t)}{\partial t}
+=
+-(\lambda+c)P(1,t)+cP(2,t),
+$$
+
+$$
+\frac{\partial P(V,t)}{\partial t}
+=
+-(\lambda+c)P(V,t)
++\lambda P(V-1,t)
++cP(V+1,t),
+\qquad
+V\ge2,\;V\neq V_0,
+$$
+
+以及 source state
+
+$$
+\frac{\partial P(V_0,t)}{\partial t}
+=
+-(\lambda+c)P(V_0,t)
++\lambda P(V_0-1,t)
++cP(V_0+1,t)
++J(t).
+$$
+
+其中始终有
+
+$$
+\boxed{J(t)=cP(1,t).}
+$$
+
+这就是后面 stationary solution 为什么要特别处理 \(V=1\) 和 \(V=V_0\) 的原因。
+
+### 1.7 如果坚持“任何一次状态变化都只能 \(\pm1\)”，那就必须换模型
+
+书里的 instantaneous reinjection 本身允许 boundary 上的 nonlocal jump：
+
+$$
+1\to0\to U.
+$$
+
+如果你希望整个过程在任何时候都严格 nearest-neighbor，那么就不能使用这种 arbitrary-\(\rho\) 的瞬时 reset。可以改成例如：
+
+- 把 \(V=0\) 保留成真实状态；
+- refill 也通过显式的 \(0\to1\to2\to\cdots\) 事件逐步发生；
+
+或者至少给 \(0\to U\) 一个有限等待时间，而不是 instantaneous reset。
+
+书里选择 instantaneous reinjection，主要是为了让 queue depletion 后立刻开始一个新的 regenerative cycle，并避免 probability mass 长时间停在 0。
+
+**因此你指出的区分是正确的：原始 Poisson dynamics 在内部确实每次只走 \(\pm1\)；\(J(t)\rho(V)\) 描述的是 boundary reset，而不是另一个普通的 local jump。**
 
 ## 2. 为什么同时发生两个 event 不写进去？
 
@@ -391,7 +612,7 @@ $$
 
 ## 8. 从 continuous-time Markov chain 的角度看
 
-如果暂时忽略 reinjection，这个模型的 generator 在内部状态上只有三条非零元素：
+如果暂时忽略 boundary reinjection，这个模型在内部状态 $V\ge2$ 的 generator 只有三条非零元素：
 
 $$
 Q_{V,V+1}=\lambda,
