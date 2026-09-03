@@ -1,0 +1,16 @@
+{
+  "publication_date": "2026-09-03",
+  "scope": "Tutorial and synthetic research experiment only; no company data.",
+  "frozen_sha256": {
+    "reproduction/results.json": "609cfb82883671881e47254908bed0a445537bad2c5b23cbcac1e75849ce1665",
+    "reproduction/training_history.csv": "95c1b8ac49ed2780844c1321739e14c1e04df6bef42208e6b587f5a03ba4ffe3",
+    "reproduction/sample_completion.csv": "ec7a0b36b50240fb31b78d976c57e10bd66eef97f22b57bc3afad365eedc5acc",
+    "reproduce_vol_surface_vae.py": "73b96b6a5123a58613ef0592cbdd3c7c0f85a73bf2e9931195678b216c8ebfa5",
+    "reproduction/synthetic_ssvi_data.npz": "de11bacc2ab7f6e53c6f7837e3e61cfa95691c2bee76624f09653085e3c7f469",
+    "reproduction/synthetic_ssvi_factors.csv": "547876721d58257ff9b8aa26c934856c940d4f7938bd86b5b7780c15c09fd104"
+  },
+  "note": "Rendering uses frozen prior-run metrics. Model checkpoints from the original conversation ZIP are not included. Synthetic data is regenerated deterministically and verified byte-for-byte.",
+  "errata": [
+    "Section 8.4: remove a stray tab+iny typesetting remnant before the unchanged ridge coefficient 10^-4."
+  ]
+}
