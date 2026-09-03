@@ -1,12 +1,13 @@
 # TSML Research Notes
 
-这个仓库保存可公开分享的时间序列、树模型、利率期限结构、市场微观结构和 corporate-bond modeling 技术报告。
+这个仓库保存可公开分享的时间序列、树模型、利率期限结构、波动率曲面、市场微观结构和 corporate-bond modeling 技术报告。
 
 ## 阅读与编辑入口
 
 - [阅读列表与完成标记](READING_LIST.md)
 - [English report index](ENGLISH_REPORT_INDEX.md)
 - [报告编辑与渲染流程](meta/REPORT_EDITING_WORKFLOW.md)
+- **Vol Surface × VAE 教程与文献复现**：[中文 HTML](reports/volatility-surfaces/vae-tutorial/index.html) · [可编辑 Markdown](reports/volatility-surfaces/vae-tutorial/SOURCE.md) · [复现材料与说明](reports/volatility-surfaces/vae-tutorial/README.md)
 - **利率期限结构模型**：[中文 HTML](reports/interest-rates/term-structure-models/index.html) · [中文 Markdown](reports/interest-rates/term-structure-models/SOURCE.md) · [English HTML](reports/interest-rates/term-structure-models/index.en.html) · [English Markdown](reports/interest-rates/term-structure-models/SOURCE.en.md)
 - [第一棵 LightGBM 树的统计理论：Markdown](reports/machine-learning/lightgbm-first-tree-theory/SOURCE.md)
 - [第一棵 LightGBM 树的统计理论：HTML](reports/machine-learning/lightgbm-first-tree-theory/index.html)
@@ -25,6 +26,8 @@
 ├── meta/
 │   └── REPORT_EDITING_WORKFLOW.md
 └── reports/
+    ├── volatility-surfaces/
+    │   └── vae-tutorial/
     ├── interest-rates/
     │   └── term-structure-models/
     ├── machine-learning/

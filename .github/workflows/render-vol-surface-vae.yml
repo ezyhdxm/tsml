@@ -1,0 +1,89 @@
+name: Render volatility-surface VAE tutorial
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'reports/volatility-surfaces/vae-tutorial/**'
+      - '.github/workflows/render-vol-surface-vae.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vol-surface-vae-render
+  cancel-in-progress: false
+
+jobs:
+  render:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      REPORT: reports/volatility-surfaces/vae-tutorial
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Restore checksum-verified text assets (first publication only)
+        run: |
+          python - <<'PY'
+          import base64, hashlib, json, lzma, os, shutil
+          from pathlib import Path
+          root = Path(os.environ['REPORT']).resolve()
+          transport = root / '.transport'
+          if transport.exists():
+              pieces = sorted(transport.glob('payload-*.txt'))
+              assert len(pieces) == 6, 'Missing publication payload chunk'
+              packed = ''.join(p.read_text() for p in pieces)
+              raw = lzma.decompress(base64.b64decode(packed, validate=True))
+              expected = '32c173d0d27214b4ef0da6ab898405bf3af6756e713875bd6ebf61109bc40e10'
+              assert hashlib.sha256(raw).hexdigest() == expected, 'Publication checksum mismatch'
+              assets = json.loads(raw)
+              allowed = {'reproduce_vol_surface_vae.py', 'report.css', 'report_template.html5',
+                         'header.html', 'before.html', 'after.html', 'render.py',
+                         'make_tutorial_figures.py', 'publication.json',
+                         'reproduction/results.json', 'reproduction/training_history.csv',
+                         'reproduction/sample_completion.csv'}
+              assert set(assets) == allowed
+              for relative, content in assets.items():
+                  path = (root / relative).resolve()
+                  assert path.is_relative_to(root)
+                  path.parent.mkdir(parents=True, exist_ok=True)
+                  path.write_text(content, encoding='utf-8')
+              shutil.rmtree(transport)
+              print('Restored original text assets; removed temporary transport chunks.')
+          else:
+              assert (root / 'render.py').is_file()
+              print('Using existing editable source files.')
+          PY
+      - name: Install render dependencies (no model training)
+        run: |
+          python -m pip install numpy==2.3.5 pandas==2.2.3 scipy==1.17.0 matplotlib==3.10.8
+          curl --fail --location --retry 3 \
+            https://github.com/jgm/pandoc/releases/download/3.1.11.1/pandoc-3.1.11.1-linux-amd64.tar.gz \
+            --output /tmp/pandoc.tar.gz
+          tar -xzf /tmp/pandoc.tar.gz -C /tmp
+          echo '/tmp/pandoc-3.1.11.1/bin' >> "$GITHUB_PATH"
+      - name: Render and validate frozen report
+        run: |
+          python "$REPORT/render.py"
+          cat "$REPORT/build_validation.json"
+      - name: Commit validated HTML, figures, data and public bundle
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A "$REPORT"
+          if git diff --cached --quiet; then
+            echo 'Report is already up to date.'
+          else
+            git commit -m 'Render VAE tutorial with frozen results and offline MathML [rendered]'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
