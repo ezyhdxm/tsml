@@ -25,7 +25,8 @@ from scipy.special import ndtr
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'reproduction'
 CHAPTERS = [
-    '00-surface-foundations.md', '01-vae-foundations.md',
+    '00-surface-foundations.md', '00a-why-surface.md',
+    '00b-classical-methods.md', '01-vae-foundations.md',
     '02a-literature.md', '02b-literature.md', '02c-literature.md',
     '03-comparison-and-reproducibility.md', '04-experiment.md',
     '05-implementation-and-research.md', '06-references-and-appendices.md',
@@ -96,6 +97,8 @@ class HTMLAudit(HTMLParser):
 
 def main() -> None:
     frozen_figures()
+    import classical_demo
+    classical_demo.run(ROOT / 'classical_examples')
     text = ''.join((ROOT / 'manuscript' / name).read_text(encoding='utf-8') for name in CHAPTERS)
     (ROOT / 'report.md').write_text(text, encoding='utf-8')
     cmd = ['pandoc', 'report.md', '-f', 'markdown+tex_math_dollars+raw_html+markdown_in_html_blocks',
@@ -108,14 +111,35 @@ def main() -> None:
         raise RuntimeError(run.stderr)
     html = (ROOT / 'index.html').read_text(encoding='utf-8')
     html = re.sub(r'(<math display="block"[^>]*>.*?</math>)', r'<div class="math-scroll">\1</div>', html, flags=re.S)
+    html = re.sub(r'<table>(.*?)</table>',
+                  r'<div class="table-wrap"><table class="data-table">\1</table></div>',
+                  html, flags=re.S)
     (ROOT / 'index.html').write_text(html, encoding='utf-8')
     audit = HTMLAudit(); audit.feed(html)
-    assert audit.math == 337, f'Expected 337 equations, found {audit.math}'
-    assert len(audit.images) == 12, f'Expected 12 image occurrences, found {len(audit.images)}'
+    ast_run = subprocess.run(['pandoc', 'report.md', '-f',
+        'markdown+tex_math_dollars+raw_html+markdown_in_html_blocks', '-t', 'json'],
+        cwd=ROOT, check=True, capture_output=True, text=True)
+    def count_math(node):
+        if isinstance(node, dict):
+            return int(node.get('t') == 'Math') + sum(count_math(v) for v in node.values())
+        if isinstance(node, list):
+            return sum(count_math(v) for v in node)
+        return 0
+    expected_math = count_math(json.loads(ast_run.stdout))
+    body_audit = HTMLAudit()
+    body = re.search(r'<main\b[^>]*>(.*?)</main>', html, flags=re.S)
+    assert body is not None, 'Main content element missing'
+    body_audit.feed(body.group(1))
+    assert body_audit.math == expected_math, f'MathML/AST mismatch: {body_audit.math}/{expected_math}'
+    assert len(audit.images) == 14, f'Expected 14 image occurrences, found {len(audit.images)}'
     assert not audit.errors, 'MathML error element found'
     assert all(src.startswith('data:image/') for src in audit.images), 'Non-embedded image found'
-    summary = {'mathml_equations': audit.math, 'image_occurrences': len(audit.images),
+    summary = {'mathml_equations': audit.math, 'body_mathml_equations': body_audit.math, 'image_occurrences': len(audit.images),
                'all_images_embedded': True, 'models_retrained': False,
+               'revision': 'v2-classical-motivation',
+               'teaching_examples_validated': True,
+               'new_sections': ['3A: why surfaces and models', '3B: classical methods and VAE value'],
+               'mathml_matches_pandoc_ast': True,
                'html_sha256': hashlib.sha256((ROOT / 'index.html').read_bytes()).hexdigest()}
     (ROOT / 'build_validation.json').write_text(json.dumps(summary, indent=2) + '\n')
     # Repository bundle intentionally excludes original model checkpoints.

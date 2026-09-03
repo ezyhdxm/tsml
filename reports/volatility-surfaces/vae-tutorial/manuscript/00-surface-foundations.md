@@ -1,6 +1,6 @@
 ---
 title: "Vol Surface × VAE"
-subtitle: "从隐含波动率曲面、变分推断到无套利生成：教程、文献地图与可复现实验"
+subtitle: "为什么需要曲面、经典方法与 VAE 的增量：从定价逻辑到文献与复现实验"
 author: "Tutorial-style literature review and reproducibility audit"
 date: "资料与检索截至 2026-09-03"
 lang: zh-CN
@@ -8,6 +8,10 @@ lang: zh-CN
 
 <div class="callout success">
 <strong>这份报告做了三件彼此分开的事。</strong>第一部分从期权价格开始，逐步推导什么是 implied volatility surface，以及 static no-arbitrage 到底限制什么；第二部分从 latent-variable model 开始推导 VAE 的 ELBO、Gaussian KL 与 reparameterization；第三部分审计 2021–2026 年核心 vol-surface VAE 文献，并给出一份实际运行过的结构复现实验。文中用 <span class="badge reported">论文报告</span>、<span class="badge executed">本次实跑</span> 和 <span class="badge audit">审计判断</span> 明确区分证据来源。
+</div>
+
+<div class="callout">
+<strong>2026-09-03 补充导读：</strong>对“BS 假定同一波动率，为什么还要 surface？”有疑问，请先读 <a href="#why-surface">第 3A 节：模型、报价坐标与动态</a>，再读 <a href="#classical-methods">第 3B 节：经典方法与 VAE 的增量收益</a>。这两节位于 VAE 推导之前，含三个可重跑数学例子。
 </div>
 
 # 0. 先看结论：这个领域真正研究的是什么？
@@ -39,7 +43,8 @@ lang: zh-CN
 
 ## 0.1 建议阅读路线
 
-- 只想理解概念：读第 2–4 节。
+- 只想理解概念：读第 2 节，再读 [第 3A 节](#why-surface)；它区分真实动态和 IV 报价坐标。
+- 想知道传统方法与 VAE 各有什么用：读 [第 3B 节](#classical-methods)，再进入第 4 节的 VAE 推导。
 - 想选研究方向：读第 5–7 节，尤其比较 hard guarantee、soft penalty、repair 和 latent flow。
 - 想动手：读第 8–9 节，并运行配套脚本。
 - 想做论文：读第 10 节；其中“带约束的非线性动态 tensor factor model”与你之前考虑的方向直接相连。
@@ -104,7 +109,7 @@ $$
 \end{aligned}
 $$
 
-所以，只要市场价格位于无套利价格界内，$C(K,\tau;\sigma)$ 随 $\sigma$ 严格递增，数值求根就有唯一解。
+所以，只要市场价格严格位于对应无套利价格上下界之间，$C(K,\tau;\sigma)$ 随 $\sigma$ 严格递增，数值求根就有唯一解。
 
 <figure>
 <img src="reproduction/black_price_and_vega.png" alt="Black price and vega as functions of volatility">
@@ -229,10 +234,10 @@ $$
 s_{i+1}\ge s_i.
 $$
 
-前者检查 vertical spread，后者检查 convexity/butterfly。对 calendar spread，应比较同一 strike、相同现金流口径下的 undiscounted call value；后到期不应更便宜。
+前者检查 vertical spread，后者检查 convexity/butterfly。对 calendar spread，在零利率、零分红的示例中，同一 strike 的 call price 随到期不应下降。一般 carry 情况必须先确认下述归一化条件，不能对所有原始 call quotes 直接加 maturity 单调约束。
 
 <div class="callout warning">
-<strong>坐标陷阱：</strong>固定 $k=\log(K/F)$ 不总等于固定 strike，因为 forward 会随期限变化。许多机器学习论文在统一 forward-normalized grid 上检查 calendar 条件，这是一个实用离散代理，但不能不加说明地等同于所有实际合约上的严格 calendar no-arbitrage。
+<strong>坐标与 carry：</strong>在确定性利率、连续比例分红和适当 martingale 条件下，$S_T/F(T)$ 是归一化 martingale。归一化价格 $C(K,T)/(D(T)F(T))$ 在固定 $k=\log(K/F(T))$ 上随到期不减；通过 Black 映射，这对应 $w(k,T)$ 不减。因此这里不是一概仅为“代理条件”。但有限网格检测仍只覆盖取样点，随机利率、离散分红与其他合约口径需要单独处理。详见 <a href="https://arxiv.org/html/1204.0646">Gatheral–Jacquier 第 2.1 节</a>。
 </div>
 
 ## 3.3 为什么有 bid–ask 和交易成本，仍然要求 surface admissible？
