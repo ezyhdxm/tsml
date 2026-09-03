@@ -1,6 +1,6 @@
 ---
 title: "Vol Surface × VAE"
-subtitle: "从隐含波动率曲面、变分推断到无套利生成：教程、文献地图与可复现实验"
+subtitle: "为什么需要曲面、经典方法与 VAE 的增量：从定价逻辑到文献与复现实验"
 author: "Tutorial-style literature review and reproducibility audit"
 date: "资料与检索截至 2026-09-03"
 lang: zh-CN
@@ -8,6 +8,10 @@ lang: zh-CN
 
 <div class="callout success">
 <strong>这份报告做了三件彼此分开的事。</strong>第一部分从期权价格开始，逐步推导什么是 implied volatility surface，以及 static no-arbitrage 到底限制什么；第二部分从 latent-variable model 开始推导 VAE 的 ELBO、Gaussian KL 与 reparameterization；第三部分审计 2021–2026 年核心 vol-surface VAE 文献，并给出一份实际运行过的结构复现实验。文中用 <span class="badge reported">论文报告</span>、<span class="badge executed">本次实跑</span> 和 <span class="badge audit">审计判断</span> 明确区分证据来源。
+</div>
+
+<div class="callout">
+<strong>2026-09-03 补充导读：</strong>对“BS 假定同一波动率，为什么还要 surface？”有疑问，请先读 <a href="#why-surface">第 3A 节：模型、报价坐标与动态</a>，再读 <a href="#classical-methods">第 3B 节：经典方法与 VAE 的增量收益</a>。这两节位于 VAE 推导之前，含三个可重跑数学例子。
 </div>
 
 # 0. 先看结论：这个领域真正研究的是什么？
@@ -39,7 +43,8 @@ lang: zh-CN
 
 ## 0.1 建议阅读路线
 
-- 只想理解概念：读第 2–4 节。
+- 只想理解概念：读第 2 节，再读 [第 3A 节](#why-surface)；它区分真实动态和 IV 报价坐标。
+- 想知道传统方法与 VAE 各有什么用：读 [第 3B 节](#classical-methods)，再进入第 4 节的 VAE 推导。
 - 想选研究方向：读第 5–7 节，尤其比较 hard guarantee、soft penalty、repair 和 latent flow。
 - 想动手：读第 8–9 节，并运行配套脚本。
 - 想做论文：读第 10 节；其中“带约束的非线性动态 tensor factor model”与你之前考虑的方向直接相连。
@@ -104,7 +109,7 @@ $$
 \end{aligned}
 $$
 
-所以，只要市场价格位于无套利价格界内，$C(K,\tau;\sigma)$ 随 $\sigma$ 严格递增，数值求根就有唯一解。
+所以，只要市场价格严格位于对应无套利价格上下界之间，$C(K,\tau;\sigma)$ 随 $\sigma$ 严格递增，数值求根就有唯一解。
 
 <figure>
 <img src="reproduction/black_price_and_vega.png" alt="Black price and vega as functions of volatility">
@@ -229,10 +234,10 @@ $$
 s_{i+1}\ge s_i.
 $$
 
-前者检查 vertical spread，后者检查 convexity/butterfly。对 calendar spread，应比较同一 strike、相同现金流口径下的 undiscounted call value；后到期不应更便宜。
+前者检查 vertical spread，后者检查 convexity/butterfly。对 calendar spread，在零利率、零分红的示例中，同一 strike 的 call price 随到期不应下降。一般 carry 情况必须先确认下述归一化条件，不能对所有原始 call quotes 直接加 maturity 单调约束。
 
 <div class="callout warning">
-<strong>坐标陷阱：</strong>固定 $k=\log(K/F)$ 不总等于固定 strike，因为 forward 会随期限变化。许多机器学习论文在统一 forward-normalized grid 上检查 calendar 条件，这是一个实用离散代理，但不能不加说明地等同于所有实际合约上的严格 calendar no-arbitrage。
+<strong>坐标与 carry：</strong>在确定性利率、连续比例分红和适当 martingale 条件下，$S_T/F(T)$ 是归一化 martingale。归一化价格 $C(K,T)/(D(T)F(T))$ 在固定 $k=\log(K/F(T))$ 上随到期不减；通过 Black 映射，这对应 $w(k,T)$ 不减。因此这里不是一概仅为“代理条件”。但有限网格检测仍只覆盖取样点，随机利率、离散分红与其他合约口径需要单独处理。详见 <a href="https://arxiv.org/html/1204.0646">Gatheral–Jacquier 第 2.1 节</a>。
 </div>
 
 ## 3.3 为什么有 bid–ask 和交易成本，仍然要求 surface admissible？
@@ -292,6 +297,571 @@ $$
 6. **拟合与约束**：SVI/SSVI、constrained spline、neural operator、VAE decoder 等；
 7. **独立检查**：不要只复用训练 loss，另行检查 price bounds、calendar、vertical、butterfly，以及网格之间的密集插值点；
 8. **记录误差单位**：price、IV decimal、volatility point、volatility basis point 不能混用。
+
+# 3A. 为什么要有 vol surface？为什么不是直接修模型？ {#why-surface}
+
+<div class="callout success">
+<strong>先回答你的质疑：</strong>如果把不同 strike 的 implied volatility 当成同一个 underlying 的不同“真实常数波动率”，那么确实没有一个统一的 Black–Scholes 模型支持这件事。正确的解释是：<strong>放弃常数波动率模型对全部期权的联合定价假设，保留 Black 公式作为价格与 IV 之间的可逆换算。</strong>修模型与构建 surface 并不是二选一；前者解释动态，后者整理需要被解释的报价。
+</div>
+
+本节先固定今天为 0；$T$ 表示到期，等于前文的剩余期限 $\tau$。为把注意力放在逻辑上，推导例子暂设利率和分红为零，因此 $F=S_0$、discount factor 为 1；涉及实际 carry 时再恢复前文的 forward 形式。
+
+## 3A.1 Black–Scholes 的数学推导没有允许你偷偷更换 underlying
+
+常数波动率模型在风险中性测度下假设
+
+$$
+dS_t=rS_t\,dt+\sigma_0 S_t\,dW_t.
+$$
+
+同一个 underlying 只有一个 $\sigma_0$。利用 Itô 公式对 $\log S_t$ 展开并积分：
+
+$$
+\log S_T=\log S_0+(r-\tfrac12\sigma_0^2)T+\sigma_0W_T.
+$$
+
+给定今天的信息，$S_T$ 因而服从一个确定的 lognormal distribution。每个 strike 的 call 都对**这同一个分布**取期望：
+
+$$
+C(K,T)=e^{-rT}\mathbb E^Q[(S_T-K)^+]
+=C_{\mathrm{BS}}(S_0,K,T;\sigma_0).
+$$
+
+所以在该模型内部，反解任何 strike、任何 maturity 的 implied volatility，都应得到同一个 $\sigma_0$。市场存在 smile，表明这个联合分布假设不能同时解释所有价格，<strong>不是 Black–Scholes 的代数推导突然允许了多个不同的 $\sigma_0$</strong>。Derman–Kani 的原始论文正是从这一矛盾出发，扩展 underlying dynamics。[原始讨论：Derman–Kani (1994)](https://emanuelderman.com/the-volatility-smile-and-its-implied-tree/)
+
+### 只让波动率随日历时间变化，够不够？
+
+把常数改成已知的确定性函数 $a(t)$：
+
+$$
+\frac{dS_t}{S_t}=r\,dt+a(t)\,dW_t.
+$$
+
+此时
+
+$$
+\log(S_T/S_0)=rT-\frac12\int_0^T a(u)^2du
++\int_0^T a(u)dW_u.
+$$
+
+最后一个积分仍是 Gaussian，方差是 $\int_0^T a(u)^2du$。所以所有同一到期的 call 仍由同一个 lognormal law 定价，其 Black-equivalent volatility 为
+
+$$
+\sigma_{\mathrm{imp}}(K,T)
+=\sqrt{\frac1T\int_0^T a(u)^2du}.
+$$
+
+它可以随 $T$ 变，但不随 $K$ 变。<strong>确定性时间变动能解释 term structure，不能单独解释同一期限的 smile。</strong>要产生 strike dependence，需要改变终值分布形状，例如状态依赖的 diffusion、随机波动率或跳跃；不是简单地“换成明天另一个常数”。
+
+## 3A.2 必须区分：模型、换算公式、统计曲面
+
+| 对象 | 它在回答什么？ | 它有没有指定标的资产如何演化？ |
+|---|---|---|
+| Black–Scholes 模型 | 在 GBM 假设下，这些期权应该值多少？ | 有 |
+| Black/BS 换算公式 | 给定一个价格，相当于公式中的哪个 IV 数字？ | 反解时没有增加新的动态假设 |
+| 今天的 implied-vol surface | 不同合约今天的价格如何组织成一个连续查询对象？ | 没有完整指定 |
+| Heston / local-vol / LSV 模型 | 什么动态过程能解释这些价格，并用于路径定价与对冲？ | 有，但还需校准和适用条件 |
+| 跨日 surface 统计模型 | 历史曲面怎样共动、缺失区域怎样推断、未来报价如何变化？ | 不一定能推出一致的风险中性 underlying dynamics |
+
+把 Black 公式在 $\sigma$ 方向看成一个严格递增函数。对满足价格上下界内部条件的市场价格，定义
+
+$$
+\sigma_{\mathrm{imp}}(K,T)
+=\operatorname{BlackInverse}\bigl(C_{\mathrm{mkt}}(K,T);F,K,T,D\bigr).
+$$
+
+于是
+
+$$
+C_{\mathrm{mkt}}(K,T)
+=C_{\mathrm{Black}}\bigl(F,K,T,D;\sigma_{\mathrm{imp}}(K,T)\bigr)
+$$
+
+此时是一个**定义导致的等式**，不是“常数波动率模型预测市场成功”的检验结果。对每个数据点反解参数，总能在该点拟合；模型价值应由跨合约约束、未观测价格、动态或对冲来检验。Dupire 在原始文章开头也明确区分了模型给出的价格与由市场价格反推出的 IV。[Dupire 原文重刊](https://www.risk.net/derivatives/equity-derivatives/1500211/pricing-with-a-smile)
+
+可以类比债券的 yield：两只不同现金流的债券有不同 yield，并不意味着对每只债券指定一个不同的真实短利率过程。Yield 是价格的等价报价坐标；term-structure dynamics 是另一个模型问题。这个类比只用于区分角色，不表示 yield curve 与 IV surface 具有相同的无套利约束。
+
+<div class="callout warning">
+<strong>这不是说“surface 没有模型假设”。</strong>单个价格换成 IV 的动作很弱；但把稀疏报价补成整张 surface 时，你必须加入插值、平滑、形状或历史先验。缺失区域的价格不由换算公式凭空决定。真正的建模发生在这里。
+</div>
+
+## 3A.3 一个可计算反例：同一个分布，却有不同 IV
+
+不妨设今天 forward 为 100，到期一年。终值分布是两个具有同样均值 100 的 lognormal 分布的混合：
+
+$$
+S_T\mid B=1\sim100\exp(-0.1^2/2+0.1Z),
+\qquad
+S_T\mid B=2\sim100\exp(-0.4^2/2+0.4Z),
+$$
+
+其中 $\mathbb P^Q(B=1)=\mathbb P^Q(B=2)=1/2$，$Z$ 为标准正态，独立于 $B$。这里 $B$ 只是定义这个教学用终值分布；我们没有声称它已经唯一确定连续时间动态。
+
+先算均值：
+
+$$
+\mathbb E^Q[S_T]
+=\tfrac12\,100+\tfrac12\,100=100.
+$$
+
+再按条件期望定价：
+
+$$
+\begin{aligned}
+C(K,T)
+&=\mathbb E^Q\!\left[\mathbb E^Q[(S_T-K)^+\mid B]\right]\\
+&=\tfrac12 C_{\mathrm{BS}}(K,T;10\%)
++\tfrac12 C_{\mathrm{BS}}(K,T;40\%).
+\end{aligned}
+$$
+
+<strong>对所有 strikes，我们用的始终是这同一个混合分布。</strong>因为它给出非负概率、正确均值及 payoff expectation，同一期限的价格天然满足单调性与凸性。但反解 Black IV 后得到：
+
+| Strike | 统一混合分布给出的 call price | 等价 Black IV |
+|---|---:|---:|
+| 80 | 23.215549 | 28.7951% |
+| 100 | 9.919852 | 24.9298% |
+| 120 | 4.667713 | 27.8192% |
+| 140 | 2.613010 | 31.1646% |
+
+<figure>
+<img src="classical_examples/mixture_smile.png" alt="One mixture distribution gives a non-flat implied-volatility smile">
+<figcaption>新增图 A：本次实际计算的教学例子，非市场数据。同一个非 lognormal 终值分布映射到 Black 坐标后出现 smile；不是不同 strikes 对应不同标的资产。</figcaption>
+</figure>
+
+为什么 IV 不是简单的 25%？因为 call price 对波动率不是线性函数，因此“先算两种情景的价格再平均”不等于“先平均 volatility 再定价”。它也不是 $\sqrt{(0.1^2+0.4^2)/2}=29.1548\%$。不同 strike 的 payoff 对分布不同区域敏感，匹配一个 lognormal family 时需要不同的等价参数。
+
+这已经回答了最根本的逻辑问题：<strong>一个合理的统一模型完全可以产生非平坦的 implied-vol surface；矛盾的只是“一个统一的常数波动率 GBM”与非平坦 surface 同时为真。</strong>
+
+## 3A.4 那为什么不直接换成正确模型？其实一直在换
+
+一种工作流是先选择 Heston 等动态，再从它计算所有期权价格，最后需要报价时再反解 IV。另一种是先把市场报价整理成静态 surface，再把它作为动态模型校准目标。还可以直接对原始 bid/ask 校准动态模型，并把模型输出作为 surface。<strong>并不存在“必须先建一张非参数曲面”的定理。</strong>
+
+Heston 在风险中性测度下的基本结构是
+
+$$
+\begin{aligned}
+dS_t&=(r-q)S_tdt+\sqrt{v_t}\,S_t\,dW_t^S,\\
+dv_t&=\kappa(\bar v-v_t)dt+\xi\sqrt{v_t}\,dW_t^v,\\
+d\langle W^S,W^v\rangle_t&=\rho\,dt.
+\end{aligned}
+$$
+
+本小节的 $v_t$ 是瞬时方差，$\bar v$ 是长期方差水平，$\kappa$ 是回复速度，$\xi$ 是方差的波动强度，$\rho$ 是两个 Brownian shocks 的相关系数。它们不是五个新的 surface 坐标，而是同一个动态模型的一组参数。相关性和随机方差允许非 lognormal 终值分布。[Heston (1993)](https://doi.org/10.1093/rfs/6.2.327)
+
+取同一组参数，对每个 $(K,T)$ 计算
+
+$$
+C_{\mathrm{Heston}}(K,T)
+=D(T)\mathbb E^Q[(S_T-K)^+],
+$$
+
+再反解，就得到它的 model-implied surface。<strong>修模型并不会让 surface 消失，而是让 surface 有了一个生成机制。</strong>
+
+为何不只保留 Heston 参数？因为一个低维模型族一般只能产生全部可能报价曲面中的一部分。市场报价噪声、模型误设、跨期限形状与局部供需都会造成 residual。实务设计可选择接受误差，扩展动态模型，或者加一层市场校正；但任何校正都要重新检查约束和对冲的一致性，不能仅因为 vanilla 拟合更好就宣称模型更正确。
+
+## 3A.5 一张 surface 包含什么？又缺什么？
+
+在零利率、零分红、足够光滑且覆盖全部 strikes 的理想情况下，固定 $T$：
+
+$$
+C(K,T)=\int_K^\infty(s-K)f_T(s)ds.
+$$
+
+逐次对 $K$ 求导，积分下限项因 $(K-K)=0$ 消失：
+
+$$
+C_K(K,T)=-\int_K^\infty f_T(s)ds,
+\qquad
+C_{KK}(K,T)=f_T(K).
+$$
+
+所以一整条 call-price curve 确定该到期的风险中性边际分布；跨全部 $T$ 的 surface 确定一族边际分布。对足够光滑的终值 payoff，还可展开
+
+$$
+h(S_T)=h(0)+h'(0)S_T+\int_0^\infty h''(K)(S_T-K)^+dK.
+$$
+
+取期望就能用 cash、underlying 和一条 call strip 定价这类终值 payoff。这说明 surface 不是无用的画图对象：它组织了相当丰富的终值定价信息。
+
+但是边际分布不是联合分布。它不能单独告诉你
+
+$$
+\mathcal L^Q(S_{T_2}\mid S_{T_1}),
+$$
+
+所以通常不能唯一决定 barrier、Asian、forward-start 等路径相关产品。连续时间中，marginal-mimicking / Markovian-projection 结果展示了具有相同单时点分布、却有不同动态结构的过程。[Atlan (2006)](https://arxiv.org/abs/math/0604316)；[Lacker–Shkolnikov–Zhang (2019)](https://arxiv.org/abs/1905.06213)
+
+### 一个不用随机微积分的两期反例
+
+取 $S_0=3$，第一期 $S_1\in\{2.5,3.5\}$，各概率 $1/2$；第二期 $S_2\in\{1,3,5\}$。下面每行是“给定第一期状态，第二期三个状态的条件概率”：
+
+| 模型 | 给定 $S_1$ | 到 1 的概率 | 到 3 的概率 | 到 5 的概率 |
+|---|---:|---:|---:|---:|
+| A | 2.5 | 1/4 | 3/4 | 0 |
+| A | 3.5 | 1/4 | 1/4 | 1/2 |
+| B | 2.5 | 1/2 | 1/4 | 1/4 |
+| B | 3.5 | 0 | 3/4 | 1/4 |
+
+逐行计算可得，两模型均满足 $\mathbb E^Q[S_2\mid S_1]=S_1$；再对两行平均，两模型的第二期边际均为 $(1/4,1/2,1/4)$。所以它们都是这两个交易日期上的 martingale models，并对两个到期、所有 strike 的 European calls 给出相同价格。
+
+但 payoff 为 $\mathbf 1\{S_1<3,\ S_2>4\}$ 的路径数字期权，在 A 下值 0，在 B 下值 $\tfrac12\times\tfrac14=1/8$。<strong>相同 vanilla surfaces，并不意味着相同 path-dependent prices。</strong>本例只涉及两个到期，不冒充对所有连续期限的构造。
+
+## 3A.6 Local volatility：surface 和“修模型”如何接上？
+
+考虑零利率、零分红的 local-vol model：
+
+$$
+dS_t=a(t,S_t)S_t\,dW_t.
+$$
+
+这里 $a(t,s)$ 是“到了时间 $t$、资产价格为 $s$ 时，瞬时扩散有多大”，与“今天给 strike $K$、到期 $T$ 的合约反解到的 $\sigma_{\mathrm{imp}}(K,T)$”不是同一件东西。
+
+在密度、导数、边界衰减与 martingale 性等正则条件下，Dupire 关系为
+
+$$
+a(T,K)^2=\frac{2C_T(K,T)}{K^2C_{KK}(K,T)}.
+$$
+
+它提供了从静态 vanilla prices 到一个匹配边际分布的动态模型的桥梁。[Dupire (1994，重刊)](https://www.risk.net/derivatives/equity-derivatives/1500211/pricing-with-a-smile)
+
+<details>
+<summary>逐步推导：不用把 Dupire 当成需要背诵的公式</summary>
+
+从一个光滑测试函数 $h$ 出发，用 Itô 公式并取期望，随机积分的期望为零：
+
+$$
+\frac{d}{dt}\mathbb E[h(S_t)]
+=\frac12\mathbb E[a(t,S_t)^2S_t^2h''(S_t)].
+$$
+
+若 $S_t$ 的密度为 $f(t,s)$，等式两边写成积分并对右边做两次分部积分，在边界项消失时得到
+
+$$
+\partial_t f(t,s)
+=\tfrac12\partial_{ss}\!\left[a(t,s)^2s^2f(t,s)\right].
+$$
+
+在固定到期 $T$，临时把括号里的函数记为 $A(s)$。于是
+
+$$
+\begin{aligned}
+C_T(K,T)
+&=\frac12\int_K^\infty(s-K)A''(s)ds\\
+&=\frac12\left([(s-K)A'(s)]_K^\infty-\int_K^\infty A'(s)ds\right)\\
+&=\frac12 A(K)
+=\frac12 a(T,K)^2K^2f(T,K).
+\end{aligned}
+$$
+
+由前面已经推导的 $C_{KK}(K,T)=f(T,K)$，只要分母非零即可移项得到 Dupire。这里的 $T$ 导数是<strong>今天观察的价格曲面沿到期轴的导数</strong>，不是预测明天市场报价如何移动。
+
+当利率 $r(T)$ 与连续分红率 $q(T)$ 是确定性函数，未归一化的 call price 对应
+
+$$
+a(T,K)^2=
+\frac{2\left[C_T+(r-q)KC_K+qC\right]}{K^2C_{KK}}.
+$$
+
+随机利率、离散分红或 American exercise 不能无条件套这个简式。
+</details>
+
+<strong>即使能拟合今天的全部 vanilla prices，也不能据此验证 local-vol dynamics 就是实际动态。</strong>密度的数值二阶导还容易放大报价噪声；而 surface 随 spot 变化的方式会影响 hedge。SABR 原始工作正是强调“拟合当前 smile”与“产生合适的 smile dynamics / hedge”之间的差别。[Hagan et al., Managing Smile Risk](https://www.wilmott.com/managing-smile-risk/)
+
+## 3A.7 把 surface 塞回 BS，为什么不能直接照搬 delta？
+
+假设为讨论一个确定的 spot shock 规则，写
+
+$$
+C(S)=C_{\mathrm{BS}}(S,K,T;\sigma_{\mathrm{imp}}(S,K,T)).
+$$
+
+链式法则给出
+
+$$
+\frac{dC}{dS}
+=\Delta_{\mathrm{BS}}+\mathrm{Vega}_{\mathrm{BS}}
+\frac{\partial\sigma_{\mathrm{imp}}}{\partial S}.
+$$
+
+BS delta 是保持输入 volatility 不动的偏导；市场 delta 还依赖你假定 smile 在 spot 变化时如何响应。比如零 carry、固定 $K,T$ 下：
+
+- **Sticky strike**：保持各固定 strike 的 IV 不动，第二项为零。
+- **保持 log-moneyness 曲线形状不变**：若 $\sigma_{\mathrm{imp}}(S,K,T)=s(\log(K/S),T)$，则 $\partial_S\sigma_{\mathrm{imp}}=-s_k/S$。
+
+这是两种不同的情景约定，不是由今天的 surface 唯一推出来的动态真相。“保持 log-moneyness”也不等于不加说明地说“sticky delta”，因为 delta 还依赖 volatility 和具体市场 quote convention。
+
+真实随机波动率还可能存在不能由 spot alone hedge 的独立 shock；完整 Itô 展开会出现 vega、vanna、volga 等项。所以上式只说明<strong>为何必须补充动态规则</strong>，不是声称用一项 chain-rule correction 就能实现完美对冲。
+
+## 3A.8 为什么工程上常把 surface 单独保留？
+
+这是一个设计判断，不是“所有机构都必须如此”的行业定律：<strong>让共同的报价表示与下游动态模型分离，可以减少把单一模型偏差写进整个系统的风险。</strong>
+
+一张经清洗、注明 bid/ask 与插值可靠度的 surface，既可服务 vanilla quoting，也可用于比较不同模型的校准 residual、组织风险敞口、生成统计特征。换一个 exotic pricer，不必重新定义市场报价语言。反过来，如果任务只涉及少量合约，一个合适的动态模型已足够，就完全可以直接校准它，不额外建设复杂 surface-learning 系统。
+
+**到这里应记住：surface 回答“市场在给各类 payoff 什么价格”；动态模型回答“什么路径机制与这些价格兼容”。从报价反解 IV 不修复 BS 模型；选择 local-vol、Heston 或更丰富动态才是在修模型。**
+
+# 3B. 经典方法怎么做？为什么要 VAE，收益到底在哪里？ {#classical-methods}
+
+<div class="callout">
+<strong>先给一个不替 VAE 辩护的结论：</strong>如果任务只是把今天已经比较密集、干净的 vanilla quotes 插成平滑曲面，没有理由默认从 VAE 开始。经典方法提供更小、更透明的建模问题；VAE 需要证明的，是<strong>历史统计结构在稀疏补全、非线性表示或条件分布上带来的样本外增量</strong>，而不是“也能画出一张曲面”。
+</div>
+
+## 3B.1 经典方法不是一个 baseline：先分三条路线
+
+| 路线 | 主要输入 | 输出 | 代表方法 |
+|---|---|---|---|
+| 当日横截面构造 | 今天不同 strike / maturity 的 quotes | 连续可查询的 price / IV surface | 分段插值、受约束 spline、SVI/SSVI |
+| 动态模型校准 | 今天 quotes，外加动态假设与参数约束 | 一个风险中性的 underlying path model | local vol、Heston、SABR、LSV / jumps |
+| 历史统计建模 | 多天或多资产的 surface panels | factors、补全器、预测分布或情景分布 | PCA / functional PCA、因子状态空间、GP、参数时间序列 |
+
+它们可以组成同一条 pipeline：先清洗价格、拟合 SSVI，再对 SSVI 参数或其 residual 做时间序列，必要时校准动态模型。VAE 通常是第三条路线的非线性替代或增强，也可以替代第一条中的补全映射；它并不自动完成第二条。
+
+## 3B.2 从零开始：报价 → 价格一致性 → 网格 → 插值
+
+假设今天拿到一组 $(K_i,T_i,C_i)$，其中 $C_i$ 为 mid，同时保留 bid/ask。一个完整的经典流程首先不是“fit 神经网络”，而是确认：合约是 European 还是 American、carry 与 forward 是否一致、put/call 是否可用 parity 归一、不同报价是否同步、IV inversion 是否接近边界。
+
+再决定拟合空间。若用每个点的 IV，其 raw error 容易夸大低 vega 区域的价格噪声。由一阶 Taylor 展开，
+
+$$
+\Delta C_i\approx\mathrm{Vega}_i\,\Delta\sigma_i.
+$$
+
+因此 price MSE 近似对应 $\sum_i\mathrm{Vega}_i^2(\Delta\sigma_i)^2$，而等权 IV MSE 近似对应以 $1/\mathrm{Vega}_i^2$ 加权的 price errors。没有哪种永远正确：你应先决定模型到底在优化报价误差、波动率状态误差还是交易风险。Bid/ask-normalized price error 通常是值得同时报告的另一把尺子。
+
+### 最简单的 maturity interpolation
+
+在相同 log-forward-moneyness $k$，两个期限 $T_1<T_2$ 已有 total variance。对中间 $T$ 取
+
+$$
+u=\frac{T-T_1}{T_2-T_1},
+\qquad
+w(k,T)=(1-u)w(k,T_1)+u\,w(k,T_2),
+$$
+
+然后令 $\sigma(k,T)=\sqrt{w(k,T)/T}$。例如 3 个月 IV 为 30%、一年 IV 为 20%，则两端 total variance 为 0.0225 与 0.04。6 个月取 $u=1/3$，得到
+
+$$
+w(k,0.5)=0.0283333,
+\qquad
+\sigma(k,0.5)=23.8048\%.
+$$
+
+直接线性插 IV 会给出 26.6667%，是另一个插值模型。选择 total variance 是为了与累计不确定性、价格和 calendar 结构更好对齐，不代表它在所有情形都统计最优。
+
+<strong>只插 total variance 不能自动保证 butterfly 无套利。</strong>即使各固定 $k$ 上 $w$ 随期限递增，跨 strike 的曲率仍需检查。并且 $w(k,T)$ 的 calendar 单调关系需要相应的 deterministic carry / proportional-dividend 设定与正确归一化；不应机械地要求有离散分红的未归一化 call price 对到期单调。相关标准条件见 [Gatheral–Jacquier](https://arxiv.org/html/1204.0646)。
+
+## 3B.3 在 price space 直接构造：受约束最小二乘与 spline
+
+这是回答“为什么非得搞 IV surface”的另一个关键：<strong>完全可以先拟合 price surface，最后有需要再转成 IV。</strong>Fengler 的工作就是从受形状约束的 smoothing splines 出发处理曲面；经典方法并不等于任意 cubic interpolation。[作者机构版本](https://edoc.hu-berlin.de/items/0abf3928-5a9f-4788-b094-ae39f3089a78)
+
+先只看一个到期、$r=q=0$。在固定 strikes 上，把待估 call prices 记为 $c_i$；令 $b_i$ 为报价 half-spread，$s_i=(c_{i+1}-c_i)/(K_{i+1}-K_i)$。一个透明的离散优化是
+
+$$
+\min_{c_1,\ldots,c_n}
+\frac12\sum_{i\in O}\left(\frac{c_i-C_i^{\mathrm{mid}}}{b_i}\right)^2
++\lambda\sum_i(s_{i+1}-s_i)^2,
+$$
+
+满足
+
+$$
+(S_0-K_i)^+\le c_i\le S_0,
+\qquad -1\le s_i\le0,
+\qquad s_{i+1}\ge s_i.
+$$
+
+其中 $O$ 是今天真正有报价的 indices，$b_i$ 要有数值下限防止除零，$\lambda$ 控制平滑程度。若 bid/ask 区间可行，还可以加
+
+$$
+C_i^{\mathrm{bid}}\le c_i\le C_i^{\mathrm{ask}},\quad i\in O.
+$$
+
+目标是二次函数，约束是线性的，所以这是一个 convex quadratic program。它不是某篇 spline 论文的逐行复刻，而是把同样的“拟合 + 形状约束”思想压成最容易理解的有限维版本。
+
+求得节点后，分段线性 price interpolation 在 strike 区间内保持递减与凸性；但它的 density 可能有离散质量，未必足够光滑用于 Dupire。真正需要二阶导时，可改用带相应形状约束的 spline，并处理边界与 tails。<strong>光滑程度与无套利是两项不同设计目标。</strong>
+
+### 一个实际运行的修复例子
+
+配套脚本使用第 3A 节的混合分布作为隐藏真值。在七个 strikes 上造一组报价，故意把 ATM midpoint 抬高 2 个价格单位，并给该点较宽的 bid/ask。其他点的 half-spread 为 0.08，ATM 为 2.10，保证至少真值落在全部报价区间内。以 $\lambda=0$ 解上面的 quadratic objective。
+
+结果：midpoints 的最小相邻 slope 增量为 **−0.165183**，存在离散 convexity violation；投影后的最小增量为约 **−2.2×10⁻¹⁶**，即浮点误差范围内的零，全部 fitted prices 同时位于 bid/ask 区间内。
+
+<figure>
+<img src="classical_examples/price_projection.png" alt="Bid-ask-aware convex price projection">
+<figcaption>新增图 B：受约束 price projection，不需要历史训练集或 VAE。合成真值仅用于展示，优化目标不使用真值。检查只针对该到期和指定 strikes，并非全连续域证书。</figcaption>
+</figure>
+
+这也回应了交易摩擦的疑问：我们没有要求 raw midpoints 绝对一致，而是在它们的报价区间内找一个可供定价系统使用的一致 shadow surface。如果区间本身不可行，应报告 infeasibility、检查 stale quotes，或加入有记录的 slack；不能悄悄改掉原始 quotes 后宣称市场不存在问题。
+
+## 3B.4 SVI / SSVI：把一张自由曲面压成少数形状参数
+
+对某个固定到期，raw SVI 写成
+
+$$
+w(k)=a+b\left[\rho(k-c)+\sqrt{(k-c)^2+h^2}\right].
+$$
+
+本小节暂用 $c$ 表示中心位移、$h>0$ 表示中心平滑尺度，避免与全文 mask $m$、implied volatility $\sigma$ 混淆。$a$ 控制水平，$b$ 控制翼部斜率尺度，$\rho$ 控制左右不对称。
+
+关键导数可直接算出：
+
+$$
+w'(k)=b\left[\rho+\frac{k-c}{\sqrt{(k-c)^2+h^2}}\right],
+\qquad
+w''(k)=\frac{bh^2}{((k-c)^2+h^2)^{3/2}}.
+$$
+
+所以 $b\ge0$ 时 total variance 是凸的，左右翼渐近斜率分别为 $b(\rho-1)$ 和 $b(\rho+1)$。但这不是 call-price convexity；只保证 $w''\ge0$ 仍可能产生 butterfly arbitrage。基本的 $w\ge0$ 条件也不够，必须检查第 3.4 节的 $g(k)$、tails 和跨期限一致性。[SVI/SSVI 原文](https://arxiv.org/html/1204.0646)
+
+一个明确的校准流程是：先把当日 quotes 转成 $w_i=T\sigma_i^2$；用多初值 weighted least squares 拟合五个参数；沿较密 strike 网格检查价格约束；跨期限联合约束或校正；最后做经验证的插值与外推。SSVI 进一步用 $\theta(T)$ 和共享形状函数连接期限，并允许使用足够的参数条件控制静态套利。
+
+它的核心收益是**低参数量、可解释、直接利用当日报价，不需要数年历史数据**。代价是形状族可能限制拟合；极稀疏时参数可能不识别；逐期限独立拟合后再随意插参数，也可能破坏整体约束。历史参数平滑、hierarchical pooling 和 regime models 都能作为经典增强，不属于 VAE 独有能力。
+
+## 3B.5 Heston、SABR、local vol：不是另一种随意插值
+
+第 3A 节已经展示 Heston 的动态。经典 calibration 是在允许的参数范围内求
+
+$$
+\min_{\text{parameters}}
+\sum_{i\in O}
+\left(\frac{C_{\mathrm{model}}(K_i,T_i)-C_i^{\mathrm{mid}}}{b_i}\right)^2,
+$$
+
+也可以使用 bid/ask interval loss，让区间内部的模型价不再因偏离 midpoint 而受罚。对受支持合约，模型输出同时提供价格、模拟路径和风险敏感度；但少量参数未必能精确匹配整个市场面板。
+
+SABR 则以某一到期对应的 forward 为对象，在相应 forward measure 下写
+
+$$
+dF_t=\alpha_t F_t^\beta dW_t,
+\qquad d\alpha_t=\nu\alpha_t dZ_t,
+\qquad d\langle W,Z\rangle_t=\rho dt.
+$$
+
+这里的 $\beta$ 是 forward 的弹性参数，<strong>不是 VAE 的 KL 权重</strong>。常用的一种校准安排是固定 $\beta$，用 ATM 与 smile quotes 拟合 $\alpha_0,\rho,\nu$，再用模型价格或近似 IV 公式查询。SABR 的原始动机包括 smile dynamics 与 hedge，而不只是减少横截面 RMSE。[Hagan et al.](https://www.wilmott.com/managing-smile-risk/)
+
+要分别注意三个边界。第一，SABR 的近似 Black-IV 公式不是精确 transition law，其误差可能在 wings 或长端造成不合适的价格形状。第二，每个 expiry 独立拟合一组 SABR 参数，不自动构成一个跨所有 expiries、tenors 的统一动态模型。第三，rates 的 normal、shifted-lognormal 与 Black conventions 必须分清，不能把 equity 的 positive-forward 假设无条件搬过来。
+
+Local vol 通过 surface derivatives 恢复扩散系数；LSV 把状态依赖项与随机方差结合，试图兼顾 vanilla marginal calibration 和 richer dynamics。它们说明：<strong>市场已经有大量“修模型”的路线，VAE 不是因为传统金融从未修过 BS 才出现的。</strong>[Local-stochastic volatility 的校准与投影关系](https://arxiv.org/abs/1905.06213)
+
+## 3B.6 PCA / 因子模型：经典方法也能学习历史和生成曲面
+
+把每天曲面展平为 $x_t$，经典线性因子模型写成
+
+$$
+x_t=\bar x+Bf_t+\epsilon_t.
+$$
+
+$B$ 是共享 loading，$f_t$ 是当天少量 factors。PCA 从训练期求 $B$；今天只见到坐标 $O$ 时，可以求
+
+$$
+\widehat f_t=(B_O^\top B_O+\lambda I)^{-1}B_O^\top(x_{t,O}-\bar x_O),
+$$
+
+然后恢复未报价位置。这就是第 8 节保留的强 PCA baseline。
+
+给 factors 加 VAR / state-space dynamics，就能预测；给它们指定 Gaussian mixture 或经验重采样，就能生成 scenarios；使用 probabilistic PCA、Kalman filter 或 Gaussian process，则能提供 conditional uncertainty。比如联合 Gaussian 曲面分成已知与缺失坐标，条件均值就是
+
+$$
+\mathbb E[x_M\mid x_O]
+=\mu_M+\Sigma_{MO}\Sigma_{OO}^{-1}(x_O-\mu_O),
+$$
+
+条件方差为
+
+$$
+\operatorname{Var}(x_M\mid x_O)
+=\Sigma_{MM}-\Sigma_{MO}\Sigma_{OO}^{-1}\Sigma_{OM}.
+$$
+
+这些是 Gaussian conditioning 的直接结果；协方差仍须从训练期估计并 regularize。它说明<strong>“能生成”“能补全”“能给 uncertainty”都不是 VAE 独占的卖点</strong>。真正要比较的是分布假设、非线性程度、计算代价与样本外效果。
+
+## 3B.7 VAE 增加了什么，而不是替代了什么？
+
+线性因子映射是 $x\approx\bar x+Bf$，VAE 则换成 nonlinear decoder $x\approx D(z)$，并训练一个给定观测后的概率 encoder。这里可能有四类收益，但每一类都需要证据。
+
+**第一，跨曲面借信息。** 当今天整条 tenor 没有报价，单日 spline 的信息主要来自邻近期限与平滑假设；历史模型还可以使用以往相似 level/skew regimes 下的联合形状。这是 learned prior 的收益，但 PCA、GP 或参数层的 hierarchical model 也能借历史信息。不能给 VAE 全部历史、却给 classic baseline 只有今天几个点，再把优势全部归功于 neural architecture。
+
+**第二，表达弯曲或多模态的低维结构。** 若 level 升高时 skew、curvature 和 term structure 的关系随 regime 改变，一个固定 loading matrix 可能不够。Nonlinear decoder 有机会用更少 factors 描述这种变化。代价是更多参数、潜变量不识别与 extrapolation 风险；在近似线性的低噪声数据中，PCA 可能更准。
+
+**第三，降低重复条件推断成本。** Masked encoder 把“每来一张曲面就解一次 latent optimization”摊到训练阶段，部署时做一次 forward pass。但原始 VAE completion 若仍逐张优化 latent code，就没有获得这部分 amortized speedup。SVI 的小规模 warm-start fit 本来就可能很快；速度必须实际测。
+
+**第四，学习非 Gaussian 的条件分布。** 当缺失区域确实存在多种合理形状，单个均值不够，可以采样多张 completion surfaces。不过 VAE 的 posterior variance 不自动等于可信的市场 uncertainty，更不自动包含参数不确定性；要检验 coverage、proper scores 和 rare regimes。
+
+Gopal 的论文直接展示了这一领域的 baseline 问题：更强的 Heston-with-jumps baseline 能胜过早期 VAE，随后 residual / uncertainty architecture 改进才带来显著提升。它支持“认真比较、分解增益”，不支持“VAE 一定比金融模型好”。[Gopal (2024)](https://arxiv.org/html/2411.05998v1)
+
+## 3B.8 在本报告里，VAE 的收益其实证明到哪一步？
+
+本次原有 SSVI 实验在随机隐藏 50% 时，hidden-cell RMSE 为：PCA-8 **0.200 vol points**，MLP-VAE **3.031**，ConvVAE **1.982**。这些数字来自冻结的 `reproduction/results.json`，详见第 8 节。
+
+因此应该说：<strong>在已测试的 VAE 中，二维卷积比 MLP 有优势；但 VAE 本身没有胜过 PCA。</strong>前者是网络 inductive bias 的证据，不是 variational inference 或 KL regularization 的独立贡献。数据是低噪声、四因子的 SSVI family，因此这不是所有真实市场任务的结论，但必须保留为明确的负面对照。
+
+本实验没有比较以下对照，因此不能宣称已证明相应收益：同结构 deterministic AE；$\beta=0$ 或其他 KL 权重；历史正则化 SSVI；GP conditional completion；真正的 bid/ask pricing 与 hedging P&amp;L；真实市场 future-surface prediction。
+
+要回答“为什么是 VAE，而不是 AE”，至少在匹配 encoder/decoder 容量的条件下，比较 deterministic AE、带 decoder regularization 的 AE、VAE，以及采用经验 latent distribution 的 AE。VAE 的 KL 会牺牲一部分 reconstruction 来约束 latent distribution；这是一项 trade-off，不是免费精度提升。
+
+## 3B.9 “收益”怎样落到可测的业务量？
+
+### 统计收益不等于交易 alpha
+
+给某个未报价 option 补出更准的 IV，首先只是减少 fair-value estimation error。其价格影响一阶近似为
+
+$$
+|\Delta C|\approx\mathrm{Vega}\times|\Delta\sigma|.
+$$
+
+再除以 half-spread，才知道误差是报价区间的几倍。低 vega 的 deep-wing IV 改善很多，价格可能只动一点；高 vega 的 ATM IV 小误差可能对应更大资金影响。要声称交易收益，还需要 fill、inventory、hedging、transaction costs 与 adverse selection 的独立评估。论文的 reconstruction RMSE 不能直接换算成收益率。
+
+### 系统收益也需要算训练和维护成本
+
+设每天要处理 $N$ 次更新，经典拟合平均耗时 $t_{\mathrm{fit}}$，VAE inference 平均耗时 $t_{\mathrm{infer}}$，每天摊销的训练、再校准与监控成本为 $T_{\mathrm{maint}}$。粗略的计算节省条件是
+
+$$
+N\bigl(t_{\mathrm{fit}}-t_{\mathrm{infer}}\bigr)>T_{\mathrm{maint}}.
+$$
+
+这只是 decision accounting，不是实测速度结论。若 $N$ 很小、SVI warm start 已经很快，VAE 不一定划算；若 $N$ 很大、需要复杂 probabilistic completion，amortization 才可能更有价值。
+
+### 定价收益、压缩收益、风险收益分别验收
+
+| 你声称的增量 | 应报告什么 | 不能用什么替代 |
+|---|---|---|
+| 未报价点更准 | 严格样本外 masked price/IV MAE，按 vega、期限和 wings 分组 | 训练重建曲线更低 |
+| 更符合报价区间 | bid/ask 内比例、越界幅度、quote reliability 分层 | 只报告平滑度 |
+| 推断更快 | 包括预处理与 repair 的 p50/p99 latency、摊销成本 | GPU 单次 forward 理论 FLOPs |
+| 生成分布更好 | 联合/尾部分布、约束幅度、coverage、stress tests | 只给几张好看的 samples |
+| hedge / risk 更稳 | Greek 稳定性、样本外 hedge error、成本后指标 | 同日 IV RMSE |
+
+## 3B.10 一项重要区别：市场曲面分布不是自动的风险中性路径分布
+
+每天的 option prices 可以由某个风险中性测度 $Q$ 表示；但按历史日期收集到的 surface panels，描述的是现实测度 $P$ 下市场状态如何变化。这是两个不同层次。
+
+所以从历史训练的 VAE 采出一张合理 surface，或用 CVAE 预测明天 surface，<strong>不等于已经定义出一个能定价 exotic 的 $Q$-path model</strong>。即使每个时刻单独通过静态 no-arbitrage checks，整条 option-price process 在合适 numeraire 下仍需满足动态约束。
+
+同样，condition on interest rate 让模型学到相关性，不等于证明一个外生 rate shock 的因果反应。用于 stress/scenario 时，应说明是 conditional historical scenario、人工 shape shock，还是来自结构动态模型的 shock。
+
+## 3B.11 对这个项目，我会怎样选方法？
+
+这是根据任务作出的建模建议，而不是推荐某个方法永远胜出。
+
+| 主要目标 | 我会先做 | VAE 进入比较的条件 |
+|---|---|---|
+| 今天密集 vanilla quotes 的插值 | bid/ask-aware price fit、SVI/SSVI 或受约束 spline | 经典方法留下稳定、可解释且有经济量级的样本外误差 |
+| 整条 tenor / wing 稀疏补全 | pooled SSVI、PCA/因子条件补全、GP | 历史跨区域关系明显非线性，且在相同信息集下胜过这些基线 |
+| 路径依赖期权定价与 hedge | calibrated local vol、stochastic vol、LSV 等合适动态 | VAE 用作辅助表示、参数先验或加速器，不能用静态 decoder 取代路径模型 |
+| 多日 risk scenarios | 因子 dynamics / 参数动态与经验 resampling | 需要复杂联合尾部或多模态，并能通过分布与动态一致性检验 |
+
+<strong>最值得验证的组合不一定是“经典方法 vs VAE”，而可能是“经典结构 + 小型 learned residual”。</strong>先用 SSVI 或受约束价格表示承担大部分形状与约束，再检验 neural residual 是否在相同数据、相同时间切分下增加价值。即使如此，residual 加回后也必须重新检查 admissibility。
+
+## 3B.12 新增示例怎样重跑？
+
+```bash
+python classical_demo.py --output-dir classical_examples
+```
+
+它不训练模型，不调用市场数据，也不修改原有 VAE 实验结果。输出包括混合分布 IV 表、bid/ask 内价格投影表、两期 martingale 的验证结果与两张图。示例只验证本节的数学和实现逻辑，<strong>不是一项新市场 benchmark，也不是对 VAE 交易收益的证明</strong>。
+
+本节新增来源：Fengler 的受约束 smoothing；Gatheral–Jacquier 的 SVI/SSVI；Heston 的 stochastic volatility；Hagan et al. 的 SABR / smile-risk 动机；Gopal 的经典基线与 VAE 改进。链接均已放在相关论断处，新增数值表由随附脚本独立计算。
 
 # 4. 什么是 VAE？从概率模型一步一步推导
 

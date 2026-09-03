@@ -1,0 +1,76 @@
+{
+  "scope": "Deterministic illustrative calculations, not market benchmarks.",
+  "mixture": {
+    "forward": 100,
+    "tau": 1,
+    "component_vols": [
+      0.1,
+      0.4
+    ],
+    "weights": [
+      0.5,
+      0.5
+    ],
+    "atm_iv": 0.2492978730944968,
+    "root_mean_square_vol": 0.29154759474226505
+  },
+  "price_projection": {
+    "solver": "SLSQP",
+    "solver_success": true,
+    "mid_min_convexity_margin": -0.1651831605875731,
+    "projected_min_convexity_margin": -2.220446049250313e-16,
+    "all_inside_bid_ask": true,
+    "continuous_global_arbitrage_certificate": false
+  },
+  "same_marginals_different_paths": {
+    "A": {
+      "transition": [
+        [
+          0.25,
+          0.75,
+          0.0
+        ],
+        [
+          0.25,
+          0.25,
+          0.5
+        ]
+      ],
+      "conditional_mean": [
+        2.5,
+        3.5
+      ],
+      "terminal_probabilities": [
+        0.25,
+        0.5,
+        0.25
+      ],
+      "path_digital_price": 0.0
+    },
+    "B": {
+      "transition": [
+        [
+          0.5,
+          0.25,
+          0.25
+        ],
+        [
+          0.0,
+          0.75,
+          0.25
+        ]
+      ],
+      "conditional_mean": [
+        2.5,
+        3.5
+      ],
+      "terminal_probabilities": [
+        0.25,
+        0.5,
+        0.25
+      ],
+      "path_digital_price": 0.125
+    }
+  },
+  "models_retrained": false
+}

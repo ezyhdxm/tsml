@@ -1,7 +1,15 @@
 {
-  "mathml_equations": 337,
-  "image_occurrences": 12,
+  "mathml_equations": 491,
+  "body_mathml_equations": 488,
+  "image_occurrences": 14,
   "all_images_embedded": true,
   "models_retrained": false,
-  "html_sha256": "0f3143d756b0f93845abc151351bd8279b07d246783b71adeee6a34105aa1452"
+  "revision": "v2-classical-motivation",
+  "teaching_examples_validated": true,
+  "new_sections": [
+    "3A: why surfaces and models",
+    "3B: classical methods and VAE value"
+  ],
+  "mathml_matches_pandoc_ast": true,
+  "html_sha256": "11ecfc168fc5c9d030558037c0a9cf8442ccb26bfb2e63b08986cbe07bce1c6f"
 }
