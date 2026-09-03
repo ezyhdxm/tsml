@@ -65,17 +65,9 @@ def frozen_figures() -> None:
     scope = load_original_functions()
     scope['save_plots'](OUT, truth, hist, results['completion'], results['generation'],
                        np.asarray(results['latent_factor_audit']['correlation_matrix']), sample)
-    # Recover the original synthetic sample from its seed; never fit a network.
-    cfg = scope['Config'](**results['config'])
-    iv, factors = scope['make_data'](cfg)
-    ntr = results['data']['n_train']; nv = results['data']['n_val']; nt = results['data']['n_test']
-    log = np.log(iv[:ntr].reshape(ntr, 42))
-    mean = log.mean(0); std = log.std(0).clip(min=1e-6)
-    np.savez_compressed(OUT / 'synthetic_ssvi_data.npz', iv=iv.astype(np.float32),
-                        factors=factors.to_numpy(np.float32), tenors_days=scope['TENOR_DAYS'],
-                        log_moneyness=scope['KLOG'], train_size=ntr, val_size=nv,
-                        test_size=nt, log_mean=mean, log_std=std)
-    factors.to_csv(OUT / 'synthetic_ssvi_factors.csv', index=False)
+    # Reuse the checked-in frozen data byte for byte. Regenerating even a
+    # deterministic sample can change floating-point bytes across CPU/library
+    # builds; rendering must not replace the published experimental dataset.
     provenance = json.loads((ROOT / 'publication.json').read_text())
     for rel, expected in provenance['frozen_sha256'].items():
         actual = hashlib.sha256((ROOT / rel).read_bytes()).hexdigest()

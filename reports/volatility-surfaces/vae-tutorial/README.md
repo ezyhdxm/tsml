@@ -29,7 +29,7 @@ VAE 实验是在 1,800 张合成 SSVI 曲面上比较 PCA-8、masked MLP-VAE、C
 
 ## 公开包与原始会话 ZIP 的区别
 
-`results.json`、训练日志、补全案例和 VAE 实验脚本保留原始字节。SSVI 数据由原 seed 确定性重建并验证 SHA-256；VAE 图表使用已保存结果重绘，不重新计算 benchmark。
+`results.json`、训练日志、补全案例和 VAE 实验脚本保留原始字节。SSVI 数据在首次发布时由原 seed 重建；本次渲染直接复用并验证已发布文件的 SHA-256，不再跨平台重新生成。VAE 图表使用已保存结果重绘，不重新计算 benchmark。
 
 `public_reproduction_bundle.zip` 包含本版报告、源码、结果、日志、合成数据、教学示例和图表，**不包含原始三个 `.pt` 模型权重，也不是原始会话 ZIP 的逐字节副本**。原始带 checkpoint 的包仍保留在创建报告的会话下载中。报告附录 D 描述原始完整实验产物，不表示所有产物都已上传仓库。
 
