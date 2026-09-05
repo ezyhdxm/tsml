@@ -1,0 +1,1629 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="可转债定价中文教程：精确 payoff 分解、最优行权、TF、显式违约、树与PDE、校准和对冲。包含离线交互计算及可复核合成实验。"><title>可转债定价：从债券 + 期权到信用与最优行权 | TSML</title><style>:root{--ink:#1d2938;--muted:#64748b;--paper:#ffffff;--bg:#f4f6f8;--nav:#102639;--accent:#087f8c;--line:#dbe3e9;--warm:#a56618}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:30px}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans CJK SC","PingFang SC","Microsoft YaHei",sans-serif;font-size:16px;line-height:1.9}a{color:#076a82;text-decoration:none;overflow-wrap:anywhere}a:hover{text-decoration:underline}#sidebar{position:fixed;inset:0 auto 0 0;width:278px;padding:30px 24px;background:var(--nav);color:#deebf3;overflow-y:auto;z-index:3}.brand{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#8fcbd0;font-weight:700}.navtitle{font-size:24px;line-height:1.5;margin:15px 0 22px;color:white}.navmeta{font-size:12px;color:#aac1d0;border-top:1px solid #345064;padding-top:18px;margin-top:20px}#sidebar a{color:#c8d7e1}#sidebar ul{list-style:none;padding:0;margin:0}#sidebar li{font-size:13px;line-height:1.65;padding:6px 0;border-bottom:1px solid #ffffff0c}#sidebar li ul{display:none}#sidebar li.active>a{color:white;font-weight:700}.shell{margin-left:278px;padding:38px 42px 72px;max-width:1350px}.hero{position:relative;border-radius:15px;background:var(--nav);color:white;padding:48px 46px;margin-bottom:28px;overflow:hidden}.hero:after{content:"";position:absolute;width:230px;height:230px;border:1px solid #42718a;border-radius:50%;top:-98px;right:-82px;opacity:.5}.kicker{font-size:12px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#92d5d8}.hero h1{font-size:clamp(30px,3.2vw,42px);line-height:1.3;margin:18px 0;font-weight:730;letter-spacing:-.03em}.hero p{font-size:17px;color:#c4d7e3;max-width:680px;margin:14px 0}.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:25px}.tag{font-size:11px;padding:4px 10px;border-radius:5px;border:1px solid #527086;color:#e0eff5}.summary-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 28px}.summary-strip>div{border:1px solid var(--line);background:white;border-radius:10px;padding:18px 20px}.summary-strip span{display:block;font-size:12px;color:var(--muted)}.summary-strip strong{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}.summary-strip small{font-size:12px;display:block;color:var(--muted)}article{background:var(--paper);border:1px solid var(--line);padding:20px 46px 46px;border-radius:12px;max-width:980px}h2{font-size:25px;line-height:1.5;border-top:1px solid var(--line);padding-top:38px;margin:44px 0 22px;letter-spacing:-.02em}article>h2:first-child{border-top:0;padding-top:14px;margin-top:10px}h3{font-size:19px;line-height:1.5;margin:30px 0 14px}p{margin:15px 0}strong{font-weight:680}.callout,.takeaway{border-left:4px solid var(--accent);background:#eef8f8;border-radius:0 8px 8px 0;padding:6px 21px;margin:23px 0}.takeaway{background:#f5f7fa;border-left-color:#758da0}.callout p,.takeaway p{margin:10px 0}.tablewrap{overflow-x:auto;max-width:100%;margin:21px 0;border:1px solid var(--line);border-radius:8px}table{width:100%;border-collapse:collapse;font-size:14px;line-height:1.7;margin:0}th{background:#edf2f6;color:#263b50;font-weight:650;text-align:left;vertical-align:top;padding:12px 13px;border-bottom:2px solid #cfdae3}td{padding:12px 13px;border-bottom:1px solid #e4eaf0;vertical-align:top;min-width:90px}tr:nth-child(even) td{background:#fafbfd}tr:last-child td{border-bottom:none}table code{font-size:12px}td[style*="right"],th[style*="right"]{font-variant-numeric:tabular-nums;white-space:nowrap}.math.display{display:block;padding:18px 13px;margin:20px 0;background:#f7f9fb;border:1px solid #e7edf2;border-radius:8px;overflow-x:auto;overflow-y:hidden;max-width:100%;font-size:1.06em;text-align:center}math{font-family:"STIX Two Math","Cambria Math",math;font-size:1.06em}math[display=block]{margin:0}.math.inline{white-space:normal}.figure{margin:28px 0;padding:20px 18px 12px;border:1px solid var(--line);border-radius:10px;background:#fbfcfd}.figure canvas,.lab canvas{display:block;width:100%;height:300px}.caption{font-size:12px;color:var(--muted);line-height:1.7}.legend{font-size:12px;color:#3c596a;text-align:center;margin:6px 0}.lab{padding:23px;border:1px solid #b5d5d8;border-radius:12px;background:#f5fbfb;margin:22px 0}.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 25px}.controls label{font-size:13px;display:block;font-weight:600}.controls output{float:right;color:var(--accent);font-variant-numeric:tabular-nums}.controls input{display:block;width:100%;accent-color:var(--accent);margin:12px 0 0}.controls select{width:100%;padding:10px 8px;font-size:13px;border:1px solid #b8cbd4;border-radius:6px;background:white;color:var(--ink);margin-top:8px}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0}.metrics>div{background:white;border:1px solid #d4e5e7;border-radius:7px;padding:13px 12px}.metrics span{display:block;font-size:11px;color:#597381}.metrics strong{display:block;font-size:22px;font-variant-numeric:tabular-nums;color:#16445a}.sourceCode,pre{font-size:12px;line-height:1.65}div.sourceCode{border:1px solid var(--line);border-radius:8px;margin:20px 0;background:#f5f7fa}pre{padding:20px;overflow:auto;max-width:100%;tab-size:4}code{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;background:#eff3f7;padding:2px 4px;border-radius:3px}pre code{background:transparent;padding:0}code span.kw{color:#713b9b}code span.st{color:#1e6d52}code span.co{color:#758398}code span.dv,code span.fl{color:#9b561c}.mobile-nav{display:none}footer{font-size:12px;color:var(--muted);padding:22px 5px}.backtop{position:fixed;bottom:18px;right:18px;padding:9px 13px;border:1px solid var(--line);background:white;border-radius:30px;font-size:12px;z-index:4}hr{border:0;border-top:1px solid var(--line);margin:35px 0}@media(min-width:1500px){.shell{margin-left:calc(278px + (100vw - 1500px)/2)}}@media(max-width:1050px){#sidebar{width:235px;padding:24px 20px}.shell{margin-left:235px;padding:26px 22px}article{padding:14px 28px 35px}.hero{padding:36px 28px}}@media(max-width:760px){#sidebar{display:none}.shell{margin:0;padding:12px 10px 40px}.hero{padding:30px 24px;margin-bottom:15px}.hero h1{font-size:30px}.hero p{font-size:15px}.summary-strip{gap:7px;margin-bottom:15px}.summary-strip>div{padding:12px 9px}.summary-strip strong{font-size:19px}.summary-strip span,.summary-strip small{font-size:10px}article{padding:10px 20px 30px;border-radius:9px;font-size:15px;line-height:1.95}h2{font-size:23px;scroll-margin-top:10px}h3{font-size:18px}.mobile-nav{display:block;background:white;border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:0 0 15px;font-size:13px}.mobile-nav ul{padding-left:18px}.mobile-nav li{margin:7px 0}.mobile-nav li ul{display:none}.controls{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}.metrics>div{display:flex;justify-content:space-between;align-items:center}.metrics strong{font-size:23px}.lab{padding:16px 12px}.figure{padding:15px 8px 10px}.figure canvas,.lab canvas{height:270px}th,td{padding:10px;font-size:13px}.math.display{font-size:1em;padding:16px 7px}.tags{gap:6px}.tag{font-size:10px}pre{padding:12px;font-size:11px}}@media print{body{background:white;font-size:11pt}#sidebar,.mobile-nav,.backtop,.controls{display:none}.shell{margin:0;padding:0;max-width:none}.hero{background:white;color:#102639;border:1px solid #bbb;padding:20px}.hero p,.kicker,.tag{color:#324d63}.hero:after{display:none}article{border:none;padding:0;max-width:none}.summary-strip{margin-top:14px}.math.display{break-inside:avoid;background:white}.figure,.lab,.tablewrap,.callout,.takeaway{break-inside:avoid}h2,h3{break-after:avoid}h2{font-size:19pt;margin-top:24px;padding-top:18px}a{color:inherit;text-decoration:none}.caption{color:#555}.sourceCode{white-space:pre-wrap}.metrics{grid-template-columns:repeat(3,1fr)}}
+
+.math.display math{width:max-content;min-width:100%}
+</style></head>
+<body id="top"><nav id="sidebar" aria-label="章节目录"><div class="brand">TSML / Research Notes</div><div class="navtitle">可转债定价<br><span style="font-size:14px;color:#9ebccc">Convertible Bond Pricing</span></div><ul>
+<li><a href="#overview">01 ·
+先把问题摆正：这是一份会改变身份的合约</a></li>
+<li><a href="#contract">02 · 把 term sheet
+翻译成数学</a></li>
+<li><a href="#decomposition">03 · 什么时候“债券 +
+call”是精确的？</a></li>
+<li><a href="#floor">04 · Bond floor
+与价格形状：保护有条件</a></li>
+<li><a href="#exercise">05 ·
+提前转股、回售与赎回：一个节点的决策</a></li>
+<li><a href="#pde">06 · 从短时间条件期望推到无违约
+PDE</a></li>
+<li><a href="#tf">07 · TF 分拆：现金部分加信用
+spread</a></li>
+<li><a href="#default">08 ·
+显式违约：为什么股价漂移也要改？</a></li>
+<li><a href="#tree">09 · 一个可运行的 survival/default
+树</a></li>
+<li><a href="#numerics">10 · 有限差分、多因子与 Monte
+Carlo 怎么选？</a></li>
+<li><a href="#experiments">11 ·
+合成实验：实际跑了什么，得到什么？</a></li>
+<li><a href="#path-dependence">12 ·
+真正让问题变难的是条款状态</a></li>
+<li><a href="#calibration">13 · 校准：不是找到一条
+bond spread 就完成了</a></li>
+<li><a href="#risk">14 · Greeks 与 convertible
+arbitrage：delta-neutral 不等于无风险</a></li>
+<li><a href="#reading">15 · 阅读地图与实现顺序</a></li>
+<li><a href="#python">附录 A · 最小 Python
+基准与可复算数字</a></li>
+<li><a href="#pitfalls">附录 B ·
+六个最容易踩的坑</a></li>
+</ul><div class="navmeta">中文教程 · 2026-09-05<br>独立推导 / 合成实验<br>原生 MathML / 离线交互</div></nav><main class="shell"><header class="hero"><div class="kicker">Equity × Credit × Exercise</div><h1>可转债定价</h1><p>从“债券 + 期权”的精确边界，走到<br>信用—股价耦合、最优行权与数值实现。</p><div class="tags"><span class="tag">15 节教程 + 2 个附录</span><span class="tag">可复算的合成实验</span><span class="tag">无需联网渲染公式</span></div></header><div class="summary-strip"><div><span>无违约 · 欧式零息</span><strong>112.1834</strong><small>精确 payoff 分解</small></div><div><span>显式违约 · 欧式零息</span><strong>111.6656</strong><small>同一组股票/信用假设</small></div><div><span>同模型 · 零息直债</span><strong>85.0091</strong><small>每 100 面值 · 合成例子</small></div></div><details class="mobile-nav"><summary>打开章节目录</summary><ul>
+<li><a href="#overview">01 ·
+先把问题摆正：这是一份会改变身份的合约</a></li>
+<li><a href="#contract">02 · 把 term sheet
+翻译成数学</a></li>
+<li><a href="#decomposition">03 · 什么时候“债券 +
+call”是精确的？</a></li>
+<li><a href="#floor">04 · Bond floor
+与价格形状：保护有条件</a></li>
+<li><a href="#exercise">05 ·
+提前转股、回售与赎回：一个节点的决策</a></li>
+<li><a href="#pde">06 · 从短时间条件期望推到无违约
+PDE</a></li>
+<li><a href="#tf">07 · TF 分拆：现金部分加信用
+spread</a></li>
+<li><a href="#default">08 ·
+显式违约：为什么股价漂移也要改？</a></li>
+<li><a href="#tree">09 · 一个可运行的 survival/default
+树</a></li>
+<li><a href="#numerics">10 · 有限差分、多因子与 Monte
+Carlo 怎么选？</a></li>
+<li><a href="#experiments">11 ·
+合成实验：实际跑了什么，得到什么？</a></li>
+<li><a href="#path-dependence">12 ·
+真正让问题变难的是条款状态</a></li>
+<li><a href="#calibration">13 · 校准：不是找到一条
+bond spread 就完成了</a></li>
+<li><a href="#risk">14 · Greeks 与 convertible
+arbitrage：delta-neutral 不等于无风险</a></li>
+<li><a href="#reading">15 · 阅读地图与实现顺序</a></li>
+<li><a href="#python">附录 A · 最小 Python
+基准与可复算数字</a></li>
+<li><a href="#pitfalls">附录 B ·
+六个最容易踩的坑</a></li>
+</ul></details><article><h2 id="overview">01 ·
+先把问题摆正：这是一份会改变身份的合约</h2>
+<p>一张普通公司债承诺支付现金；一张普通股票期权赋予股票相关的选择权。<strong>可转债把两者放进同一份会提前终止、会被赎回、也可能违约的合约里。</strong>
+关键不只是“债券加期权”，而是：做出一个选择后，其他现金流与选择权是否还存在？</p>
+<p>本文从一个完全可核算的例子出发，再逐层加入提前转股、发行人赎回、投资者回售及信用风险。数值部分全部使用合成参数，不使用真实交易数据；它是定价教程与模型检查，不是任何证券的估值意见。</p>
+<div class="callout">
+<p><strong>贯穿全文的四个问题</strong>：现在转股能拿到什么？继续持有还保留什么？发行人能否提前结束合约？若先违约，股票和债券分别变成什么？</p>
+</div>
+<h3 id="阅读路线">阅读路线</h3>
+<p>第 2–4 节建立 payoff 和无违约基准；第 5–8
+节把最优决策与违约写成递推式及 PDE；第 9–11
+节落到树、有限差分和实算结果；第 12–15
+节处理真实条款、校准、对冲及新文献。附录提供可直接运行的最小 Python
+基准。</p>
+<p><strong>三个必须区分的对象</strong>：<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>V</mi><annotation encoding="application/x-tex">V</annotation></semantics></math>
+是可转债整体价值；<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mi>S</mi></mrow><annotation encoding="application/x-tex">mS</annotation></semantics></math>
+是转股所得股票的市值；<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>B</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">g</mi><mi mathvariant="normal">h</mi><mi mathvariant="normal">t</mi></mrow></msub><annotation encoding="application/x-tex">B_{\mathrm{straight}}</annotation></semantics></math>
+是删去转股等选择权后、在明确的信用及回收模型下计算的普通债券价值。它们不是同一个价格，也不是三种可以随意互换的“fair
+value”。</p>
+<p>本文使用普通、投资者自愿转股的可转债作为对象，不把强制转股债、监管触发的
+CoCo、可交换为其他公司股票的 exchangeable bond
+混成同一个合约。不同的触发者和标的必须另写 payoff。</p>
+<h2 id="contract">02 · 把 term sheet 翻译成数学</h2>
+<h3 id="先只保留九个参数">2.1 先只保留九个参数</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">记号</th>
+<th style="text-align: left;">含义</th>
+<th style="text-align: right;">本文合成基准</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td
+style="text-align: left;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math></td>
+<td style="text-align: left;">每张债券面值</td>
+<td style="text-align: right;">100</td>
+</tr>
+<tr class="even">
+<td
+style="text-align: left;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>S</mi><annotation encoding="application/x-tex">S</annotation></semantics></math></td>
+<td style="text-align: left;">当前每股股价</td>
+<td style="text-align: right;">50</td>
+</tr>
+<tr class="odd">
+<td
+style="text-align: left;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math></td>
+<td style="text-align: left;">每张债券可转换的股数</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td
+style="text-align: left;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math></td>
+<td style="text-align: left;">距到期的年数</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr class="odd">
+<td
+style="text-align: left;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>r</mi><annotation encoding="application/x-tex">r</annotation></semantics></math></td>
+<td style="text-align: left;">连续复利无风险利率</td>
+<td style="text-align: right;">4%</td>
+</tr>
+<tr class="even">
+<td
+style="text-align: left;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>q</mi><annotation encoding="application/x-tex">q</annotation></semantics></math></td>
+<td style="text-align: left;">连续股息率</td>
+<td style="text-align: right;">1%</td>
+</tr>
+<tr class="odd">
+<td
+style="text-align: left;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>σ</mi><annotation encoding="application/x-tex">\sigma</annotation></semantics></math></td>
+<td style="text-align: left;">存续状态下股价扩散波动率</td>
+<td style="text-align: right;">30%</td>
+</tr>
+<tr class="even">
+<td
+style="text-align: left;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math></td>
+<td style="text-align: left;">风险中性违约强度</td>
+<td style="text-align: right;">2.5% / 年</td>
+</tr>
+<tr class="odd">
+<td
+style="text-align: left;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>R</mi><annotation encoding="application/x-tex">R</annotation></semantics></math></td>
+<td style="text-align: left;">违约时按面值回收的比例</td>
+<td style="text-align: right;">40%</td>
+</tr>
+</tbody>
+</table></div>
+<p>前半部分先令
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>h</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">h=0</annotation></semantics></math>。基准是零息债；加入票息时另行说明。价格统一为<strong>每
+100 面值的货币金额</strong>，不是 yield，也不是债券
+spread。<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math>
+的单位是“股 / 每张债券”，绝不能把每 1,000 面值的 conversion ratio
+直接塞进每 100 面值的模型。</p>
+<p>转股价只是换算关系：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>K</mi><mo>=</mo><mfrac><mi>F</mi><mi>m</mi></mfrac><mo>=</mo><mn>50</mn><mo>,</mo><mspace width="2.0em"></mspace><mtext mathvariant="normal">conversion parity</mtext><mo>=</mo><mi>m</mi><mi>S</mi><mo>=</mo><mn>100</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+K=\frac{F}{m}=50,\qquad \text{conversion parity}=mS=100.
+</annotation></semantics></math></span></p>
+<p>若市场价格是
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>P</mi><mrow><mi mathvariant="normal">m</mi><mi mathvariant="normal">k</mi><mi mathvariant="normal">t</mi></mrow></msub><annotation encoding="application/x-tex">P_{\mathrm{mkt}}</annotation></semantics></math>，常见的转股溢价定义为</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><msub><mi>P</mi><mrow><mi mathvariant="normal">m</mi><mi mathvariant="normal">k</mi><mi mathvariant="normal">t</mi></mrow></msub><mrow><mi>m</mi><mi>S</mi></mrow></mfrac><mo>−</mo><mn>1</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\frac{P_{\mathrm{mkt}}}{mS}-1.
+</annotation></semantics></math></span></p>
+<p>这是相对于当前转股价值的价格比例，不等于隐含波动率、信用利差，也不等于某个固定执行价期权的
+premium。</p>
+<h3 id="真正需要逐项读的条款">2.2 真正需要逐项读的条款</h3>
+<div class="tablewrap"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">条款</th>
+<th style="text-align: left;">要翻译成的对象</th>
+<th style="text-align: left;">常见错误</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">转股窗口与转股比例</td>
+<td style="text-align: left;">允许转股的日期/状态，以及
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>,</mo><mtext mathvariant="normal">history</mtext><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">m(t,\text{history})</annotation></semantics></math></td>
+<td style="text-align: left;">默认从发行日起随时转股</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Coupon、到期偿还额</td>
+<td style="text-align: left;">金额、支付日、累计/除息规则</td>
+<td style="text-align: left;">提前转股后仍保留未来全部票息</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Issuer call</td>
+<td style="text-align: left;">可赎回日期、价格、触发条件、通知期</td>
+<td style="text-align: left;">把 call price 当成债券价值的绝对上限</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Holder put</td>
+<td style="text-align: left;">回售日期、金额、公司事件条件</td>
+<td style="text-align: left;">与 issuer call 搞反方向</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">转股结算</td>
+<td style="text-align: left;">实物股票、现金或混合；观察/平均窗口</td>
+<td style="text-align: left;">始终使用即时
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mi>S</mi></mrow><annotation encoding="application/x-tex">mS</annotation></semantics></math></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">违约与回收</td>
+<td style="text-align: left;">违约定义、顺位、回收基数、结算延迟</td>
+<td style="text-align: left;">写了 recovery rate 却没有说明乘什么</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">调整与特殊事件</td>
+<td style="text-align: left;">反稀释、make-whole、重设转股价</td>
+<td style="text-align: left;">把所有调整当成免费增加
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math></td>
+</tr>
+</tbody>
+</table></div>
+<p>这些不是“模型做完后的补丁”。例如 Rubrik 2025
+年发行文件规定了有条件转股、20/30
+个交易日的股价触发、现金/股票/混合结算选择以及赎回前保护期；因此一张美国可转债也不能自动当成从今天起可随时实物转股的
+American option。<a
+href="https://www.sec.gov/Archives/edgar/data/1943896/000119312525140729/d920850d8k.htm">公开条款实例：Rubrik
+8-K</a>。这只是一个已核对的实例，不代表所有市场的统一条款。</p>
+<h2 id="decomposition">03 · 什么时候“债券 + call”是精确的？</h2>
+<h3 id="从到期-payoff-开始而不是从产品口号开始">3.1 从到期 payoff
+开始，而不是从产品口号开始</h3>
+<p>先假设：无违约、零票息、只在到期转股、没有 call/put、固定
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math>，且立即以股票结算。到期时，在收回本金和接收股票之间选择：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>T</mi><mo>,</mo><msub><mi>S</mi><mi>T</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>max</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>F</mi><mo>,</mo><mi>m</mi><msub><mi>S</mi><mi>T</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+V(T,S_T)=\max(F,mS_T).
+</annotation></semantics></math></span></p>
+<p>逐状态恒等变形：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>max</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>F</mi><mo>,</mo><mi>m</mi><msub><mi>S</mi><mi>T</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>F</mi><mo>+</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>m</mi><msub><mi>S</mi><mi>T</mi></msub><mo>−</mo><mi>F</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo></msup><mo>=</mo><mi>F</mi><mo>+</mo><mi>m</mi><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>S</mi><mi>T</mi></msub><mo>−</mo><mi>K</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\max(F,mS_T)=F+(mS_T-F)^+=F+m(S_T-K)^+.
+</annotation></semantics></math></span></p>
+<p>因此线性定价给出</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><menclose notation="box"><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>F</mi><msup><mi>e</mi><mrow><mo>−</mo><mi>r</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>T</mi><mo>−</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msup><mo>+</mo><mi>m</mi><msub><mi>C</mi><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">S</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>S</mi><mo>,</mo><mi>K</mi><mo>,</mo><mi>T</mi><mo>−</mo><mi>t</mi><mo>;</mo><mi>r</mi><mo>,</mo><mi>q</mi><mo>,</mo><mi>σ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow></menclose><annotation encoding="application/x-tex">
+\boxed{V(t,S)=F e^{-r(T-t)}+m C_{\mathrm{BS}}(S,K,T-t;r,q,\sigma).}
+</annotation></semantics></math></span></p>
+<p>这是<strong>在这些假设下精确成立的复制关系</strong>。不是“某一部分看上去像债券、剩下看上去像期权”的近似说法。若有确定票息，且只能在付清所有票息后的到期决策时转股，可另加票息现值；若允许提前转股并因此丧失后续票息，不能这样无条件相加。</p>
+<h3 id="再把-blackscholes-展开一次">3.2 再把 Black–Scholes 展开一次</h3>
+<p>令
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>=</mo><mi>T</mi><mo>−</mo><mi>t</mi></mrow><annotation encoding="application/x-tex">\tau=T-t</annotation></semantics></math>，<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Φ</mi><annotation encoding="application/x-tex">\Phi</annotation></semantics></math>
+为标准正态分布函数：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>C</mi><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">S</mi></mrow></msub><mo>=</mo><mi>S</mi><msup><mi>e</mi><mrow><mo>−</mo><mi>q</mi><mi>τ</mi></mrow></msup><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>d</mi><mn>1</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mi>K</mi><msup><mi>e</mi><mrow><mo>−</mo><mi>r</mi><mi>τ</mi></mrow></msup><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>d</mi><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
+C_{\mathrm{BS}}=S e^{-q\tau}\Phi(d_1)-K e^{-r\tau}\Phi(d_2),
+</annotation></semantics></math></span></p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>d</mi><mn>1</mn></msub><mo>=</mo><mfrac><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>S</mi><mi>/</mi><mi>K</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo>+</mo><msup><mi>σ</mi><mn>2</mn></msup><mi>/</mi><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow><mi>τ</mi></mrow><mrow><mi>σ</mi><msqrt><mi>τ</mi></msqrt></mrow></mfrac><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>d</mi><mn>2</mn></msub><mo>=</mo><msub><mi>d</mi><mn>1</mn></msub><mo>−</mo><mi>σ</mi><msqrt><mi>τ</mi></msqrt><mi>.</mi></mrow><annotation encoding="application/x-tex">
+d_1=\frac{\log(S/K)+(r-q+\sigma^2/2)\tau}{\sigma\sqrt{\tau}},\qquad d_2=d_1-\sigma\sqrt{\tau}.
+</annotation></semantics></math></span></p>
+<p>它来自
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℚ</mi><annotation encoding="application/x-tex">\mathbb Q</annotation></semantics></math>
+下的分布</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><msub><mi>S</mi><mi>T</mi></msub><mo>=</mo><mo>log</mo><mi>S</mi><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo>−</mo><msup><mi>σ</mi><mn>2</mn></msup><mi>/</mi><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow><mi>τ</mi><mo>+</mo><mi>σ</mi><msqrt><mi>τ</mi></msqrt><mi>Z</mi><mo>,</mo><mspace width="1.0em"></mspace><mi>Z</mi><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\log S_T=\log S+(r-q-\sigma^2/2)\tau+\sigma\sqrt{\tau}Z,\quad Z\sim N(0,1).
+</annotation></semantics></math></span></p>
+<p>将 call 的期望拆成两个截断项：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>e</mi><mrow><mo>−</mo><mi>r</mi><mi>τ</mi></mrow></msup><mi>𝔼</mi><mrow><mo stretchy="true" form="prefix">[</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>S</mi><mi>T</mi></msub><mo>−</mo><mi>K</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo></msup><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>r</mi><mi>τ</mi></mrow></msup><mi>𝔼</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>S</mi><mi>T</mi></msub><msub><mn>𝟏</mn><mrow><msub><mi>S</mi><mi>T</mi></msub><mo>&gt;</mo><mi>K</mi></mrow></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>−</mo><mi>K</mi><msup><mi>e</mi><mrow><mo>−</mo><mi>r</mi><mi>τ</mi></mrow></msup><mi>ℚ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>S</mi><mi>T</mi></msub><mo>&gt;</mo><mi>K</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+e^{-r\tau}\mathbb E[(S_T-K)^+]
+=e^{-r\tau}\mathbb E[S_T\mathbf1_{S_T&gt;K}]-K e^{-r\tau}\mathbb Q(S_T&gt;K).
+</annotation></semantics></math></span></p>
+<p>第二项概率是
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>d</mi><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\Phi(d_2)</annotation></semantics></math>；第一项用正态密度完成平方后得到
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><msup><mi>e</mi><mrow><mo>−</mo><mi>q</mi><mi>τ</mi></mrow></msup><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>d</mi><mn>1</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">S e^{-q\tau}\Phi(d_1)</annotation></semantics></math>。所以它使用的是风险中性的远期漂移，不是你对未来股价涨幅的预测。</p>
+<h3 id="同一-payoff还有另一个有用分解">3.3 同一
+payoff，还有另一个有用分解</h3>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>max</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>F</mi><mo>,</mo><mi>m</mi><msub><mi>S</mi><mi>T</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>m</mi><msub><mi>S</mi><mi>T</mi></msub><mo>+</mo><mi>m</mi><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>K</mi><mo>−</mo><msub><mi>S</mi><mi>T</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\max(F,mS_T)=mS_T+m(K-S_T)^+.
+</annotation></semantics></math></span></p>
+<p>所以</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>m</mi><mi>S</mi><msup><mi>e</mi><mrow><mo>−</mo><mi>q</mi><mi>τ</mi></mrow></msup><mo>+</mo><mi>m</mi><msub><mi>P</mi><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">S</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>S</mi><mo>,</mo><mi>K</mi><mo>,</mo><mi>τ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+V(t,S)=mS e^{-q\tau}+mP_{\mathrm{BS}}(S,K,\tau).
+</annotation></semantics></math></span></p>
+<p>第一种分解突出“现金本金 + 上行”；第二种突出“股票敞口 +
+下行保护”。两者相同，不代表真实可转债存在无条件本金保护：这里暂时假定发行人绝不违约。</p>
+<h3 id="用数字固定直觉">3.4 用数字固定直觉</h3>
+<p>本例无违约零息欧式价值为 <strong>112.1834</strong>。其中本金现值是
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>100</mn><msup><mi>e</mi><mrow><mo>−</mo><mn>0.04</mn><mo>×</mo><mn>3</mn></mrow></msup><mo>=</mo><mn>88.6920</mn></mrow><annotation encoding="application/x-tex">100e^{-0.04\times3}=88.6920</annotation></semantics></math>，转股选择权价值为
+<strong>23.4914</strong>。现在的 parity 是 100，但总价值不是
+100，因为持有人保留了到期再决定的权利。</p>
+<div class="takeaway">
+<p><strong>本节模板</strong>：先逐状态写出到期现金流，再做恒等分解，最后才分别定价。某个条款使其中一项现金流随其他决策消失时，静态分解就需要重新检查。</p>
+</div>
+<h2 id="floor">04 · Bond floor 与价格形状：保护有条件</h2>
+<p>在第 3
+节的模型中，<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>≥</mo><mi>F</mi><msup><mi>e</mi><mrow><mo>−</mo><mi>r</mi><mi>τ</mi></mrow></msup></mrow><annotation encoding="application/x-tex">V\ge F e^{-r\tau}</annotation></semantics></math>。若无
+issuer
+call，且持有人总可以选择从不转股，那么在同一信用、回收与票息假设下，可转债不应低于对应
+straight bond 的模型价值。</p>
+<p>但“floor”不是承诺。信用恶化会降低
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>B</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">g</mi><mi mathvariant="normal">h</mi><mi mathvariant="normal">t</mi></mrow></msub><annotation encoding="application/x-tex">B_{\mathrm{straight}}</annotation></semantics></math>；违约可能使现金回收远低于面值。若添加发行人赎回，比较对象应保留相同赎回条款，不能再把不可赎回直债的现值不加说明地当下界。</p>
+<p>此外，只有<strong>现在确实允许转股、即时结算且忽略交易摩擦</strong>时，才可以用
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>≥</mo><mi>m</mi><mi>S</mi></mrow><annotation encoding="application/x-tex">V\ge mS</annotation></semantics></math>。只能到期转股时，正确的股票相关静态下界是
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mi>S</mi><msup><mi>e</mi><mrow><mo>−</mo><mi>q</mi><mi>τ</mi></mrow></msup></mrow><annotation encoding="application/x-tex">mS e^{-q\tau}</annotation></semantics></math>，而不是
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mi>S</mi></mrow><annotation encoding="application/x-tex">mS</annotation></semantics></math>；高股息下这个区别很重要。</p>
+<div class="figure">
+<canvas id="shapeChart" aria-label="股价与可转债价格、转股价值和直债价值的关系" role="img">
+</canvas>
+<div class="legend">
+实线：显式违约欧式可转债　虚线：当前 parity　点线：同模型直债
+</div>
+<p class="caption">
+图 1 · 全部为合成参数；仅到期转股、零票息、无赎回。由第 8
+节闭式公式计算。深度价内时并不强制贴合当前
+parity，因为持有人尚不能即时转股且股票支付股息。
+</p>
+</div>
+<p><strong>债性、平衡态、股性</strong>是有用的描述，不是三种不同证券。股价低时，赎回本金或违约回收的状态相对重要；股价在转股价附近时，终值在现金与股票之间切换的概率对波动率敏感；股价很高时，股票交付主导。加入
+call、put、重设与信用耦合后，分界和形状都可能改变。</p>
+<h2 id="exercise">05 · 提前转股、回售与赎回：一个节点的决策</h2>
+<h3 id="先定义-continuation-value">5.1 先定义 continuation value</h3>
+<p>记
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">t</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V_{\mathrm{cont}}(t,S)</annotation></semantics></math>
+为“这个时点暂不结束合约，向前走一个小时间步，再最优决策”的价值。允许即时转股时：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>=</mo><mo>max</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>V</mi><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">t</mi></mrow></msub><mo>,</mo><mi>m</mi><mi>S</mi><mo stretchy="false" form="postfix">}</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
+V=\max\{V_{\mathrm{cont}},mS\}.
+</annotation></semantics></math></span></p>
+<p>若同时允许投资者以
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">P(t)</annotation></semantics></math>
+回售，持有人的即时选择下界为</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>L</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>max</mo><mo stretchy="false" form="prefix">{</mo><mi>m</mi><mi>S</mi><mo>,</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="false" form="postfix">}</mo><mo>,</mo><mspace width="2.0em"></mspace><mi>V</mi><mo>=</mo><mo>max</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>V</mi><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">t</mi></mrow></msub><mo>,</mo><mi>L</mi><mo stretchy="false" form="postfix">}</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
+L(t,S)=\max\{mS,P(t)\},\qquad V=\max\{V_{\mathrm{cont}},L\}.
+</annotation></semantics></math></span></p>
+<p>只在指定日有 put 权利时，只在那些日期加入
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">P(t)</annotation></semantics></math>。未开放转股的时点也不能随意加入
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mi>S</mi></mrow><annotation encoding="application/x-tex">mS</annotation></semantics></math>。</p>
+<h3 id="issuer-call-为什么不是-vle-ct">5.2 Issuer call 为什么不是
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>≤</mo><mi>C</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V\le C(t)</annotation></semantics></math>？</h3>
+<p>用
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">C(t)</annotation></semantics></math>
+表示现金赎回额，避免与第 3 节的
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>C</mi><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">S</mi></mrow></msub><annotation encoding="application/x-tex">C_{\mathrm{BS}}</annotation></semantics></math>
+混淆。假设发行人一旦 call，持有人仍可立刻选择转股，则 call
+时持有人拿到</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>U</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>max</mo><mo stretchy="false" form="prefix">{</mo><mi>C</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mi>m</mi><mi>S</mi><mo stretchy="false" form="postfix">}</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
+U(t,S)=\max\{C(t),mS\}.
+</annotation></semantics></math></span></p>
+<p>若股价
+60、<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">m=2</annotation></semantics></math>、赎回额
+105，持有人会选择 120 的股票，不会被迫只拿 105。上界是 120，不是
+105。</p>
+<p>在<strong>无通知期、call 即刻结算、转股在 call
+时可用、回售额不高于赎回额</strong>的简化节点上：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><menclose notation="box"><mrow><mi>V</mi><mo>=</mo><mo>max</mo><mo minsize="1.2" maxsize="1.2" stretchy="false" form="prefix">{</mo><mi>L</mi><mo>,</mo><mo>min</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>V</mi><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">t</mi></mrow></msub><mo>,</mo><mi>U</mi><mo stretchy="false" form="postfix">}</mo><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">}</mo><mi>.</mi></mrow></menclose><annotation encoding="application/x-tex">
+\boxed{V=\max\bigl\{L,\min\{V_{\mathrm{cont}},U\}\bigr\}.}
+</annotation></semantics></math></span></p>
+<p>这是本文数值例子的事件约定；一般合约若出现不同权利优先级、重叠窗口或结算延迟，必须重新写节点规则。经典文献将这类约束表述为最优停止/双方博弈及互补条件。<a
+href="https://cs.uwaterloo.ca/~paforsyt/convert.pdf">AFV，§2</a>。</p>
+<h3 id="三个不用解-pde-也能检查的节点">5.3 三个不用解 PDE
+也能检查的节点</h3>
+<div class="tablewrap"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">假设</th>
+<th style="text-align: left;">数值</th>
+<th style="text-align: left;">正确动作与价值</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">continuation 112，parity 100，没有
+call</td>
+<td
+style="text-align: left;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>max</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>112</mn><mo>,</mo><mn>100</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\max(112,100)</annotation></semantics></math></td>
+<td style="text-align: left;">继续持有，112</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">continuation 118，parity 110，可立即 call
+105</td>
+<td
+style="text-align: left;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>min</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>118</mn><mo>,</mo><mo>max</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>105</mn><mo>,</mo><mn>110</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\min(118,\max(105,110))</annotation></semantics></math></td>
+<td style="text-align: left;">发行人 call，持有人转股，110</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">continuation 92，parity 60，可 put
+100</td>
+<td
+style="text-align: left;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>max</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>92</mn><mo>,</mo><mn>60</mn><mo>,</mo><mn>100</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\max(92,60,100)</annotation></semantics></math></td>
+<td style="text-align: left;">回售，100</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>股价超过转股价并不自动意味着应转股。</strong>
+现在转换会失去剩余可选择性，也可能失去票息；应比较
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mi>S</mi></mrow><annotation encoding="application/x-tex">mS</annotation></semantics></math>
+与 continuation，而不是只比较
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>S</mi><annotation encoding="application/x-tex">S</annotation></semantics></math>
+与
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>。</p>
+<h3 id="票息事件必须与行权排序一致">5.4 票息事件必须与行权排序一致</h3>
+<p>本文的合成票息规则是：到 coupon
+date，仍存续的持有人先收到本期票息，再决定是否转股、回售或接受赎回；提前离开的持有人不再收未来票息。令
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>V</mi><mo>+</mo></msup><annotation encoding="application/x-tex">V^+</annotation></semantics></math>
+为本期票息已付后的价值，则</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>t</mi><mi>i</mi><mo>−</mo></msubsup><mo>,</mo><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>c</mi><mi>i</mi></msub><mo>+</mo><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>t</mi><mi>i</mi><mo>+</mo></msubsup><mo>,</mo><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+V(t_i^-,S)=c_i+V(t_i^+,S).
+</annotation></semantics></math></span></p>
+<p>实际合约可能要求转股时补偿应计利息、放弃部分利息或采用不同 record
+date。上述简单加法仅适用于本文约定；不能不看条款直接搬用。</p>
+<h2 id="pde">06 · 从短时间条件期望推到无违约 PDE</h2>
+<p>在
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℚ</mi><annotation encoding="application/x-tex">\mathbb Q</annotation></semantics></math>
+下先采用</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>S</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>S</mi><mspace width="0.167em"></mspace><mi>d</mi><mi>t</mi><mo>+</mo><mi>σ</mi><mi>S</mi><mspace width="0.167em"></mspace><mi>d</mi><msup><mi>W</mi><mi>ℚ</mi></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+dS=(r-q)S\,dt+\sigma S\,dW^{\mathbb Q}.
+</annotation></semantics></math></span></p>
+<p>在没有票息事件、也没有立即行权的 continuation region，定价条件为</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>r</mi><mi>Δ</mi><mi>t</mi></mrow></msup><msup><mi>𝔼</mi><mi>ℚ</mi></msup><mrow><mo stretchy="true" form="prefix">[</mo><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>+</mo><mi>Δ</mi><mi>t</mi><mo>,</mo><mi>S</mi><mo>+</mo><mi>Δ</mi><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>∣</mo><msub><mi>S</mi><mi>t</mi></msub><mo>=</mo><mi>S</mi><mo stretchy="true" form="postfix">]</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+V(t,S)=e^{-r\Delta t}\mathbb E^{\mathbb Q}[V(t+\Delta t,S+\Delta S)\mid S_t=S].
+</annotation></semantics></math></span></p>
+<p>二阶展开，并使用
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝔼</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>Δ</mi><mi>S</mi><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>S</mi><mi>Δ</mi><mi>t</mi><mo>+</mo><mi>o</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\mathbb E[\Delta S]=(r-q)S\Delta t+o(\Delta t)</annotation></semantics></math>、<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝔼</mi><mrow><mo stretchy="true" form="prefix">[</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><msup><mi>σ</mi><mn>2</mn></msup><msup><mi>S</mi><mn>2</mn></msup><mi>Δ</mi><mi>t</mi><mo>+</mo><mi>o</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\mathbb E[(\Delta S)^2]=\sigma^2S^2\Delta t+o(\Delta t)</annotation></semantics></math>：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝔼</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>+</mo><mi>Δ</mi><mi>t</mi><mo>,</mo><mi>S</mi><mo>+</mo><mi>Δ</mi><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><mi>V</mi><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>V</mi><mi>t</mi></msub><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>S</mi><msub><mi>V</mi><mi>S</mi></msub><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mi>σ</mi><mn>2</mn></msup><msup><mi>S</mi><mn>2</mn></msup><msub><mi>V</mi><mrow><mi>S</mi><mi>S</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>Δ</mi><mi>t</mi><mo>+</mo><mi>o</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\mathbb E[V(t+\Delta t,S+\Delta S)]
+=V+\left(V_t+(r-q)SV_S+\frac12\sigma^2S^2V_{SS}\right)\Delta t+o(\Delta t).
+</annotation></semantics></math></span></p>
+<p>再用
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>e</mi><mrow><mo>−</mo><mi>r</mi><mi>Δ</mi><mi>t</mi></mrow></msup><mo>=</mo><mn>1</mn><mo>−</mo><mi>r</mi><mi>Δ</mi><mi>t</mi><mo>+</mo><mi>o</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">e^{-r\Delta t}=1-r\Delta t+o(\Delta t)</annotation></semantics></math>，减去
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>V</mi><annotation encoding="application/x-tex">V</annotation></semantics></math>、除以
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Δ</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">\Delta t</annotation></semantics></math>、令步长趋零：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><menclose notation="box"><mrow><msub><mi>V</mi><mi>t</mi></msub><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mi>σ</mi><mn>2</mn></msup><msup><mi>S</mi><mn>2</mn></msup><msub><mi>V</mi><mrow><mi>S</mi><mi>S</mi></mrow></msub><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>S</mi><msub><mi>V</mi><mi>S</mi></msub><mo>−</mo><mi>r</mi><mi>V</mi><mo>=</mo><mn>0</mn><mi>.</mi></mrow></menclose><annotation encoding="application/x-tex">
+\boxed{V_t+\frac12\sigma^2 S^2V_{SS}+(r-q)SV_S-rV=0.}
+</annotation></semantics></math></span></p>
+<p>若连续支付票息流
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">c(t)</annotation></semantics></math>，左侧加
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">c(t)</annotation></semantics></math>；若是离散票息，时间间隔内部不加该项，而是在支付日应用第
+5.4 节的跳跃关系。两种方法不能同时计入同一笔票息。</p>
+<p>有行权权利时，PDE 只在 continuation region 成立。令</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>A</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>V</mi><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><msub><mi>V</mi><mi>t</mi></msub><mo>+</mo><mfrac displaystyle="false"><mn>1</mn><mn>2</mn></mfrac><msup><mi>σ</mi><mn>2</mn></msup><msup><mi>S</mi><mn>2</mn></msup><msub><mi>V</mi><mrow><mi>S</mi><mi>S</mi></mrow></msub><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>S</mi><msub><mi>V</mi><mi>S</mi></msub><mo>−</mo><mi>r</mi><mi>V</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+A[V]=V_t+\tfrac12\sigma^2S^2V_{SS}+(r-q)SV_S-rV.
+</annotation></semantics></math></span></p>
+<p>对于
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>L</mi><mo>&lt;</mo><mi>U</mi></mrow><annotation encoding="application/x-tex">L&lt;U</annotation></semantics></math>
+的区域，条件可写为</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mi>A</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>V</mi><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><mn>0</mn><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mi>L</mi><mo>&lt;</mo><mi>V</mi><mo>&lt;</mo><mi>U</mi><mo>,</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mi>A</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>V</mi><mo stretchy="true" form="postfix">]</mo></mrow><mo>≤</mo><mn>0</mn><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mi>V</mi><mo>=</mo><mi>L</mi><mo>&lt;</mo><mi>U</mi><mo>,</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mi>A</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>V</mi><mo stretchy="true" form="postfix">]</mo></mrow><mo>≥</mo><mn>0</mn><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mi>V</mi><mo>=</mo><mi>U</mi><mo>&gt;</mo><mi>L</mi><mi>.</mi></mtd></mtr></mtable></mrow><annotation encoding="application/x-tex">
+\begin{cases}
+A[V]=0,&amp; L&lt;V&lt;U,\\
+A[V]\le0,&amp; V=L&lt;U,\\
+A[V]\ge0,&amp; V=U&gt;L.
+\end{cases}
+</annotation></semantics></math></span></p>
+<p>符号可从“继续一小步的价值
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≈</mo><mi>V</mi><mo>+</mo><mi>A</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>V</mi><mo stretchy="true" form="postfix">]</mo></mrow><mi>Δ</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">\approx V+A[V]\Delta t</annotation></semantics></math>”检查：在持有人行权下界，继续不应更好；在发行人赎回上界，继续不应对发行人更有利。上下界相等时价值直接被固定，不应机械套用严格区间的条件。</p>
+<div class="takeaway">
+<p><strong>本节模板</strong>：先写 discounted conditional
+expectation，再展开得到 continuation PDE；最后单独加入 terminal
+payoff、事件跳跃与行权障碍。不要把所有条款都硬塞进漂移项。</p>
+</div>
+<h2 id="tf">07 · TF 分拆：现金部分加信用 spread</h2>
+<h3 id="拆的不是两只互不相关的证券">7.1 拆的不是两只互不相关的证券</h3>
+<p>Tsiveriotis–Fernandes（1998，以下简称
+TF）将总价值分为未来以现金结算的部分与股票交付相关部分。记</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>=</mo><mi>E</mi><mo>+</mo><mi>B</mi><mo>,</mo></mrow><annotation encoding="application/x-tex">
+V=E+B,
+</annotation></semantics></math></span></p>
+<p>其中
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>B</mi><annotation encoding="application/x-tex">B</annotation></semantics></math>
+是该合约在最优转股/赎回/回售策略下的 <strong>cash-only
+component</strong>，不是另买一张普通债券的价格。以下给出该分拆的教学形式；原论文可通过<a
+href="https://www.pm-research.com/content/iijfixinc/8/2/95">期刊入口</a>定位，官方数值软件也明确区分
+spread 输入与显式违约输入。<a
+href="https://www.mathworks.com/help/fininst/cbondbyitt.html">MathWorks
+文档</a>。</p>
+<p>给现金部分信用折现 spread
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>s</mi><mi>c</mi></msub><annotation encoding="application/x-tex">s_c</annotation></semantics></math>，在事件之间有</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>B</mi><mi>t</mi></msub><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mi>σ</mi><mn>2</mn></msup><msup><mi>S</mi><mn>2</mn></msup><msub><mi>B</mi><mrow><mi>S</mi><mi>S</mi></mrow></msub><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>S</mi><msub><mi>B</mi><mi>S</mi></msub><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><msub><mi>s</mi><mi>c</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>B</mi><mo>=</mo><mn>0</mn><mo>,</mo></mrow><annotation encoding="application/x-tex">
+B_t+\frac12\sigma^2S^2B_{SS}+(r-q)SB_S-(r+s_c)B=0,
+</annotation></semantics></math></span></p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>E</mi><mi>t</mi></msub><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mi>σ</mi><mn>2</mn></msup><msup><mi>S</mi><mn>2</mn></msup><msub><mi>E</mi><mrow><mi>S</mi><mi>S</mi></mrow></msub><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>S</mi><msub><mi>E</mi><mi>S</mi></msub><mo>−</mo><mi>r</mi><mi>E</mi><mo>=</mo><mn>0</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+E_t+\frac12\sigma^2S^2E_{SS}+(r-q)SE_S-rE=0.
+</annotation></semantics></math></span></p>
+<p>相加得</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><menclose notation="box"><mrow><msub><mi>V</mi><mi>t</mi></msub><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mi>σ</mi><mn>2</mn></msup><msup><mi>S</mi><mn>2</mn></msup><msub><mi>V</mi><mrow><mi>S</mi><mi>S</mi></mrow></msub><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>S</mi><msub><mi>V</mi><mi>S</mi></msub><mo>−</mo><mi>r</mi><mi>V</mi><mo>−</mo><msub><mi>s</mi><mi>c</mi></msub><mi>B</mi><mo>=</mo><mn>0</mn><mi>.</mi></mrow></menclose><annotation encoding="application/x-tex">
+\boxed{V_t+\frac12\sigma^2S^2V_{SS}+(r-q)SV_S-rV-s_cB=0.}
+</annotation></semantics></math></span></p>
+<p>“股票部分以
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>r</mi><annotation encoding="application/x-tex">r</annotation></semantics></math>
+折现”不等于“股票不可能下跌”，也不等于违约不影响股票。它是该近似体系的折现分配规则，不是一份已经完全指定好的股价—违约联合过程。</p>
+<h3 id="分拆如何跟随行权状态改变">7.2 分拆如何跟随行权状态改变？</h3>
+<p>忽略末期 coupon，若到期
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mi>S</mi><mo>&gt;</mo><mi>F</mi></mrow><annotation encoding="application/x-tex">mS&gt;F</annotation></semantics></math>，则
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><mi>S</mi><mo>,</mo><mi>B</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">E=mS,B=0</annotation></semantics></math>；若选择本金，则
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo>=</mo><mn>0</mn><mo>,</mo><mi>B</mi><mo>=</mo><mi>F</mi></mrow><annotation encoding="application/x-tex">E=0,B=F</annotation></semantics></math>。提前转股同样将
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>B</mi><annotation encoding="application/x-tex">B</annotation></semantics></math>
+设为零；现金回售把
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>E</mi><annotation encoding="application/x-tex">E</annotation></semantics></math>
+设为零；支付 coupon 则将现金金额加到
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>B</mi><annotation encoding="application/x-tex">B</annotation></semantics></math>。</p>
+<p>因此
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>B</mi><annotation encoding="application/x-tex">B</annotation></semantics></math>
+的终值与边界由
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>=</mo><mi>E</mi><mo>+</mo><mi>B</mi></mrow><annotation encoding="application/x-tex">V=E+B</annotation></semantics></math>
+的决策共同决定。<strong>不能先独立算一张 straight
+bond，再声称剩余价值就是 TF 的
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>E</mi><annotation encoding="application/x-tex">E</annotation></semantics></math>。</strong>
+两个分量在区间内的方程简单，但通过行权条件耦合。</p>
+<h3 id="tf-能回答什么不能自动回答什么">7.3 TF
+能回答什么，不能自动回答什么？</h3>
+<p>它提供了一个容易解释、可实施的现金/股票风险分配方式。问题是仅有
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>s</mi><mi>c</mi></msub><annotation encoding="application/x-tex">s_c</annotation></semantics></math>
+还没有指定：违约时股票跌多少？债券收回什么？持有人在违约发生时还可否转股？只用股票
+delta 能否对冲那个跳跃？AFV 的工作明确强调了这种缺失。<a
+href="https://cs.uwaterloo.ca/~paforsyt/convert.pdf">AFV，§4–5</a>。</p>
+<p>所以 TF 可以作为基准或对照模型，但把它的 spread sensitivity
+直接解释为结构一致的违约风险、或把所有 TF 树的 Greeks
+视为同一种对象，都需要额外验证。本文不会把下一节的显式违约树称为
+QuantLib 的 TF 引擎。</p>
+<h2 id="default">08 · 显式违约：为什么股价漂移也要改？</h2>
+<h3 id="把-default-time-的条件分布写清楚">8.1 把 default time
+的条件分布写清楚</h3>
+<p>令
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>τ</mi><mi>D</mi></msub><annotation encoding="application/x-tex">\tau_D</annotation></semantics></math>
+为违约时间。恒定风险中性强度
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>
+意味着，在今天仍未违约的条件下，未来存活概率是</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℚ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>τ</mi><mi>D</mi></msub><mo>&gt;</mo><mi>t</mi><mo>+</mo><mi>u</mi><mo>∣</mo><msub><mi>τ</mi><mi>D</mi></msub><mo>&gt;</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>h</mi><mi>u</mi></mrow></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\mathbb Q(\tau_D&gt;t+u\mid \tau_D&gt;t)=e^{-hu}.
+</annotation></semantics></math></span></p>
+<p>因此</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℚ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>&lt;</mo><msub><mi>τ</mi><mi>D</mi></msub><mo>≤</mo><mi>t</mi><mo>+</mo><mi>Δ</mi><mi>t</mi><mo>∣</mo><msub><mi>τ</mi><mi>D</mi></msub><mo>&gt;</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn><mo>−</mo><mfrac><msup><mi>e</mi><mrow><mo>−</mo><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>+</mo><mi>Δ</mi><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msup><msup><mi>e</mi><mrow><mo>−</mo><mi>h</mi><mi>t</mi></mrow></msup></mfrac><mo>=</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>h</mi><mi>Δ</mi><mi>t</mi></mrow></msup><mo>=</mo><mi>h</mi><mi>Δ</mi><mi>t</mi><mo>+</mo><mi>o</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\mathbb Q(t&lt;\tau_D\le t+\Delta t\mid\tau_D&gt;t)
+=1-\frac{e^{-h(t+\Delta t)}}{e^{-ht}}
+=1-e^{-h\Delta t}=h\Delta t+o(\Delta t).
+</annotation></semantics></math></span></p>
+<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>
+是定价测度
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℚ</mi><annotation encoding="application/x-tex">\mathbb Q</annotation></semantics></math>
+下的强度；历史违约频率属于实际测度
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℙ</mi><annotation encoding="application/x-tex">\mathbb P</annotation></semantics></math>，不能未经风险溢价处理就替换它。仅靠股票与无风险资产通常不足以唯一确定违约风险价格；选定
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>
+与回收规则也是模型及校准的一部分。</p>
+<p>若强度依赖股价，<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>h</mi><mo>=</mo><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>,</mo><msub><mi>S</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">h=h(t,S_t)</annotation></semantics></math>，则需要沿随机路径累计强度；不再能把
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>e</mi><mrow><mo>−</mo><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>,</mo><msub><mi>S</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>u</mi></mrow></msup><annotation encoding="application/x-tex">e^{-h(t,S_t)u}</annotation></semantics></math>
+当成一般精确存活概率。</p>
+<h3 id="违约时股票下跌比例为-eta">8.2 违约时股票下跌比例为
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>η</mi><annotation encoding="application/x-tex">\eta</annotation></semantics></math></h3>
+<p>假设股票在 default 时从
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>S</mi><annotation encoding="application/x-tex">S</annotation></semantics></math>
+跳到
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>η</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>S</mi></mrow><annotation encoding="application/x-tex">(1-\eta)S</annotation></semantics></math>，<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>≤</mo><mi>η</mi><mo>≤</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">0\le\eta\le1</annotation></semantics></math>。在违约前，让其连续部分漂移为
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></msub><annotation encoding="application/x-tex">\mu_{\mathrm{pre}}</annotation></semantics></math>。一个短时间步内的期望总回报约为</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></msub><mspace width="0.167em"></mspace><mi>d</mi><mi>t</mi><mo>−</mo><mi>η</mi><mi>h</mi><mspace width="0.167em"></mspace><mi>d</mi><mi>t</mi><mo>+</mo><mi>q</mi><mspace width="0.167em"></mspace><mi>d</mi><mi>t</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\mu_{\mathrm{pre}}\,dt-\eta h\,dt+q\,dt.
+</annotation></semantics></math></span></p>
+<p>风险中性定价要求含股息回报为
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mspace width="0.167em"></mspace><mi>d</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">r\,dt</annotation></semantics></math>，所以</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><menclose notation="box"><mrow><msub><mi>μ</mi><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>=</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo>+</mo><mi>η</mi><mi>h</mi><mi>.</mi></mrow></menclose><annotation encoding="application/x-tex">
+\boxed{\mu_{\mathrm{pre}}=r-q+\eta h.}
+</annotation></semantics></math></span></p>
+<p>写成带一次违约跳跃的形式，在违约前：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mi>d</mi><msub><mi>S</mi><mi>t</mi></msub></mrow><msub><mi>S</mi><mrow><mi>t</mi><mo>−</mo></mrow></msub></mfrac><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo>+</mo><mi>η</mi><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>d</mi><mi>t</mi><mo>+</mo><mi>σ</mi><mi>d</mi><msubsup><mi>W</mi><mi>t</mi><mi>ℚ</mi></msubsup><mo>−</mo><mi>η</mi><mspace width="0.167em"></mspace><mi>d</mi><msub><mi>H</mi><mi>t</mi></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">
+\frac{dS_t}{S_{t-}}=(r-q+\eta h)dt+\sigma dW_t^{\mathbb Q}-\eta\,dH_t,
+</annotation></semantics></math></span></p>
+<p>其中
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mi>t</mi></msub><mo>=</mo><msub><mn>𝟏</mn><mrow><mo stretchy="false" form="prefix">{</mo><msub><mi>τ</mi><mi>D</mi></msub><mo>≤</mo><mi>t</mi><mo stretchy="false" form="postfix">}</mo></mrow></msub></mrow><annotation encoding="application/x-tex">H_t=\mathbf1_{\{\tau_D\le t\}}</annotation></semantics></math>。当
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>η</mi><mo>&lt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\eta&lt;1</annotation></semantics></math>
+时，还需要为存活的违约后股票另行指定动态；本文只使用 pre-default
+定价方程，并在违约时终止可转债。</p>
+<div class="callout">
+<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>+</mo><mi>η</mi><mi>h</mi></mrow><annotation encoding="application/x-tex">+\eta h</annotation></semantics></math>
+不是“信用越差，真实世界预期股价涨得越快”。它是在风险中性测度下补偿跳跃损失的存续态漂移。只把
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>r</mi><annotation encoding="application/x-tex">r</annotation></semantics></math>
+换成 risky discount rate、却让股票动态完全不变，会定义出另一套模型。</p>
+</div>
+<h3 id="明确违约时持有人拿到-g">8.3 明确违约时持有人拿到
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>G</mi><annotation encoding="application/x-tex">G</annotation></semantics></math></h3>
+<p>本文数值模型选择
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>η</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\eta=1</annotation></semantics></math>，即股票在违约时归零；债券立即按面值回收
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>G</mi><mo>=</mo><mi>R</mi><mi>F</mi></mrow><annotation encoding="application/x-tex">G=RF</annotation></semantics></math>，违约后没有
+coupon，也没有剩余转股权。</p>
+<p>若允许违约时在回收和残余股票之间选择，可研究
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>G</mi><mo>=</mo><mo>max</mo><mo stretchy="false" form="prefix">{</mo><mi>R</mi><mi>F</mi><mo>,</mo><mi>m</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>η</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>S</mi><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">G=\max\{RF,m(1-\eta)S\}</annotation></semantics></math>；<strong>这是一项额外合约/处置假设，不是债券持有人的通用法定权利</strong>。AFV
+提供了显式指定股票跳跃及回收的建模框架；本文下面的短步推导是在选定假设下独立展开。<a
+href="https://cs.uwaterloo.ca/~paforsyt/convert.pdf">AFV，§4</a>。</p>
+<h3 id="逐项展开-default-survival-两种情况">8.4 逐项展开 default /
+survival 两种情况</h3>
+<p>在不立即行权、不付票息的时段：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>r</mi><mi>Δ</mi><mi>t</mi></mrow></msup><mrow><mo stretchy="true" form="prefix">[</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>h</mi><mi>Δ</mi><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>𝔼</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>+</mo><mi>Δ</mi><mi>t</mi><mo>,</mo><mi>S</mi><mo>+</mo><mi>Δ</mi><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>∣</mo><mtext mathvariant="normal">survival</mtext><mo stretchy="true" form="postfix">]</mo></mrow><mo>+</mo><mi>h</mi><mi>Δ</mi><mi>t</mi><mspace width="0.167em"></mspace><mi>G</mi><mo stretchy="true" form="postfix">]</mo></mrow><mo>+</mo><mi>o</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>Δ</mi><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+V=e^{-r\Delta t}\left[(1-h\Delta t)\mathbb E[V(t+\Delta t,S+\Delta S)\mid\text{survival}]+h\Delta t\,G\right]+o(\Delta t).
+</annotation></semantics></math></span></p>
+<p>条件于本步存续时，使用漂移
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>−</mo><mi>q</mi><mo>+</mo><mi>η</mi><mi>h</mi></mrow><annotation encoding="application/x-tex">r-q+\eta h</annotation></semantics></math>。像第
+6 节一样展开并整理：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><menclose notation="box"><mrow><msub><mi>V</mi><mi>t</mi></msub><mo>+</mo><mfrac displaystyle="false"><mn>1</mn><mn>2</mn></mfrac><msup><mi>σ</mi><mn>2</mn></msup><msup><mi>S</mi><mn>2</mn></msup><msub><mi>V</mi><mrow><mi>S</mi><mi>S</mi></mrow></msub><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo>+</mo><mi>η</mi><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>S</mi><msub><mi>V</mi><mi>S</mi></msub><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>V</mi><mo>+</mo><mi>h</mi><mi>G</mi><mo>=</mo><mn>0</mn><mi>.</mi></mrow></menclose><annotation encoding="application/x-tex">
+\boxed{V_t+\tfrac12\sigma^2S^2V_{SS}+(r-q+\eta h)SV_S-(r+h)V+hG=0.}
+</annotation></semantics></math></span></p>
+<p>四项分别是：时间/扩散效应、存续态股价漂移、由于折现和违约终止产生的扣减、违约现金流。<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>
+出现两处不叫重复计数：<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>+</mo><mi>η</mi><mi>h</mi></mrow><annotation encoding="application/x-tex">+\eta h</annotation></semantics></math>
+补偿股票跳跃，<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>−</mo><mi>h</mi><mi>V</mi><mo>+</mo><mi>h</mi><mi>G</mi></mrow><annotation encoding="application/x-tex">-hV+hG</annotation></semantics></math>
+处理该债券自身的终止损益。</p>
+<p><strong>自洽性检查</strong>：把一个在违约时变为
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>η</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>S</mi></mrow><annotation encoding="application/x-tex">(1-\eta)S</annotation></semantics></math>、无股息的股票本身代入，即
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>=</mo><mi>S</mi><mo>,</mo><mi>q</mi><mo>=</mo><mn>0</mn><mo>,</mo><mi>G</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>η</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>S</mi></mrow><annotation encoding="application/x-tex">V=S,q=0,G=(1-\eta)S</annotation></semantics></math>，方程恰好为零。这是检查跳跃漂移符号的简单方式。</p>
+<h3 id="普通债券是这个方程的退化情形">8.5
+普通债券是这个方程的退化情形</h3>
+<p>无转股、零 coupon、恒定
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>,</mo><mi>h</mi><mo>,</mo><mi>R</mi></mrow><annotation encoding="application/x-tex">r,h,R</annotation></semantics></math>，股票导数消失。用
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>=</mo><mi>T</mi><mo>−</mo><mi>t</mi></mrow><annotation encoding="application/x-tex">\tau=T-t</annotation></semantics></math>：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>B</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">g</mi><mi mathvariant="normal">h</mi><mi mathvariant="normal">t</mi></mrow></msub><mo>=</mo><mi>F</mi><msup><mi>e</mi><mrow><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>τ</mi></mrow></msup><mo>+</mo><mi>R</mi><mi>F</mi><msubsup><mo>∫</mo><mn>0</mn><mi>τ</mi></msubsup><mi>h</mi><msup><mi>e</mi><mrow><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>u</mi></mrow></msup><mspace width="0.167em"></mspace><mi>d</mi><mi>u</mi><mo>=</mo><mi>F</mi><msup><mi>e</mi><mrow><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>τ</mi></mrow></msup><mo>+</mo><mi>R</mi><mi>F</mi><mfrac><mi>h</mi><mrow><mi>r</mi><mo>+</mo><mi>h</mi></mrow></mfrac><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>τ</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+B_{\mathrm{straight}}=F e^{-(r+h)\tau}+RF\int_0^{\tau}h e^{-(r+h)u}\,du
+=F e^{-(r+h)\tau}+RF\frac{h}{r+h}(1-e^{-(r+h)\tau}).
+</annotation></semantics></math></span></p>
+<p>第一项是存续至到期的本金，第二项是在不同违约时刻支付回收的现值。离散
+coupon 只需另加
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>i</mi></msub><msub><mi>c</mi><mi>i</mi></msub><msup><mi>e</mi><mrow><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>t</mi><mi>i</mi></msub><mo>−</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msup></mrow><annotation encoding="application/x-tex">\sum_i c_i e^{-(r+h)(t_i-t)}</annotation></semantics></math>。</p>
+<p>在本例中，零息直债价值 <strong>85.0091</strong>。常见近似
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mi>c</mi></msub><mo>≈</mo><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>R</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">s_c\approx h(1-R)</annotation></semantics></math>
+此处给出 150bp，但将本金统一按
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>+</mo><msub><mi>s</mi><mi>c</mi></msub></mrow><annotation encoding="application/x-tex">r+s_c</annotation></semantics></math>
+折现并不精确等于上述 recovery-of-par
+模型。按违约前市场价值回收与按面值回收会给出不同方程；必须说明回收基数。</p>
+<h3 id="一个可以严格校验数值程序的闭式解">8.6
+一个可以严格校验数值程序的闭式解</h3>
+<p>继续取
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>η</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\eta=1</annotation></semantics></math>、<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>G</mi><mo>=</mo><mi>R</mi><mi>F</mi></mrow><annotation encoding="application/x-tex">G=RF</annotation></semantics></math>、常数系数、只在到期转股。违约过程与扩散布朗运动独立。在存续条件下，<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>S</mi><mi>T</mi></msub><annotation encoding="application/x-tex">S_T</annotation></semantics></math>
+是漂移
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>+</mo><mi>h</mi><mo>−</mo><mi>q</mi></mrow><annotation encoding="application/x-tex">r+h-q</annotation></semantics></math>
+的 lognormal。于是</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>τ</mi></mrow></msup><mi>𝔼</mi><mrow><mo stretchy="true" form="prefix">[</mo><mo>max</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>F</mi><mo>,</mo><mi>m</mi><msub><mi>S</mi><mi>T</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>∣</mo><msub><mi>τ</mi><mi>D</mi></msub><mo>&gt;</mo><mi>T</mi><mo stretchy="true" form="postfix">]</mo></mrow><mo>+</mo><mi>R</mi><mi>F</mi><mfrac><mi>h</mi><mrow><mi>r</mi><mo>+</mo><mi>h</mi></mrow></mfrac><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>τ</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+V=e^{-(r+h)\tau}\mathbb E[\max(F,mS_T)\mid\tau_D&gt;T]+RF\frac{h}{r+h}(1-e^{-(r+h)\tau}).
+</annotation></semantics></math></span></p>
+<p>令</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>d</mi><mn>1</mn><mi>h</mi></msubsup><mo>=</mo><mfrac><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>S</mi><mi>/</mi><mi>K</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><mi>h</mi><mo>−</mo><mi>q</mi><mo>+</mo><msup><mi>σ</mi><mn>2</mn></msup><mi>/</mi><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow><mi>τ</mi></mrow><mrow><mi>σ</mi><msqrt><mi>τ</mi></msqrt></mrow></mfrac><mo>,</mo><mspace width="2.0em"></mspace><msubsup><mi>d</mi><mn>2</mn><mi>h</mi></msubsup><mo>=</mo><msubsup><mi>d</mi><mn>1</mn><mi>h</mi></msubsup><mo>−</mo><mi>σ</mi><msqrt><mi>τ</mi></msqrt><mo>,</mo></mrow><annotation encoding="application/x-tex">
+d_1^h=\frac{\log(S/K)+(r+h-q+\sigma^2/2)\tau}{\sigma\sqrt\tau},\qquad d_2^h=d_1^h-\sigma\sqrt\tau,
+</annotation></semantics></math></span></p>
+<p>得到</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><menclose notation="box"><mrow><mi>V</mi><mo>=</mo><mi>m</mi><mi>S</mi><msup><mi>e</mi><mrow><mo>−</mo><mi>q</mi><mi>τ</mi></mrow></msup><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>d</mi><mn>1</mn><mi>h</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mi>F</mi><msup><mi>e</mi><mrow><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>τ</mi></mrow></msup><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mo>−</mo><msubsup><mi>d</mi><mn>2</mn><mi>h</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><mi>R</mi><mi>F</mi><mfrac><mi>h</mi><mrow><mi>r</mi><mo>+</mo><mi>h</mi></mrow></mfrac><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>τ</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow></menclose><annotation encoding="application/x-tex">
+\boxed{V=mS e^{-q\tau}\Phi(d_1^h)+F e^{-(r+h)\tau}\Phi(-d_2^h)+RF\frac{h}{r+h}(1-e^{-(r+h)\tau}).}
+</annotation></semantics></math></span></p>
+<p>当
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>+</mo><mi>h</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">r+h=0</annotation></semantics></math>
+时回收积分按连续极限处理；在本文非负
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>,</mo><mi>h</mi></mrow><annotation encoding="application/x-tex">r,h</annotation></semantics></math>
+的交互范围里，它只有二者皆零的退化情形。将
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>h</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">h=0</annotation></semantics></math>
+代回得到第 3 节；令
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">m=0</annotation></semantics></math>
+则直接使用 straight-bond 公式，不计算
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>K</mi><mo>=</mo><mi>F</mi><mi>/</mi><mi>m</mi></mrow><annotation encoding="application/x-tex">K=F/m</annotation></semantics></math>。</p>
+<p>本例可转债闭式价值为 <strong>111.6656</strong>。把
+<strong>85.0091</strong> 的 risky bond 加上第 3 节
+<strong>23.4914</strong> 的无违约 call，会得到
+<strong>108.5005</strong>，不是该显式违约模型的正确答案。差异来自期权也必须服从同一套跳跃—存续动态。这不证明任一模型是真实市场的唯一正确模型，而是说明不能混拼两套假设。</p>
+<h2 id="tree">09 · 一个可运行的 survival/default 树</h2>
+<h3 id="股票的两个存续分支加一个终止分支">9.1
+股票的两个存续分支，加一个终止分支</h3>
+<p>取
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Δ</mi><mi>t</mi><mo>=</mo><mi>T</mi><mi>/</mi><mi>N</mi></mrow><annotation encoding="application/x-tex">\Delta t=T/N</annotation></semantics></math>，<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>u</mi><mo>=</mo><msup><mi>e</mi><mrow><mi>σ</mi><msqrt><mrow><mi>Δ</mi><mi>t</mi></mrow></msqrt></mrow></msup></mrow><annotation encoding="application/x-tex">u=e^{\sigma\sqrt{\Delta t}}</annotation></semantics></math>、<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mo>=</mo><mn>1</mn><mi>/</mi><mi>u</mi></mrow><annotation encoding="application/x-tex">d=1/u</annotation></semantics></math>。在本文
+jump-to-zero 模型中，本步存活概率是
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>h</mi><mi>Δ</mi><mi>t</mi></mrow></msup></mrow><annotation encoding="application/x-tex">a=e^{-h\Delta t}</annotation></semantics></math>。在<strong>条件存续</strong>下使用</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mfrac><mrow><msup><mi>e</mi><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><mi>h</mi><mo>−</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>Δ</mi><mi>t</mi></mrow></msup><mo>−</mo><mi>d</mi></mrow><mrow><mi>u</mi><mo>−</mo><mi>d</mi></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+p=\frac{e^{(r+h-q)\Delta t}-d}{u-d}.
+</annotation></semantics></math></span></p>
+<p>这保证
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>p</mi><mi>u</mi><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>p</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>d</mi><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><msup><mi>e</mi><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>Δ</mi><mi>t</mi></mrow></msup></mrow><annotation encoding="application/x-tex">a[pu+(1-p)d]=e^{(r-q)\Delta t}</annotation></semantics></math>，即无条件股票除息价值增长与风险中性要求一致。实际三个分支的概率是
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mi>p</mi></mrow><annotation encoding="application/x-tex">ap</annotation></semantics></math>、<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>p</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">a(1-p)</annotation></semantics></math>、<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>−</mo><mi>a</mi></mrow><annotation encoding="application/x-tex">1-a</annotation></semantics></math>；不能把条件概率
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>
+误当成无条件 up 概率。</p>
+<p>必须检查
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>≤</mo><mi>p</mi><mo>≤</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">0\le p\le1</annotation></semantics></math>。强度或漂移大、步长粗时可能不满足；应细化网格或换离散方案，不能直接
+clip 成合法概率然后仍声称同一模型。<a
+href="https://arxiv.org/abs/1206.1400">相关树离散研究：Milanov–Kounchev
+(2012)</a>。</p>
+<h3 id="把一步内的回收现金流精确积分">9.2
+把一步内的回收现金流精确积分</h3>
+<p>对常数系数及固定
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>F</mi></mrow><annotation encoding="application/x-tex">RF</annotation></semantics></math>
+回收，节点 continuation 为</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">t</mi></mrow></msub><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>Δ</mi><mi>t</mi></mrow></msup><mrow><mo stretchy="true" form="prefix">[</mo><mi>p</mi><msub><mi>V</mi><mrow><mi mathvariant="normal">u</mi><mi mathvariant="normal">p</mi></mrow></msub><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>p</mi><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>V</mi><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">w</mi><mi mathvariant="normal">n</mi></mrow></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>+</mo><mi>R</mi><mi>F</mi><mfrac><mi>h</mi><mrow><mi>r</mi><mo>+</mo><mi>h</mi></mrow></mfrac><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>Δ</mi><mi>t</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+V_{\mathrm{cont}}=e^{-(r+h)\Delta t}[pV_{\mathrm{up}}+(1-p)V_{\mathrm{down}}]
++RF\frac{h}{r+h}(1-e^{-(r+h)\Delta t}).
+</annotation></semantics></math></span></p>
+<p>第二项相对于“都在步末回收”的近似更干净。它只对本文的固定强度、固定面值回收规则精确；若
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>h</mi><mo>,</mo><mi>G</mi></mrow><annotation encoding="application/x-tex">h,G</annotation></semantics></math>
+依赖路径或股价，不能直接照搬。</p>
+<p>到期初始化
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>max</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>F</mi><mo>,</mo><mi>m</mi><msub><mi>S</mi><mi>T</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\max(F,mS_T)</annotation></semantics></math>，必要时加末期
+coupon。倒推时先计算 continuation，再按日期应用
+call、put、conversion，最后按第 5.4 节约定加本时点
+coupon。每一步只保留当前向量，内存
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>N</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">O(N)</annotation></semantics></math>，总运算
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>N</mi><mn>2</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">O(N^2)</annotation></semantics></math>。</p>
+<h3 id="为什么不只给一个价格">9.3 为什么不只给一个价格？</h3>
+<p>增加
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math>
+不代表所有 Greeks 都单调变好。终值 kink
+与行权边界相对格点的位置会改变。应分别查看价格收敛、跨股价光滑性和有限差分
+bump 稳定性，尤其不要用“价格到小数点两位不变”替代 gamma 检查。</p>
+<div class="figure">
+<canvas id="convergenceChart" aria-label="不同树步数的欧式价格绝对误差" role="img">
+</canvas>
+<p class="caption">
+图 2 · 第 8.6
+节闭式解为基准；实线为显式违约，虚线为无违约；横轴为步数，纵轴为每 100
+面值的绝对误差。两轴取对数。这里只展示对齐的偶数网格，不据此断言任意网格误差都单调。
+</p>
+</div>
+<h2 id="numerics">10 · 有限差分、多因子与 Monte Carlo 怎么选？</h2>
+<h3 id="一维-pde先在-log-stock-上看清结构">10.1 一维 PDE：先在 log-stock
+上看清结构</h3>
+<p>令
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mo>=</mo><mo>log</mo><mi>S</mi></mrow><annotation encoding="application/x-tex">x=\log S</annotation></semantics></math>，则
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><msub><mi>V</mi><mi>S</mi></msub><mo>=</mo><msub><mi>V</mi><mi>x</mi></msub></mrow><annotation encoding="application/x-tex">SV_S=V_x</annotation></semantics></math>、<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>S</mi><mn>2</mn></msup><msub><mi>V</mi><mrow><mi>S</mi><mi>S</mi></mrow></msub><mo>=</mo><msub><mi>V</mi><mrow><mi>x</mi><mi>x</mi></mrow></msub><mo>−</mo><msub><mi>V</mi><mi>x</mi></msub></mrow><annotation encoding="application/x-tex">S^2V_{SS}=V_{xx}-V_x</annotation></semantics></math>。显式违约
+PDE 变为</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mi>t</mi></msub><mo>+</mo><mfrac displaystyle="false"><mn>1</mn><mn>2</mn></mfrac><msup><mi>σ</mi><mn>2</mn></msup><msub><mi>V</mi><mrow><mi>x</mi><mi>x</mi></mrow></msub><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo>+</mo><mi>η</mi><mi>h</mi><mo>−</mo><mfrac displaystyle="false"><mn>1</mn><mn>2</mn></mfrac><msup><mi>σ</mi><mn>2</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>V</mi><mi>x</mi></msub><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo>+</mo><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>V</mi><mo>+</mo><mi>h</mi><mi>G</mi><mo>=</mo><mn>0</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+V_t+\tfrac12\sigma^2V_{xx}+(r-q+\eta h-\tfrac12\sigma^2)V_x-(r+h)V+hG=0.
+</annotation></semantics></math></span></p>
+<p>在均匀
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>
+网格上，用中心差分离散导数。令
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>=</mo><msup><mi>σ</mi><mn>2</mn></msup><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">a=\sigma^2/2</annotation></semantics></math>、<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi><mo>=</mo><mi>r</mi><mo>−</mo><mi>q</mi><mo>+</mo><mi>η</mi><mi>h</mi><mo>−</mo><msup><mi>σ</mi><mn>2</mn></msup><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">b=r-q+\eta h-\sigma^2/2</annotation></semantics></math>、<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi><mo>=</mo><mi>r</mi><mo>+</mo><mi>h</mi></mrow><annotation encoding="application/x-tex">k=r+h</annotation></semantics></math>，continuation
+的三对角系数为</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>ℓ</mo><mo>−</mo></msub><mo>=</mo><mfrac><mi>a</mi><mrow><mi>Δ</mi><msup><mi>x</mi><mn>2</mn></msup></mrow></mfrac><mo>−</mo><mfrac><mi>b</mi><mrow><mn>2</mn><mi>Δ</mi><mi>x</mi></mrow></mfrac><mo>,</mo><mspace width="1.0em"></mspace><msub><mo>ℓ</mo><mn>0</mn></msub><mo>=</mo><mo>−</mo><mfrac><mrow><mn>2</mn><mi>a</mi></mrow><mrow><mi>Δ</mi><msup><mi>x</mi><mn>2</mn></msup></mrow></mfrac><mo>−</mo><mi>k</mi><mo>,</mo><mspace width="1.0em"></mspace><msub><mo>ℓ</mo><mo>+</mo></msub><mo>=</mo><mfrac><mi>a</mi><mrow><mi>Δ</mi><msup><mi>x</mi><mn>2</mn></msup></mrow></mfrac><mo>+</mo><mfrac><mi>b</mi><mrow><mn>2</mn><mi>Δ</mi><mi>x</mi></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\ell_- =\frac{a}{\Delta x^2}-\frac{b}{2\Delta x},\quad
+\ell_0=-\frac{2a}{\Delta x^2}-k,\quad
+\ell_+=\frac{a}{\Delta x^2}+\frac{b}{2\Delta x}.
+</annotation></semantics></math></span></p>
+<p>用距到期时间
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
+向前推进：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>I</mi><mo>−</mo><mi>θ</mi><mi>Δ</mi><mi>τ</mi><msub><mi>L</mi><mi>h</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msup><mi>V</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msup><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>I</mi><mo>+</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>θ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>Δ</mi><mi>τ</mi><msub><mi>L</mi><mi>h</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msup><mi>V</mi><mi>n</mi></msup><mo>+</mo><mi>Δ</mi><mi>τ</mi><msup><mi>f</mi><mrow><mi>n</mi><mo>+</mo><mi>θ</mi></mrow></msup><mo>,</mo><mspace width="1.0em"></mspace><mi>f</mi><mo>=</mo><mi>h</mi><mi>G</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+(I-\theta\Delta\tau L_h)V^{n+1}
+=(I+(1-\theta)\Delta\tau L_h)V^n+\Delta\tau f^{n+\theta},\quad f=hG.
+</annotation></semantics></math></span></p>
+<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\theta=1</annotation></semantics></math>
+为全隐式，<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi><mo>=</mo><mn>1</mn><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">\theta=1/2</annotation></semantics></math>
+为 Crank–Nicolson。终值有 kink 时可先做几个隐式半步再切换
+CN；漂移强时中心差分未必保持单调，需要检查 off-diagonal 系数并考虑
+upwinding/拟合网格。稳定性、单调性和高阶精度不是同一件事。</p>
+<p>每步带上下障碍时，要解离散互补问题，可用 policy iteration、penalty 或
+projected iteration。只做一次“无约束求解 +
+clip”是一种分裂近似，不应无条件宣称与完整障碍求解等价。<a
+href="https://cs.uwaterloo.ca/~paforsyt/convert.pdf">AFV，数值附录</a>。</p>
+<p>低股价边界应与同模型债券/回售价值一致；高股价边界应由允许转股、股息、call
+及剩余时间决定。只在适用时才设
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>=</mo><mi>m</mi><mi>S</mi></mrow><annotation encoding="application/x-tex">V=mS</annotation></semantics></math>。边界位置要扩张测试，不能让截断误差冒充网格收敛。</p>
+<h3 id="随机利率会多出哪些项">10.2 随机利率会多出哪些项？</h3>
+<p>若
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>r</mi><mo>=</mo><msub><mi>a</mi><mi>r</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>d</mi><mi>t</mi><mo>+</mo><msub><mi>b</mi><mi>r</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>d</mi><msub><mi>W</mi><mi>r</mi></msub></mrow><annotation encoding="application/x-tex">dr=a_r(t,r)dt+b_r(t,r)dW_r</annotation></semantics></math>，<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mo stretchy="false" form="prefix">⟨</mo><msub><mi>W</mi><mi>S</mi></msub><mo>,</mo><msub><mi>W</mi><mi>r</mi></msub><mo stretchy="false" form="postfix">⟩</mo><mo>=</mo><mi>ρ</mi><mspace width="0.167em"></mspace><mi>d</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">d\langle W_S,W_r\rangle=\rho\,dt</annotation></semantics></math>，则在原
+PDE 上加入</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>a</mi><mi>r</mi></msub><msub><mi>V</mi><mi>r</mi></msub><mo>+</mo><mfrac displaystyle="false"><mn>1</mn><mn>2</mn></mfrac><msubsup><mi>b</mi><mi>r</mi><mn>2</mn></msubsup><msub><mi>V</mi><mrow><mi>r</mi><mi>r</mi></mrow></msub><mo>+</mo><mi>ρ</mi><mi>σ</mi><mi>S</mi><msub><mi>b</mi><mi>r</mi></msub><msub><mi>V</mi><mrow><mi>S</mi><mi>r</mi></mrow></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">
+a_rV_r+\tfrac12b_r^2V_{rr}+\rho\sigma S b_rV_{Sr},
+</annotation></semantics></math></span></p>
+<p>并将短端利率作为状态及折现变量。这里的 mixed derivative
+来自股票与利率增量的协方差。若违约强度也随机，继续增加强度状态及交叉项；这能更丰富地表达联合风险，但增加参数可识别性和计算成本。</p>
+<h3 id="monte-carlo-并不是模拟-payoff-后简单平均">10.3 Monte Carlo
+并不是模拟 payoff 后简单平均</h3>
+<p>只有到期 payoff
+的产品可以直接折现平均。存在提前行权时，需要每个决策时点的 conditional
+continuation estimate，再比较 stop/continue。LSMC
+可用回归或机器学习拟合该条件期望；发行人 call
+又增加对手方的最小化问题。</p>
+<p>拟合决策策略与评估该策略应使用独立模拟路径或交叉拟合，防止前视拟合偏差。普通单方
+American option 的固定策略可给一个下界；同时存在 issuer call
+时，未经博弈分析，不能把同一句下界保证原封不动搬过来。</p>
+<div class="tablewrap"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">方法</th>
+<th style="text-align: left;">本文建议的适用起点</th>
+<th style="text-align: left;">主要审计点</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">闭式解</td>
+<td style="text-align: left;">简化欧式、常数系数</td>
+<td style="text-align: left;">用作退化和单位测试，不硬套复杂条款</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">树</td>
+<td style="text-align: left;">少数状态、明确日程</td>
+<td style="text-align: left;">转移概率、日期对齐、价格与 Greeks
+的格点效应</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">有限差分</td>
+<td style="text-align: left;">一到两个连续因子、复杂事件</td>
+<td style="text-align: left;">边界、障碍求解、单调性、事件前后值</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LSMC / 神经条件期望</td>
+<td style="text-align: left;">较高维或复杂历史状态</td>
+<td style="text-align: left;">样本外策略评估、回归误差、双方决策</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CTMC 离散</td>
+<td style="text-align: left;">离散状态近似及矩阵递推</td>
+<td style="text-align: left;">状态截断、生成矩阵、跨因子耦合</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="experiments">11 · 合成实验：实际跑了什么，得到什么？</h2>
+<h3 id="欧式闭式解-vs-树">11.1 欧式闭式解 vs 树</h3>
+<p>以下表格来自本次实际执行的 Python
+计算，不是抄录论文，也不是对市场价格的拟合。对两个模型分别使用对应的风险中性树概率。</p>
+<div class="tablewrap"><table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">树步数
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math></th>
+<th style="text-align: right;">无违约欧式价格</th>
+<th style="text-align: right;">显式违约欧式价格</th>
+<th style="text-align: right;">对显式违约闭式的绝对误差</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">112.103268</td>
+<td style="text-align: right;">111.586047</td>
+<td style="text-align: right;">0.079535</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">120</td>
+<td style="text-align: right;">112.143303</td>
+<td style="text-align: right;">111.625773</td>
+<td style="text-align: right;">0.039810</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">300</td>
+<td style="text-align: right;">112.167366</td>
+<td style="text-align: right;">111.649649</td>
+<td style="text-align: right;">0.015934</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">600</td>
+<td style="text-align: right;">112.175394</td>
+<td style="text-align: right;">111.657614</td>
+<td style="text-align: right;">0.007969</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">1200</td>
+<td style="text-align: right;">112.179409</td>
+<td style="text-align: right;">111.661598</td>
+<td style="text-align: right;">0.003985</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2400</td>
+<td style="text-align: right;">112.181416</td>
+<td style="text-align: right;">111.663590</td>
+<td style="text-align: right;">0.001992</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">闭式</td>
+<td style="text-align: right;">112.183424</td>
+<td style="text-align: right;">111.665583</td>
+<td style="text-align: right;">—</td>
+</tr>
+</tbody>
+</table></div>
+<p>树的 2,400 步显式违约价格与闭式解相差约 <strong>0.00199 / 每 100
+面值</strong>。这说明该测试点的价格离散误差较小，不证明一般条款、一般网格或
+delta/gamma 都已达同样精度。</p>
+<h3 id="逐项打开条款">11.2 逐项打开条款</h3>
+<p>保持
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>h</mi><mo>=</mo><mn>2.5</mn><mi>%</mi><mo>,</mo><mi>R</mi><mo>=</mo><mn>40</mn><mi>%</mi><mo>,</mo><mi>η</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">h=2.5\%,R=40\%,\eta=1</annotation></semantics></math>。American
+表示在所有网格时点允许转股；票息为年率 2%，每半年 1 元；call 从 1.5
+年起允许、现金额 105、<strong>没有通知期和 soft-call
+股价触发</strong>；put 只在 1.5 年时以 100
+行使。金额均为除本时点已付票息后的行权额。</p>
+<div class="tablewrap"><table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">合约版本</th>
+<th
+style="text-align: right;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi><mo>=</mo><mn>600</mn></mrow><annotation encoding="application/x-tex">N=600</annotation></semantics></math></th>
+<th
+style="text-align: right;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi><mo>=</mo><mn>1</mn><mo>,</mo><mn>200</mn></mrow><annotation encoding="application/x-tex">N=1{,}200</annotation></semantics></math></th>
+<th style="text-align: right;">两网格价差绝对值</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">欧式，零 coupon</td>
+<td style="text-align: right;">111.6576</td>
+<td style="text-align: right;">111.6616</td>
+<td style="text-align: right;">0.0040</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">American，零 coupon</td>
+<td style="text-align: right;">111.8586</td>
+<td style="text-align: right;">111.8621</td>
+<td style="text-align: right;">0.0036</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">American，2% coupon</td>
+<td style="text-align: right;">117.0254</td>
+<td style="text-align: right;">117.0294</td>
+<td style="text-align: right;">0.0040</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">American，coupon + call</td>
+<td style="text-align: right;">112.4146</td>
+<td style="text-align: right;">112.3936</td>
+<td style="text-align: right;">0.0210</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">American，coupon + put</td>
+<td style="text-align: right;">117.5182</td>
+<td style="text-align: right;">117.5217</td>
+<td style="text-align: right;">0.0034</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">American，coupon + call + put</td>
+<td style="text-align: right;">113.2901</td>
+<td style="text-align: right;">113.2774</td>
+<td style="text-align: right;">0.0127</td>
+</tr>
+</tbody>
+</table></div>
+<p>打开回售提高价值，打开发行人赎回降低价值；同时添加二者的净影响不能通过独立
+option premium 简单相加，因为最优策略发生改变。含 call 的 600/1,200
+步差异约 0.021，明显大于本例欧式的差异，因此只报一个带很多小数的 call
+价格会给人虚假精确感。</p>
+<h3 id="交互实验改变一个参数再比较条款">11.3
+交互实验：改变一个参数再比较条款</h3>
+<div id="pricingLab" class="lab">
+<div class="controls">
+<label>股价 S
+<output id="spotOut">
+50
+</output>
+<input id="spotInput" type="range" min="15" max="100" step="1" value="50"></label>
+<label>波动率 σ
+<output id="volOut">
+30%
+</output>
+<input id="volInput" type="range" min="10" max="60" step="1" value="30"></label>
+<label>风险中性强度 h
+<output id="hazOut">
+2.5%
+</output>
+<p><input id="hazInput" type="range" min="0" max="10" step="0.1" value="2.5"></label>
+<label><span>合约版本</span><select id="contractInput"><option value="european">欧式零息：闭式
+/ 树对照</option><option value="american_zero">American
+零息</option><option value="american">American + 2%
+coupon</option><option value="call">American + coupon +
+call</option><option value="put">American + coupon +
+put</option><option value="both">American + coupon + call /
+put</option></select></label></p>
+</div>
+<div class="metrics">
+<div>
+<span>模型价值 · N=300</span><strong id="labPrice">计算中</strong>
+</div>
+<div>
+<span>当前 parity</span><strong id="labParity">100.0000</strong>
+</div>
+<div>
+<span>欧式零息闭式参考</span><strong id="labExact">111.6656</strong>
+</div>
+</div>
+<p class="caption" id="labNote">
+网页直接计算，无网络请求。300 步是交互速度与误差的折中；它不是生产级
+pricer。
+</p>
+<canvas id="labChart" aria-label="不同股价下当前合约、欧式基准及parity" role="img">
+</canvas>
+<p class="caption">
+图 3 ·
+实线：当前选择的条款；虚线：同模型欧式零息；点线：parity。上方闭式参考仅适用于欧式零息，不是其他版本的解析答案。所有合约均采用本文人工约定，不代表真实证券。
+</p>
+</div>
+<h3 id="本次完成的退化与方向检查">11.4 本次完成的退化与方向检查</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">检查</th>
+<th style="text-align: left;">结果</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">2,400 步欧式树 vs 闭式：绝对误差 &lt;
+0.003</td>
+<td style="text-align: left;">通过</td>
+</tr>
+<tr class="even">
+<td
+style="text-align: left;">关闭转股后，树等于同模型直债闭式（1e−10）</td>
+<td style="text-align: left;">通过</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">American 价值不低于欧式</td>
+<td style="text-align: left;">通过</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">增加 call 不提高持有人价值</td>
+<td style="text-align: left;">通过</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">增加 put 不降低持有人价值</td>
+<td style="text-align: left;">通过</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">call + put 价值落在对应单边权利界内</td>
+<td style="text-align: left;">通过</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">可立即转股时价值不低于
+parity（多股价点）</td>
+<td style="text-align: left;">通过</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">关闭转股的 coupon bond
+匹配现金流现值（1e−10）</td>
+<td style="text-align: left;">通过</td>
+</tr>
+<tr class="odd">
+<td
+style="text-align: left;">无违约、无股息、无票息时提前转股溢价为零</td>
+<td style="text-align: left;">通过</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">非法转移概率被显式拒绝</td>
+<td style="text-align: left;">通过</td>
+</tr>
+</tbody>
+</table></div>
+<p>没有进行实盘回测，没有读取商业数据，没有验证发行人真实行为，也没有运行
+QuantLib 来宣称跨库一致。附录 Python 与浏览器 JavaScript
+实现独立运行，并对同一基准价格交叉检查；两者都仍属于同一组教学假设。</p>
+<h2 id="path-dependence">12 · 真正让问题变难的是条款状态</h2>
+<h3 id="soft-call-的-2030-不是今天-s1.3k">12.1 Soft call 的 20/30
+不是今天
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo>&gt;</mo><mn>1.3</mn><mi>K</mi></mrow><annotation encoding="application/x-tex">S&gt;1.3K</annotation></semantics></math></h3>
+<p>令日度触发指示为
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mi>j</mi></msub><mo>=</mo><msub><mn>𝟏</mn><mrow><mo stretchy="false" form="prefix">{</mo><msub><mi>S</mi><mi>j</mi></msub><mo>&gt;</mo><mn>1.3</mn><msub><mi>K</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">}</mo></mrow></msub></mrow><annotation encoding="application/x-tex">I_j=\mathbf1_{\{S_j&gt;1.3K_j\}}</annotation></semantics></math>。最近
+30 个交易日里至少 20 天触发的条件是</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mi>n</mi><mo>−</mo><mn>29</mn></mrow><mi>n</mi></munderover><msub><mi>I</mi><mi>j</mi></msub><mo>≥</mo><mn>20</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\sum_{j=n-29}^{n}I_j\ge20.
+</annotation></semantics></math></span></p>
+<p>同一个今天的股价，配上不同历史，赎回资格可以不同。因此
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>,</mo><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">V(t,S)</annotation></semantics></math>
+一般不够，需要历史状态。更微妙的是，<strong>只存当前 count
+也通常不够</strong>：明天滚动窗口退出的是哪一个旧
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>I</mi><mi>j</mi></msub><annotation encoding="application/x-tex">I_j</annotation></semantics></math>，取决于它的顺序。</p>
+<p>例如两个窗口当前都计数 20，但一个明天移除 1，另一个移除
+0。给定相同明天的新指示，它们的计数会不同。精确状态需要保留足够的队列/bit
+pattern，或采用经验证的状态压缩。使用 compressed count approximation
+时，应把近似误差单独量化。上文 Rubrik
+发行文件中的历史触发就是一个具体条款例子，而不是只看 spot 的 barrier。<a
+href="https://www.sec.gov/Archives/edgar/data/1943896/000119312525140729/d920850d8k.htm">发行文件</a>。</p>
+<h3 id="call-notice-period-是一个新状态不是一条线">12.2 Call notice
+period 是一个新状态，不是一条线</h3>
+<p>若发出 call notice
+后需等一段时间，持有人仍可在期间作出选择，股价和信用也继续变化。发行人今天发通知的成本是一个“notice
+已启动”子合约的价值，通常不是即时
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>max</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>C</mi><mo>,</mo><mi>m</mi><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\max(C,mS)</annotation></semantics></math>。状态需至少包含是否已发通知及剩余通知天数。</p>
+<h3 id="reset-与-call-阈值会相互作用">12.3 Reset 与 call
+阈值会相互作用</h3>
+<p>下调转股价意味着提高
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mo>=</mo><mi>F</mi><mi>/</mi><mi>K</mi></mrow><annotation encoding="application/x-tex">m=F/K</annotation></semantics></math>，看起来对持有人有利；但若
+call threshold 同时按新
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>
+下调，发行人可能更早有资格赎回。两个条款一起变动时，不能用“增加单一投资者权利必定增值”的论证。</p>
+<p>注意逻辑边界：<strong>在发行人的机会集合和所有其他条款都不改变的前提下</strong>，扩大持有人的可选动作不应降低价值。若
+reset 同时改变 issuer call 的触发，前提已经失效。2026 年
+Zhu–Chen–Langrené 预印本将这类路径依赖 reset/call
+放进神经条件期望递推，并报告了相关实例；本文只核对其摘要，不把结论推广成所有市场的经验规律，也未复现该文。<a
+href="https://arxiv.org/abs/2605.12189">arXiv:2605.12189</a>。</p>
+<h3 id="dilution-与发行人的-capped-call-不要混为一谈">12.4 Dilution
+与发行人的 capped call 不要混为一谈</h3>
+<p>如果直接用已交易股票
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>S</mi><annotation encoding="application/x-tex">S</annotation></semantics></math>
+作状态，转股交付价值依具体股数与结算规则计算；如果从 firm value
+出发同时定价股本、其他债务和新发行股份，则需要显式处理资本结构与稀释。两种体系不能在中间随意切换。</p>
+<p>发行人为管理稀释而另外买入的 capped
+call，通常是另一份交易。除非持有人所持债券条款明确赋予相应权益，否则不能自动把发行人的
+hedge payoff 加到可转债投资者的 payoff 上。Rubrik 的 8-K 将 notes 与
+capped-call transactions 分开描述，可用来练习区分交易主体。<a
+href="https://www.sec.gov/Archives/edgar/data/1943896/000119312525140729/d920850d8k.htm">同一发行文件的
+Capped Call Transactions 部分</a>。</p>
+<h2 id="calibration">13 · 校准：不是找到一条 bond spread 就完成了</h2>
+<h3 id="输入应当对应模型中的随机对象">13.1
+输入应当对应模型中的随机对象</h3>
+<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">r(t)</annotation></semantics></math>
+从一致的贴现/融资基准构建；股息、股票借贷与公司事件需对应股价动态；信用曲线需匹配发行人、顺位、回收及流动性差异；股权期权数据约束波动率/尾部；完整条款决定停止与结算规则。这里没有理由让一个从其他债券来的
+spread 自动吸收所有误差。</p>
+<p>尤其是第 8 节的
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>σ</mi><annotation encoding="application/x-tex">\sigma</annotation></semantics></math>
+是<strong>违约前扩散波动率</strong>。观察到的 vanilla equity option
+implied volatility 已反映市场期权价格；若模型另外加入 default
+jump，再把整条 Black–Scholes implied vol
+当作完全相同的扩散参数，可能重复或错误分配尾部风险。</p>
+<p>Andersen–Buffum 的校准研究正是强调 debt 与 equity option
+市场的联合约束及数值校准偏差；本报告核对了出版方摘要，不声称读到了该站点受限全文或复现其结果。<a
+href="https://www.risk.net/journal-of-computational-finance/2160572/calibration-and-implementation-of-convertible-bond-models">出版方摘要</a>。</p>
+<h3 id="可以写成一个联合拟合问题">13.2 可以写成一个联合拟合问题</h3>
+<p>用
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
+表示波动率、强度函数和必要相关参数。一个示意目标是</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munder><mo>min</mo><mi>θ</mi></munder><munder><mo>∑</mo><mi>i</mi></munder><msubsup><mi>w</mi><mi>i</mi><mrow><mi mathvariant="normal">e</mi><mi mathvariant="normal">q</mi></mrow></msubsup><mo minsize="1.2" maxsize="1.2" stretchy="false" form="prefix">(</mo><msubsup><mi>C</mi><mi>i</mi><mrow><mi mathvariant="normal">m</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">l</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>θ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><msubsup><mi>C</mi><mi>i</mi><mrow><mi mathvariant="normal">m</mi><mi mathvariant="normal">k</mi><mi mathvariant="normal">t</mi></mrow></msubsup><msup><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">)</mo><mn>2</mn></msup><mo>+</mo><munder><mo>∑</mo><mi>j</mi></munder><msubsup><mi>w</mi><mi>j</mi><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">r</mi></mrow></msubsup><mo minsize="1.2" maxsize="1.2" stretchy="false" form="prefix">(</mo><msubsup><mi>B</mi><mi>j</mi><mrow><mi mathvariant="normal">m</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">l</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>θ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><msubsup><mi>B</mi><mi>j</mi><mrow><mi mathvariant="normal">m</mi><mi mathvariant="normal">k</mi><mi mathvariant="normal">t</mi></mrow></msubsup><msup><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">)</mo><mn>2</mn></msup><mo>+</mo><mi>λ</mi><mspace width="0.167em"></mspace><mo>Penalty</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>θ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\min_\theta\sum_i w_i^{\mathrm{eq}}\bigl(C_i^{\mathrm{model}}(\theta)-C_i^{\mathrm{mkt}}\bigr)^2
++\sum_j w_j^{\mathrm{cr}}\bigl(B_j^{\mathrm{model}}(\theta)-B_j^{\mathrm{mkt}}\bigr)^2
++\lambda\,\operatorname{Penalty}(\theta).
+</annotation></semantics></math></span></p>
+<p>权重可依据报价不确定性与 bid–ask
+尺度选择；这只是一个设计框架，不是唯一准则。不要把 illiquid quote
+的最后一位小数当作必须拟合的真值。使用可转债本身参与校准时，还应留出其他证券/日期检查模型泛化，而非用同一个价格既拟合又宣称验证。</p>
+<h3 id="有股价依赖的-hazard-时delta-也变了">13.3 有股价依赖的 hazard
+时，delta 也变了</h3>
+<p>例如人为指定</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>h</mi><mn>0</mn></msub><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><msub><mi>S</mi><mn>0</mn></msub><mi>S</mi></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>β</mi></msup><mo>,</mo><mspace width="1.0em"></mspace><mi>β</mi><mo>≥</mo><mn>0</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+h(S)=h_0\left(\frac{S_0}{S}\right)^\beta,\quad \beta\ge0.
+</annotation></semantics></math></span></p>
+<p>这是一个可研究的模型族，不是统计事实。固定 hazard 的 partial delta
+与让 hazard 随股价调整的 total delta 不同。若价格写作
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>V</mi><mo accent="true">̃</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><mi>S</mi><mo>,</mo><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\widetilde V(S,h)</annotation></semantics></math>，有</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mi>d</mi><mi>V</mi></mrow><mrow><mi>d</mi><mi>S</mi></mrow></mfrac><mo>=</mo><mfrac><mrow><mi>∂</mi><mover><mi>V</mi><mo accent="true">̃</mo></mover></mrow><mrow><mi>∂</mi><mi>S</mi></mrow></mfrac><mo>+</mo><mfrac><mrow><mi>∂</mi><mover><mi>V</mi><mo accent="true">̃</mo></mover></mrow><mrow><mi>∂</mi><mi>h</mi></mrow></mfrac><mfrac><mrow><mi>d</mi><mi>h</mi></mrow><mrow><mi>d</mi><mi>S</mi></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\frac{dV}{dS}=\frac{\partial\widetilde V}{\partial S}+\frac{\partial\widetilde V}{\partial h}\frac{dh}{dS}.
+</annotation></semantics></math></span></p>
+<p>实际 state-dependent PDE
+的依赖涉及未来整条路径，不能总把它简化为一个当前点的链式法则；上式用于解释风险口径差别。做
+bump-and-revalue 前，必须声明 bump
+哪些市场报价、是否重校准，以及保持哪些参数固定。</p>
+<h3 id="oasimplied-vol-与模型误差">13.4 OAS、implied vol 与模型误差</h3>
+<p>固定其他假设后，可以反解使模型匹配市场价的 volatility 或额外
+spread。它们是<strong>在某模型及条款下的隐含参数</strong>，不是从市场价格唯一识别出的“真实信用”或“真实波动率”。若条款解析错了，隐含参数可能只是在补偿错误。</p>
+<p>对于纯现金 bond 可以讨论单一
+yield；可转债的未来支付形态取决于股票和决策，用一个 yield
+概括全部风险尤其容易误导。模型价格、issuer credit、equity
+exposure、funding/liquidity residual 最好分开记录。</p>
+<h2 id="risk">14 · Greeks 与 convertible arbitrage：delta-neutral
+不等于无风险</h2>
+<h3 id="先把单位说清楚">14.1 先把单位说清楚</h3>
+<p>在第 8.6 节的欧式基准，固定
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>h</mi><mo>,</mo><mi>R</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>q</mi><mo>,</mo><mi>σ</mi></mrow><annotation encoding="application/x-tex">h,R,r,q,\sigma</annotation></semantics></math>，<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Δ</mi><mo>=</mo><msub><mi>V</mi><mi>S</mi></msub></mrow><annotation encoding="application/x-tex">\Delta=V_S</annotation></semantics></math>
+的单位是“股 / 每张债券”。归一化 delta
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Δ</mi><mi>/</mi><mi>m</mi></mrow><annotation encoding="application/x-tex">\Delta/m</annotation></semantics></math>
+才接近常用的 0–1 股性刻度。Gamma 是每一股价单位变化引起的 delta
+变化；vega 应说明是一单位绝对波动率还是 1 vol point。</p>
+<p>在这个特定闭式模型中，直接微分可得</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Δ</mi><mo>=</mo><mi>m</mi><msup><mi>e</mi><mrow><mo>−</mo><mi>q</mi><mi>T</mi></mrow></msup><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>d</mi><mn>1</mn><mi>h</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><mi>Γ</mi><mo>=</mo><mfrac><mrow><mi>m</mi><msup><mi>e</mi><mrow><mo>−</mo><mi>q</mi><mi>T</mi></mrow></msup><mi>ϕ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>d</mi><mn>1</mn><mi>h</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><mi>S</mi><mi>σ</mi><msqrt><mi>T</mi></msqrt></mrow></mfrac><mo>,</mo></mrow><annotation encoding="application/x-tex">
+\Delta=m e^{-qT}\Phi(d_1^h),\qquad \Gamma=\frac{m e^{-qT}\phi(d_1^h)}{S\sigma\sqrt T},
+</annotation></semantics></math></span></p>
+<p>其中
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>
+为标准正态密度。本次另用闭式公式做 central bump，结果如下，均为
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo>=</mo><mn>50</mn></mrow><annotation encoding="application/x-tex">S=50</annotation></semantics></math>
+的合成例子。</p>
+<div class="tablewrap"><table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">风险量</th>
+<th style="text-align: right;">数值</th>
+<th style="text-align: left;">计算口径</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Delta</td>
+<td style="text-align: right;">1.393848</td>
+<td style="text-align: left;">股 / 每张债券；股价 bump ±0.05</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Gamma</td>
+<td style="text-align: right;">0.025228</td>
+<td style="text-align: left;">每一股价单位；bump ±0.05</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Vega：+1 vol point</td>
+<td style="text-align: right;">0.567583</td>
+<td style="text-align: left;">价格变化；σ 中心 bump ±0.01</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Rate：+1bp</td>
+<td style="text-align: right;">-0.012170</td>
+<td style="text-align: left;">价格变化；r 中心 bump ±0.0001</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Hazard：+1bp</td>
+<td style="text-align: right;">-0.001267</td>
+<td style="text-align: left;">价格变化；h 中心 bump ±0.0001</td>
+</tr>
+</tbody>
+</table></div>
+<p>Rate 1bp 是 bump
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>r</mi><annotation encoding="application/x-tex">r</annotation></semantics></math>、保持
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>
+与扩散波动率不变的价格变化；hazard 1bp 是 bump
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>，<strong>不等于
+CDS spread
+1bp</strong>。后者还要通过信用曲线的校准映射。通常债性更强时对 credit
+更敏感，但在含固定回收和风险中性跳跃补偿的模型里，不能不加条件地断言所有状态下
+hazard sensitivity 都严格为负。</p>
+<h3 id="股票-hedge-为什么消不掉违约跳跃">14.2 股票 hedge
+为什么消不掉违约跳跃？</h3>
+<p>持有一张可转债，并做空
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Δ</mi><annotation encoding="application/x-tex">\Delta</annotation></semantics></math>
+股。违约前组合为
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>−</mo><mi>Δ</mi><mi>S</mi></mrow><annotation encoding="application/x-tex">V-\Delta S</annotation></semantics></math>。违约发生时，债券变成
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>G</mi><annotation encoding="application/x-tex">G</annotation></semantics></math>，股票变成
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>η</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>S</mi></mrow><annotation encoding="application/x-tex">(1-\eta)S</annotation></semantics></math>，瞬时组合损益为</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><menclose notation="box"><mrow><mi>Δ</mi><msub><mi>Π</mi><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">f</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">t</mi></mrow></msub><mo>=</mo><mi>G</mi><mo>−</mo><mi>V</mi><mo>+</mo><mi>Δ</mi><mi>η</mi><mi>S</mi><mi>.</mi></mrow></menclose><annotation encoding="application/x-tex">
+\boxed{\Delta\Pi_{\mathrm{default}}=G-V+\Delta\eta S.}
+</annotation></semantics></math></span></p>
+<p>令
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Δ</mi><mo>=</mo><msub><mi>V</mi><mi>S</mi></msub></mrow><annotation encoding="application/x-tex">\Delta=V_S</annotation></semantics></math>
+可以消除连续小波动的一阶暴露，却不保证上式为零。本例该跳跃损益约为
+<strong>−1.9732 / 每 100
+面值</strong>；这只是特定参数点下的瞬时模型损益，不含融资、借券、执行或违约结算摩擦。</p>
+<p>因此 “long convertible + short stock” 不等于无风险套利。即使 delta
+接近零，仍有
+gamma、volatility、credit/recovery、funding、股票借贷与召回、流动性和跳跃风险。把交易称为
+convertible arbitrage，并不意味着所有收益来自可锁定的 no-arbitrage
+discrepancy。</p>
+<h3 id="一个有用但有前提的-gammatheta-近似">14.3 一个有用但有前提的
+gamma–theta 近似</h3>
+<p>在单一连续扩散、其他参数不变、已扣除一致 carry 且 hedge
+足够频繁的理想模型里，delta-hedged option-like 部分有近似波动率损益</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>Π</mi><mo>≈</mo><mfrac displaystyle="false"><mn>1</mn><mn>2</mn></mfrac><mi>Γ</mi><msup><mi>S</mi><mn>2</mn></msup><mo minsize="1.2" maxsize="1.2" stretchy="false" form="prefix">(</mo><msubsup><mi>σ</mi><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">z</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">d</mi></mrow><mn>2</mn></msubsup><mo>−</mo><msubsup><mi>σ</mi><mrow><mi mathvariant="normal">m</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">l</mi></mrow><mn>2</mn></msubsup><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">)</mo><mi>d</mi><mi>t</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+d\Pi\approx\tfrac12\Gamma S^2\bigl(\sigma_{\mathrm{realized}}^2-\sigma_{\mathrm{model}}^2\bigr)dt.
+</annotation></semantics></math></span></p>
+<p>对可转债还要加上信用、票息、行权、融资与 default jump 项；存在 call
+时 gamma
+的形状也可能被改变。不能从这个局部近似直接推导“实际波动率高于隐含波动率就必赚”。</p>
+<div class="takeaway">
+<p><strong>本节模板</strong>：先声明价格单位和重校准规则，再给
+delta/gamma/vega/credit
+sensitivity；最后单独计算有限幅度跳跃损益。连续风险对冲与违约风险对冲不是同一个问题。</p>
+</div>
+<h2 id="reading">15 · 阅读地图与实现顺序</h2>
+<h3 id="这些文献各自解决哪层问题">15.1 这些文献各自解决哪层问题？</h3>
+<div class="tablewrap"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">来源</th>
+<th style="text-align: left;">适合带着什么问题读</th>
+<th style="text-align: left;">本报告核验边界</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><a
+href="https://www.pm-research.com/content/iijfixinc/8/2/95">Tsiveriotis–Fernandes,
+1998</a></td>
+<td style="text-align: left;">为什么区分现金与股票交付部分？</td>
+<td style="text-align: left;">核对书目信息；数学框架与公开 AFV
+讨论、官方软件文档交叉核对；原付费全文未获取</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><a
+href="https://cs.uwaterloo.ca/~paforsyt/convert.pdf">Ayache–Forsyth–Vetzal,
+2003</a></td>
+<td style="text-align: left;">违约时股票、回收与 hedge 怎样一致？</td>
+<td
+style="text-align: left;">阅读作者公开论文并核对方程所在页面；本文未复现其全部数值实验</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><a
+href="https://www.risk.net/journal-of-computational-finance/2160572/calibration-and-implementation-of-convertible-bond-models">Andersen–Buffum,
+2004</a></td>
+<td style="text-align: left;">股权期权与债务怎样联合校准？</td>
+<td
+style="text-align: left;">已核对出版方摘要；未把受限正文当已阅读</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><a
+href="https://arxiv.org/abs/1206.1400">Milanov–Kounchev, 2012</a></td>
+<td style="text-align: left;">股权—信用树的条件转移概率为何重要？</td>
+<td
+style="text-align: left;">核对公开摘要；本文的常数强度树是自建教学实现，不声称逐行复现</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><a
+href="https://arxiv.org/abs/2403.06303">Vachon–Mackay, 2024 / revised
+2025</a></td>
+<td style="text-align: left;">能否用 CTMC 统一债券、call/put
+与可转债数值方法？</td>
+<td style="text-align: left;">核对摘要与版本；未复现</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><a
+href="https://arxiv.org/abs/2605.12189">Zhu–Chen–Langrené, 2026
+preprint</a></td>
+<td style="text-align: left;">路径依赖 reset 与 call
+怎样用神经条件期望处理？</td>
+<td
+style="text-align: left;">核对摘要；未做全文精读与实证复现；不将个案结论一般化</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><a
+href="https://github.com/lballabio/QuantLib/blob/master/ql/pricingengines/bond/binomialconvertibleengine.hpp">QuantLib
+官方源码</a></td>
+<td style="text-align: left;">实际引擎接收了什么，又把哪些 term
+structure 简化了？</td>
+<td style="text-align: left;">查阅 2026-09-05 可见源码；未运行
+QuantLib</td>
+</tr>
+</tbody>
+</table></div>
+<p>在已核对的 QuantLib <code>BinomialConvertibleEngine</code>
+实现中，输入最终用于构造平坦利率、股息和常数波动率的树；engine
+名称本身也指明
+TF。<strong>给它一个完整曲面对象，并不意味着该树保留了全部 smile
+与期限结构。</strong> 应阅读具体版本实现，而不只读构造函数参数名称。<a
+href="https://github.com/lballabio/QuantLib/blob/master/ql/pricingengines/bond/binomialconvertibleengine.hpp">对应官方文件</a>。</p>
+<h3 id="实现时先攻哪几步">15.2 实现时先攻哪几步？</h3>
+<p>先让无信用、零息、欧式树通过 Black–Scholes 对照；再加入 jump-to-zero
+与 recovery-of-par，通过第 8.6 节闭式解；随后逐项加入离散
+coupon、American conversion、指定日 put 与无通知期
+call。最后才增加真实日历、notice、rolling
+trigger、结算窗口和联合校准。</p>
+<p>每增加一层，都保留上一层的退化测试。尤其先写清 contract/event
+engine，再加复杂 stochastic dynamics。把错误 term sheet
+交给更强的神经网络，只会更快地算出另一张证券的价格。</p>
+<p><strong>模型开发的验收问题</strong>：是否还原了所有现金流？是否有可验证的简单极限？是否把风险中性与实际概率分开？是否对价格和
+Greeks 分别检验？是否能解释风险来自模型、条款、校准还是数值离散？</p>
+<h2 id="python">附录 A · 最小 Python 基准与可复算数字</h2>
+<p>下面代码只实现第 8–9
+节的零息、欧式、常数系数、jump-to-zero、立即面值回收模型。这样保留一个不掩盖假设的最小基准。第
+11 节扩展条款结果与参数完整保存在同目录
+<code>results.json</code>；网页交互代码位于
+<code>interactive.js</code>，由渲染程序内联进 HTML。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> math <span class="im">import</span> erf, exp, expm1, isfinite, log, sqrt</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> european_convertible(</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    S: <span class="bu">float</span> <span class="op">=</span> <span class="fl">50.0</span>, F: <span class="bu">float</span> <span class="op">=</span> <span class="fl">100.0</span>, m: <span class="bu">float</span> <span class="op">=</span> <span class="fl">2.0</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    T: <span class="bu">float</span> <span class="op">=</span> <span class="fl">3.0</span>, r: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.04</span>, q: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.01</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    sigma: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.30</span>, h: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.025</span>, R: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.40</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    steps: <span class="bu">int</span> <span class="op">=</span> <span class="dv">1200</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>) <span class="op">-&gt;</span> <span class="bu">tuple</span>[<span class="bu">float</span>, <span class="bu">float</span>]:</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Return (tree_price, analytic_price), per F face amount.</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">    European conversion only; no coupons/call/put; stock jumps to</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">    zero at default; immediate recovery R*F; constant coefficients.</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    inputs <span class="op">=</span> (S, F, m, T, r, q, sigma, h, R)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="bu">all</span>(isfinite(x) <span class="cf">for</span> x <span class="kw">in</span> inputs):</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">&quot;Inputs must be finite&quot;</span>)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">min</span>(S, F, T, sigma) <span class="op">&lt;=</span> <span class="dv">0</span> <span class="kw">or</span> m <span class="op">&lt;</span> <span class="dv">0</span> <span class="kw">or</span> h <span class="op">&lt;</span> <span class="dv">0</span> <span class="kw">or</span> <span class="kw">not</span> <span class="dv">0</span> <span class="op">&lt;=</span> R <span class="op">&lt;=</span> <span class="dv">1</span>:</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">&quot;Invalid model inputs&quot;</span>)</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">isinstance</span>(steps, <span class="bu">bool</span>) <span class="kw">or</span> <span class="kw">not</span> <span class="bu">isinstance</span>(steps, <span class="bu">int</span>) <span class="kw">or</span> steps <span class="op">&lt;</span> <span class="dv">1</span>:</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">&quot;steps must be a positive integer&quot;</span>)</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    dt <span class="op">=</span> T <span class="op">/</span> steps</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    u <span class="op">=</span> exp(sigma <span class="op">*</span> sqrt(dt))</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    d <span class="op">=</span> <span class="fl">1.0</span> <span class="op">/</span> u</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    p <span class="op">=</span> (exp((r <span class="op">+</span> h <span class="op">-</span> q) <span class="op">*</span> dt) <span class="op">-</span> d) <span class="op">/</span> (u <span class="op">-</span> d)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> <span class="dv">0</span> <span class="op">&lt;=</span> p <span class="op">&lt;=</span> <span class="dv">1</span>:</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">&quot;Invalid transition probability; refine time grid&quot;</span>)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> r <span class="op">+</span> h</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> recovery_pv(t: <span class="bu">float</span>) <span class="op">-&gt;</span> <span class="bu">float</span>:</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Continuous limit avoids cancellation or division by zero.</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>        integral <span class="op">=</span> <span class="op">-</span>expm1(<span class="op">-</span>a <span class="op">*</span> t) <span class="op">/</span> a <span class="cf">if</span> <span class="bu">abs</span>(a) <span class="op">&gt;</span> <span class="fl">1e-12</span> <span class="cf">else</span> t</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> R <span class="op">*</span> F <span class="op">*</span> h <span class="op">*</span> integral</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    stock <span class="op">=</span> S <span class="op">*</span> np.exp((<span class="dv">2</span> <span class="op">*</span> np.arange(steps <span class="op">+</span> <span class="dv">1</span>) <span class="op">-</span> steps) <span class="op">*</span> log(u))</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    value <span class="op">=</span> np.maximum(F, m <span class="op">*</span> stock)</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    discount <span class="op">=</span> exp(<span class="op">-</span>a <span class="op">*</span> dt)</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    recovery <span class="op">=</span> recovery_pv(dt)</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(steps):</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>        value <span class="op">=</span> discount <span class="op">*</span> (p <span class="op">*</span> value[<span class="dv">1</span>:] <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> p) <span class="op">*</span> value[:<span class="op">-</span><span class="dv">1</span>]) <span class="op">+</span> recovery</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> m <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>        exact <span class="op">=</span> F <span class="op">*</span> exp(<span class="op">-</span>a <span class="op">*</span> T) <span class="op">+</span> recovery_pv(T)</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>        normal <span class="op">=</span> <span class="kw">lambda</span> z: <span class="fl">0.5</span> <span class="op">*</span> (<span class="fl">1.0</span> <span class="op">+</span> erf(z <span class="op">/</span> sqrt(<span class="fl">2.0</span>)))</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>        d1 <span class="op">=</span> (log(S <span class="op">*</span> m <span class="op">/</span> F) <span class="op">+</span> (a <span class="op">-</span> q <span class="op">+</span> sigma<span class="op">**</span><span class="dv">2</span> <span class="op">/</span> <span class="dv">2</span>) <span class="op">*</span> T) <span class="op">/</span> (sigma <span class="op">*</span> sqrt(T))</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>        d2 <span class="op">=</span> d1 <span class="op">-</span> sigma <span class="op">*</span> sqrt(T)</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>        exact <span class="op">=</span> m <span class="op">*</span> S <span class="op">*</span> exp(<span class="op">-</span>q <span class="op">*</span> T) <span class="op">*</span> normal(d1)</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>        exact <span class="op">+=</span> F <span class="op">*</span> exp(<span class="op">-</span>a <span class="op">*</span> T) <span class="op">*</span> normal(<span class="op">-</span>d2) <span class="op">+</span> recovery_pv(T)</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">float</span>(value[<span class="dv">0</span>]), exact</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">&quot;__main__&quot;</span>:</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>    tree, exact <span class="op">=</span> european_convertible()</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;tree=</span><span class="sc">{</span>tree<span class="sc">:.8f}</span><span class="ss">, exact=</span><span class="sc">{</span>exact<span class="sc">:.8f}</span><span class="ss">, error=</span><span class="sc">{</span>tree<span class="op">-</span>exact<span class="sc">:.8f}</span><span class="ss">&quot;</span>)</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">abs</span>(european_convertible(steps<span class="op">=</span><span class="dv">2400</span>)[<span class="dv">0</span>] <span class="op">-</span> exact) <span class="op">&lt;</span> <span class="fl">0.003</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>    bond_tree, bond_exact <span class="op">=</span> european_convertible(m<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">abs</span>(bond_tree <span class="op">-</span> bond_exact) <span class="op">&lt;</span> <span class="fl">1e-9</span></span></code></pre></div>
+<p>运行基准输出：<code>tree=111.66159789, exact=111.66558266, error=-0.00398477</code>。数值积分/树结果可能随运行环境在最后几位有浮点差异。代码刻意不接受任意真实
+term sheet，避免用一个看似通用的函数隐藏尚未实现的条款。</p>
+<h2 id="pitfalls">附录 B · 六个最容易踩的坑</h2>
+<div class="tablewrap"><table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">看起来合理的说法</th>
+<th style="text-align: left;">更精确的版本</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">可转债就是债券加普通 call</td>
+<td
+style="text-align: left;">在限制条件下可以精确成立；提前结束与信用耦合一般破坏静态拼接</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">股价高于转股价就该转换</td>
+<td style="text-align: left;">应比较 parity
+与继续持有的全部权利价值</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">callable convertible 不能高于 call
+price</td>
+<td style="text-align: left;">持有人可能在被 call
+时转股；无通知期简化上界是
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>max</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>C</mi><mo>,</mo><mi>m</mi><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\max(C,mS)</annotation></semantics></math></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">有 bond floor 就不会亏本金</td>
+<td style="text-align: left;">floor
+是有信用与条款假设的模型价值，不是保本承诺</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">默认 hazard 只进入折现</td>
+<td
+style="text-align: left;">有股票跳跃时，风险中性存续漂移也要补偿跳跃损失</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">delta-neutral 就没有 default risk</td>
+<td style="text-align: left;">连续 delta 对冲不消除
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>G</mi><mo>−</mo><mi>V</mi><mo>+</mo><mi>Δ</mi><mi>η</mi><mi>S</mi></mrow><annotation encoding="application/x-tex">G-V+\Delta\eta S</annotation></semantics></math>
+的跳跃损益</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>最后一句</strong>：可转债定价可以理解成“一个存续状态的条件期望递推
++ 一组精确的合约事件 +
+一个明确的违约处置规则”。先把这三件事对齐，再讨论更复杂的模型。</p>
+<hr />
+<p>资料核对与计算日期：2026-09-05。本文为公开资料基础上的独立教学推导；不含商业行情、公司内部数据或私有实现。来源链接标在对应论述及阅读表内。数学使用原生
+MathML，图表和计算脚本内联，可在支持 MathML
+的现代浏览器中离线阅读；离线时外部参考链接不可访问。</p></article><footer>TSML Research Notes · Public research only · 2026-09-05<br>合成模型示例不构成投资建议。正文、公式及交互图表可离线阅读；来源链接需联网。</footer></main><a class="backtop" href="#top">↑ 顶部</a><script>'use strict';
+// Standalone teaching calculator. No telemetry, network requests, or market data.
+const CB_RESULTS = {
+  "parameters": {
+    "S": 50.0,
+    "F": 100.0,
+    "m": 2.0,
+    "T": 3.0,
+    "r": 0.04,
+    "q": 0.01,
+    "sigma": 0.3,
+    "h": 0.025,
+    "R": 0.4
+  },
+  "unit": "per 100 face, synthetic only",
+  "analytic": {
+    "risk_free_european": 112.18342448663051,
+    "defaultable_european": 111.66558266333283,
+    "defaultable_straight": 85.00908645089386,
+    "conversion_parity": 100.0
+  },
+  "convergence": [
+    {
+      "N": 60,
+      "risk_free": 112.10326847988296,
+      "defaultable": 111.58604741486415
+    },
+    {
+      "N": 120,
+      "risk_free": 112.14330342514194,
+      "defaultable": 111.62577251032384
+    },
+    {
+      "N": 300,
+      "risk_free": 112.1673658944527,
+      "defaultable": 111.64964856142917
+    },
+    {
+      "N": 600,
+      "risk_free": 112.17539350987028,
+      "defaultable": 111.65761395284642
+    },
+    {
+      "N": 1200,
+      "risk_free": 112.17940857938986,
+      "defaultable": 111.6615978945114
+    },
+    {
+      "N": 2400,
+      "risk_free": 112.18141642843639,
+      "defaultable": 111.66359017570012
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "European, zero coupon",
+      "price_600": 111.65761395284642,
+      "price_1200": 111.6615978945114
+    },
+    {
+      "name": "American, zero coupon",
+      "price_600": 111.8585508099045,
+      "price_1200": 111.86213372375373
+    },
+    {
+      "name": "American, 2% coupon",
+      "price_600": 117.02537304042475,
+      "price_1200": 117.02938517698485
+    },
+    {
+      "name": "American, 2% coupon, call 105 from 1.5y",
+      "price_600": 112.4146084693543,
+      "price_1200": 112.3935674643464
+    },
+    {
+      "name": "American, 2% coupon, put 100 at 1.5y",
+      "price_600": 117.5182416405316,
+      "price_1200": 117.52168216519674
+    },
+    {
+      "name": "American, coupon, call and put",
+      "price_600": 113.29011456196802,
+      "price_1200": 113.27743958031427
+    }
+  ],
+  "greeks": {
+    "delta": 1.3938476989395099,
+    "vega_1volpt": 0.5675834868416132,
+    "rate_1bp": -0.012169831352110805,
+    "hazard_1bp": -0.001267348615314745,
+    "gamma": 0.025227663547866538,
+    "jump_hedged_pnl": -1.9731977163573333
+  },
+  "checks": {
+    "analytic_match_at_2400_abs_error_lt_0_003": true,
+    "no_conversion_matches_bond_1e_10": true,
+    "american_ge_european": true,
+    "call_le_noncall": true,
+    "put_ge_no_put": true,
+    "call_plus_put_between": true,
+    "american_ge_immediate_conversion": true,
+    "coupon_bond_matches_discounted_coupon_cashflows": true,
+    "default_free_call_conv_no_dividend_no_early_premium": true,
+    "invalid_probability_rejected": true
+  }
+};
+function normalCDF(x){const a=Math.abs(x)/Math.SQRT2;const t=1/(1+0.3275911*a);const erf=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-a*a);return .5*(1+Math.sign(x)*erf);}
+function exactPrice(S=50,sigma=.3,h=.025){const F=100,m=2,T=3,r=.04,q=.01,R=.4,a=r+h;const rec=R*F*h*(-Math.expm1(-a*T))/a;const d1=(Math.log(S/(F/m))+(a-q+.5*sigma*sigma)*T)/(sigma*Math.sqrt(T));const d2=d1-sigma*Math.sqrt(T);return m*S*Math.exp(-q*T)*normalCDF(d1)+F*Math.exp(-a*T)*normalCDF(-d2)+rec;}
+function straightPrice(h=.025,coupon=false){const a=.04+h;let v=100*Math.exp(-a*3)+40*h*(-Math.expm1(-a*3))/a;if(coupon)for(let i=1;i<=6;i++)v+=Math.exp(-a*i/2);return v;}
+function treePrice(S=50,sigma=.3,h=.025,type='european',N=300){
+ if(!(S>0&&sigma>0&&h>=0&&Number.isInteger(N)&&N>0&&N%6===0))throw Error('Invalid inputs or coupon grid');
+ const T=3,r=.04,q=.01,R=.4,F=100,m=2,dt=T/N,u=Math.exp(sigma*Math.sqrt(dt)),d=1/u;
+ const p=(Math.exp((r+h-q)*dt)-d)/(u-d);if(!(p>=0&&p<=1))throw Error('Transition probability outside [0,1]');
+ const disc=Math.exp(-(r+h)*dt),rec=R*F*h*(-Math.expm1(-(r+h)*dt))/(r+h),american=type!=='european';
+ const call=type==='call'||type==='both',put=type==='put'||type==='both',coupon=american&&type!=='american_zero',stepCoupon=N/6,logu=Math.log(u);
+ let v=new Float64Array(N+1);for(let j=0;j<=N;j++)v[j]=Math.max(F,m*S*Math.exp((2*j-N)*logu))+(coupon?1:0);
+ for(let i=N-1;i>=0;i--){for(let j=0;j<=i;j++){
+  let continuation=disc*(p*v[j+1]+(1-p)*v[j])+rec;
+  const conversion=m*S*Math.exp((2*j-i)*logu);
+  if(call&&i>=N/2)continuation=Math.min(continuation,Math.max(105,conversion));
+  if(put&&i===N/2)continuation=Math.max(continuation,100);
+  if(american)continuation=Math.max(continuation,conversion);
+  if(coupon&&i>0&&i%stepCoupon===0)continuation+=1;
+  v[j]=continuation;
+ }}return v[0];
+}
+function drawLines(id,series,xlabel,ylabel,logAxes=false,vertical=null){
+ const c=document.getElementById(id);if(!c)return;const width=c.clientWidth,height=c.clientHeight,ratio=window.devicePixelRatio||1;c.width=width*ratio;c.height=height*ratio;
+ const ctx=c.getContext('2d');ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,width,height);
+ const pad={l:55,r:17,t:26,b:44},w=width-pad.l-pad.r,hh=height-pad.t-pad.b;
+ const tx=x=>logAxes?Math.log10(x):x,ty=y=>logAxes?Math.log10(Math.max(y,1e-10)):y;
+ let xs=series.flatMap(s=>s.points.map(p=>tx(p[0]))),ys=series.flatMap(s=>s.points.map(p=>ty(p[1])));
+ let xmin=Math.min(...xs),xmax=Math.max(...xs),ymin=Math.min(...ys),ymax=Math.max(...ys);const range=ymax-ymin||1;ymax+=.09*range;ymin-=.06*range;if(!logAxes)ymin=Math.max(0,ymin);
+ const X=x=>pad.l+(tx(x)-xmin)/(xmax-xmin)*w,Y=y=>pad.t+(ymax-ty(y))/(ymax-ymin)*hh;
+ ctx.font='11px system-ui';ctx.fillStyle='#617383';ctx.strokeStyle='#dbe4eb';ctx.lineWidth=1;
+ for(let i=0;i<=4;i++){let y=ymin+(ymax-ymin)*i/4,yy=pad.t+hh*(1-i/4);ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(width-pad.r,yy);ctx.stroke();ctx.textAlign='right';ctx.fillText(logAxes?Math.pow(10,y).toFixed(3):y.toFixed(0),pad.l-8,yy+4);}
+ let ticks=logAxes?[60,120,300,600,1200,2400]:[0,1,2,3,4,5].map(i=>xmin+(xmax-xmin)*i/5);
+ ticks.forEach(x=>{if(tx(x)<xmin||tx(x)>xmax)return;ctx.textAlign='center';ctx.fillText(x.toFixed(0),X(x),height-pad.b+19);});
+ ctx.textAlign='left';ctx.fillText(ylabel,8,14);ctx.textAlign='center';ctx.fillText(xlabel,pad.l+w/2,height-5);
+ const colors=['#087f8c','#ad7130','#738296','#334e68'];
+ series.forEach((s,k)=>{ctx.strokeStyle=colors[k%colors.length];ctx.lineWidth=k===0?2.7:1.7;ctx.setLineDash(s.dash||[]);ctx.beginPath();s.points.forEach((p,j)=>{if(j===0)ctx.moveTo(X(p[0]),Y(p[1]));else ctx.lineTo(X(p[0]),Y(p[1]));});ctx.stroke();});ctx.setLineDash([]);
+ if(vertical!==null&&tx(vertical)>=xmin&&tx(vertical)<=xmax){ctx.strokeStyle='#798a99';ctx.setLineDash([3,5]);ctx.beginPath();ctx.moveTo(X(vertical),pad.t);ctx.lineTo(X(vertical),height-pad.b);ctx.stroke();ctx.setLineDash([]);}
+}
+function shapePlot(){const points=Array.from({length:101},(_,i)=>15+i);drawLines('shapeChart',[{points:points.map(s=>[s,exactPrice(s)])},{points:points.map(s=>[s,2*s]),dash:[7,5]},{points:points.map(s=>[s,straightPrice()]),dash:[2,5]}],'Stock price S','Value / 100 face');}
+function convergencePlot(){drawLines('convergenceChart',[{points:CB_RESULTS.convergence.map(x=>[x.N,Math.abs(x.defaultable-CB_RESULTS.analytic.defaultable_european)])},{points:CB_RESULTS.convergence.map(x=>[x.N,Math.abs(x.risk_free-CB_RESULTS.analytic.risk_free_european)]),dash:[7,5]}],'Tree steps N (log scale)','Absolute error (log scale)',true);}
+function updateLab(){
+ const S=Number(document.getElementById('spotInput').value),sigma=Number(document.getElementById('volInput').value)/100,h=Number(document.getElementById('hazInput').value)/100,type=document.getElementById('contractInput').value;
+ document.getElementById('spotOut').textContent=S.toFixed(0);document.getElementById('volOut').textContent=(sigma*100).toFixed(0)+'%';document.getElementById('hazOut').textContent=(h*100).toFixed(1)+'%';
+ try{const value=treePrice(S,sigma,h,type);document.getElementById('labPrice').textContent=value.toFixed(4);document.getElementById('labParity').textContent=(2*S).toFixed(4);document.getElementById('labExact').textContent=exactPrice(S,sigma,h).toFixed(4);
+ document.getElementById('labNote').textContent=type==='european'?'300 步树与欧式闭式的差值：'+(value-exactPrice(S,sigma,h)).toFixed(5)+'。此处强度改变时，存续股价漂移同步变化。':type==='american_zero'?'300 步、零息、每一网格时点允许转股；欧式闭式值只用于显示对应欧式基准。':'300 步、每半年付息；call 从 1.5 年起立即结算，put 仅在 1.5 年。未模拟 soft call、notice 或真实结算条款。';
+ const xs=Array.from({length:36},(_,i)=>15+i*3);drawLines('labChart',[{points:xs.map(s=>[s,treePrice(s,sigma,h,type)])},{points:xs.map(s=>[s,exactPrice(s,sigma,h)]),dash:[7,5]},{points:xs.map(s=>[s,2*s]),dash:[2,5]}],'Stock price S','Value / 100 face',false,S);
+ }catch(e){document.getElementById('labNote').textContent=e.message;document.getElementById('labPrice').textContent='输入错误';}
+}
+let pending=false;function scheduleLab(){if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;updateLab();});}
+['spotInput','volInput','hazInput','contractInput'].forEach(id=>document.getElementById(id).addEventListener('input',scheduleLab));
+shapePlot();convergencePlot();updateLab();
+let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{shapePlot();convergencePlot();updateLab();},120);});
+const observer=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){document.querySelectorAll('#sidebar li').forEach(li=>li.classList.remove('active'));const a=document.querySelector('#sidebar a[href="#'+e.target.id+'"]');if(a)a.parentElement.classList.add('active');}});},{rootMargin:'-5% 0px -75% 0px'});document.querySelectorAll('article h2').forEach(h=>observer.observe(h));
+window.CBTeaching={exactPrice,treePrice,straightPrice};
+</script></body></html>

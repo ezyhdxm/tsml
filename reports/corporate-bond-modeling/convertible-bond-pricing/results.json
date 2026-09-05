@@ -1,0 +1,104 @@
+{
+  "parameters": {
+    "S": 50.0,
+    "F": 100.0,
+    "m": 2.0,
+    "T": 3.0,
+    "r": 0.04,
+    "q": 0.01,
+    "sigma": 0.3,
+    "h": 0.025,
+    "R": 0.4
+  },
+  "unit": "per 100 face, synthetic only",
+  "analytic": {
+    "risk_free_european": 112.18342448663051,
+    "defaultable_european": 111.66558266333283,
+    "defaultable_straight": 85.00908645089386,
+    "conversion_parity": 100.0
+  },
+  "convergence": [
+    {
+      "N": 60,
+      "risk_free": 112.10326847988296,
+      "defaultable": 111.58604741486415
+    },
+    {
+      "N": 120,
+      "risk_free": 112.14330342514194,
+      "defaultable": 111.62577251032384
+    },
+    {
+      "N": 300,
+      "risk_free": 112.1673658944527,
+      "defaultable": 111.64964856142917
+    },
+    {
+      "N": 600,
+      "risk_free": 112.17539350987028,
+      "defaultable": 111.65761395284642
+    },
+    {
+      "N": 1200,
+      "risk_free": 112.17940857938986,
+      "defaultable": 111.6615978945114
+    },
+    {
+      "N": 2400,
+      "risk_free": 112.18141642843639,
+      "defaultable": 111.66359017570012
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "European, zero coupon",
+      "price_600": 111.65761395284642,
+      "price_1200": 111.6615978945114
+    },
+    {
+      "name": "American, zero coupon",
+      "price_600": 111.8585508099045,
+      "price_1200": 111.86213372375373
+    },
+    {
+      "name": "American, 2% coupon",
+      "price_600": 117.02537304042475,
+      "price_1200": 117.02938517698485
+    },
+    {
+      "name": "American, 2% coupon, call 105 from 1.5y",
+      "price_600": 112.4146084693543,
+      "price_1200": 112.3935674643464
+    },
+    {
+      "name": "American, 2% coupon, put 100 at 1.5y",
+      "price_600": 117.5182416405316,
+      "price_1200": 117.52168216519674
+    },
+    {
+      "name": "American, coupon, call and put",
+      "price_600": 113.29011456196802,
+      "price_1200": 113.27743958031427
+    }
+  ],
+  "greeks": {
+    "delta": 1.3938476989395099,
+    "vega_1volpt": 0.5675834868416132,
+    "rate_1bp": -0.012169831352110805,
+    "hazard_1bp": -0.001267348615314745,
+    "gamma": 0.025227663547866538,
+    "jump_hedged_pnl": -1.9731977163573333
+  },
+  "checks": {
+    "analytic_match_at_2400_abs_error_lt_0_003": true,
+    "no_conversion_matches_bond_1e_10": true,
+    "american_ge_european": true,
+    "call_le_noncall": true,
+    "put_ge_no_put": true,
+    "call_plus_put_between": true,
+    "american_ge_immediate_conversion": true,
+    "coupon_bond_matches_discounted_coupon_cashflows": true,
+    "default_free_call_conv_no_dividend_no_early_premium": true,
+    "invalid_probability_rejected": true
+  }
+}

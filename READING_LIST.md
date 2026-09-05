@@ -119,3 +119,13 @@
 - 应该补的 simulation：
 - 与当前 bond model 的连接：
 ```
+
+## Convertible Bond Pricing · 可转债定价
+
+**报告入口：** [HTML](reports/corporate-bond-modeling/convertible-bond-pricing/index.html) · [Markdown](reports/corporate-bond-modeling/convertible-bond-pricing/SOURCE.md) · [复现说明](reports/corporate-bond-modeling/convertible-bond-pricing/README.md)
+
+- [ ] 第 2–4 节：逐状态推导 bond + call，区分 parity、bond floor 与信用保护。
+- [ ] 第 5–8 节：手算行权节点，推导 continuation PDE、TF 分拆和违约股票漂移修正。
+- [ ] 第 9–11 节：运行合成实验，复核闭式/树收敛、六种合约及十项模型检查。
+- [ ] 第 12–14 节：解释 20/30 日触发的状态需求、联合校准与 delta 对冲后的违约残差。
+- [ ] 第 15 节与附录：按原始文献地图阅读，运行最小 Python 基准并写下扩展条款。
