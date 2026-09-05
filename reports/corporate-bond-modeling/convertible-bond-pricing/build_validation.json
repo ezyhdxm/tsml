@@ -1,9 +1,17 @@
 {
-  "mathml_count": 220,
+  "mathml_count": 570,
+  "foundation_source_files": [
+    "01-black-scholes.md",
+    "02-hedging-frictions.md",
+    "03-variable-volatility.md",
+    "04-stochastic-volatility.md",
+    "05-experiments-and-reading.md"
+  ],
+  "foundation_section_count": 9,
   "duplicate_ids": [],
   "missing_local_targets": [],
   "unresolved_placeholders": [],
   "external_runtime_assets": [],
   "pandoc_version": "pandoc 3.1.11.1",
-  "sha256": "d4e09fc982c223b945b54e0d21c837d66495de6ecf90e7994ced94d3187a2947"
+  "sha256": "e5aa3c4ea1fa582d1a96222e926271a8de47f085770a499beaa56b9fa47dca22"
 }

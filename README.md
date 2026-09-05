@@ -4,6 +4,8 @@
 
 ## 阅读与编辑入口
 
+- **Black–Scholes、交易摩擦与可变波动率**：[新增九节教程](reports/corporate-bond-modeling/convertible-bond-pricing/index.html#bs-replication) · [Markdown](reports/corporate-bond-modeling/convertible-bond-pricing/foundations/) — 自融资复制、离散 hedge、bid–ask、Dupire、Heston 与可复算对冲风险实验；整合在可转债报告中。
+
 - **Convertible Bond Pricing · 可转债定价教程**：[中文 HTML](reports/corporate-bond-modeling/convertible-bond-pricing/index.html) · [可编辑 Markdown](reports/corporate-bond-modeling/convertible-bond-pricing/SOURCE.md) · [实验与渲染说明](reports/corporate-bond-modeling/convertible-bond-pricing/README.md) — payoff、转股/call/put、TF、显式违约 PDE、数值树、联合校准与对冲；含离线交互实验。
 
 - **Time Series Cross-Validation 教程式综述**：[中文 HTML](reports/time-series/cross-validation/index.html) · [可编辑 Markdown](reports/time-series/cross-validation/SOURCE.md) · [复现与渲染说明](reports/time-series/cross-validation/README.md) — forecasting protocol、PIT、purging、nested CV、quantile 与依赖稳健 OOS。

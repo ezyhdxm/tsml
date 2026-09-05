@@ -129,3 +129,12 @@
 - [ ] 第 9–11 节：运行合成实验，复核闭式/树收敛、六种合约及十项模型检查。
 - [ ] 第 12–14 节：解释 20/30 日触发的状态需求、联合校准与 delta 对冲后的违约残差。
 - [ ] 第 15 节与附录：按原始文献地图阅读，运行最小 Python 基准并写下扩展条款。
+
+## Black–Scholes 基础与现实修正
+
+**报告入口：** [HTML](reports/corporate-bond-modeling/convertible-bond-pricing/index.html#bs-replication) · [专题源文](reports/corporate-bond-modeling/convertible-bond-pricing/foundations/)
+
+- [ ] BS1–BS2：由自融资账户推导 PDE、风险中性期望和两个截断正态积分。
+- [ ] BS3–BS4：固定损益方向，推导离散误差和 half-spread 成本尺度；区分平均补偿与超复制。
+- [ ] BS5–BS7：比较确定时间变化、local vol 与 stochastic vol；推导 Dupire 和 Heston 的剩余风险。
+- [ ] BS8–BS9：把信用风险放回可转债，复算费用账本与独立波动率消息的非零 hedge 误差极限。

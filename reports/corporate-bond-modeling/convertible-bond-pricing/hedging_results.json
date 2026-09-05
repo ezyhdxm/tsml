@@ -1,0 +1,252 @@
+{
+  "environment": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "scipy": "1.17.0"
+  },
+  "parameters": {
+    "S0": 100.0,
+    "K": 100.0,
+    "T": 1.0,
+    "r": 0.03,
+    "q": 0,
+    "sigma": 0.25,
+    "half_spread": 0.0005,
+    "paths": 32768,
+    "seed": 20260905,
+    "grids": [
+      16,
+      64,
+      256,
+      1024
+    ],
+    "simulation_measure": "specified Q; mu=r",
+    "reveal_time": 0.5,
+    "low_vol": 0.1,
+    "high_vol": 0.4,
+    "Q_probability_high": 0.5
+  },
+  "constant": {
+    "initial_premium": 11.348476825143514,
+    "initial_delta": 0.5967717843205244,
+    "rows": [
+      {
+        "steps": 16,
+        "gross_pv": {
+          "mean": 0.0014557963086409488,
+          "sd": 2.057088926064675,
+          "mean_mcse": 0.011363918196281906,
+          "loss_var95": 3.4350921566180164,
+          "loss_es95": 4.833174959908549
+        },
+        "net_pv": {
+          "mean": -0.11755278918950188,
+          "sd": 2.0634502410310436,
+          "mean_mcse": 0.011399059828703647,
+          "loss_var95": 3.5717017362145533,
+          "loss_es95": 4.980435542415657
+        },
+        "mean_cost_pv": 0.1190085854981428,
+        "mean_rebalance_cost_pv": 0.05926578837455185,
+        "cost_mean_mcse": 0.00018625485186130828,
+        "mean_cost_plus_half_gross_sd": 1.1475530485304803
+      },
+      {
+        "steps": 64,
+        "gross_pv": {
+          "mean": -0.00025047815653554445,
+          "sd": 1.0521225775560399,
+          "mean_mcse": 0.005812211009604258,
+          "loss_var95": 1.732311937928814,
+          "loss_es95": 2.4525483218165105
+        },
+        "net_pv": {
+          "mean": -0.18243780702254145,
+          "sd": 1.0589532635827974,
+          "mean_mcse": 0.0058499455753048555,
+          "loss_var95": 1.9500663866831252,
+          "loss_es95": 2.6872204778393893
+        },
+        "mean_cost_pv": 0.18218732886600592,
+        "mean_rebalance_cost_pv": 0.122482867737854,
+        "cost_mean_mcse": 0.00028249591041740196,
+        "mean_cost_plus_half_gross_sd": 0.7082486176440259
+      },
+      {
+        "steps": 256,
+        "gross_pv": {
+          "mean": -0.0029553914452232783,
+          "sd": 0.5332867392336247,
+          "mean_mcse": 0.0029460208564762347,
+          "loss_var95": 0.8771886197078101,
+          "loss_es95": 1.2272648391505663
+        },
+        "net_pv": {
+          "mean": -0.3093131944141203,
+          "sd": 0.5473640232026331,
+          "mean_mcse": 0.003023787598313536,
+          "loss_var95": 1.263646929160891,
+          "loss_es95": 1.640094427970782
+        },
+        "mean_cost_pv": 0.3063578029688971,
+        "mean_rebalance_cost_pv": 0.2465954754216948,
+        "cost_mean_mcse": 0.0005204847776234586,
+        "mean_cost_plus_half_gross_sd": 0.5730011725857094
+      },
+      {
+        "steps": 1024,
+        "gross_pv": {
+          "mean": -0.0007274565584951213,
+          "sd": 0.264402818540888,
+          "mean_mcse": 0.0014606330152742038,
+          "loss_var95": 0.4326578760782188,
+          "loss_es95": 0.600749509777421
+        },
+        "net_pv": {
+          "mean": -0.5539939996447001,
+          "sd": 0.32770667410345083,
+          "mean_mcse": 0.0018103407148331253,
+          "loss_var95": 1.1607404213168586,
+          "loss_es95": 1.3826966794684945
+        },
+        "mean_cost_pv": 0.553266543086205,
+        "mean_rebalance_cost_pv": 0.49349903336083756,
+        "cost_mean_mcse": 0.0010247466179885876,
+        "mean_cost_plus_half_gross_sd": 0.685467952356649
+      }
+    ],
+    "max_cash_ledger_identity_error": 9.067191442113653e-13,
+    "continuous_limit_sample": null
+  },
+  "revelation": {
+    "initial_premium": 11.810660724858693,
+    "initial_delta": 0.6005377492292808,
+    "rows": [
+      {
+        "steps": 16,
+        "gross_pv": {
+          "mean": -0.007712561010996221,
+          "sd": 3.8822413974387007,
+          "mean_mcse": 0.02144655639321909,
+          "loss_var95": 6.944884302801464,
+          "loss_es95": 9.244305537475833
+        },
+        "net_pv": {
+          "mean": -0.12654276596436542,
+          "sd": 3.8909128891541247,
+          "mean_mcse": 0.021494460069742368,
+          "loss_var95": 7.086609362006816,
+          "loss_es95": 9.396647847517224
+        },
+        "mean_cost_pv": 0.1188302049533692,
+        "mean_rebalance_cost_pv": 0.058734766406360606,
+        "cost_mean_mcse": 0.0001950803503819934,
+        "mean_cost_plus_half_gross_sd": 2.0599509036727195,
+        "rmse_to_continuous_limit": 2.478031232289915,
+        "correlation_with_limit": 0.7697871833105211
+      },
+      {
+        "steps": 64,
+        "gross_pv": {
+          "mean": -0.005502584822488166,
+          "sd": 3.244114415892312,
+          "mean_mcse": 0.017921369550175696,
+          "loss_var95": 5.228242148505344,
+          "loss_es95": 6.429653659468178
+        },
+        "net_pv": {
+          "mean": -0.18479605647366404,
+          "sd": 3.261427908017574,
+          "mean_mcse": 0.018017013985236578,
+          "loss_var95": 5.452394305659803,
+          "loss_es95": 6.671325336628233
+        },
+        "mean_cost_pv": 0.17929347165117587,
+        "mean_rebalance_cost_pv": 0.11921991882512886,
+        "cost_mean_mcse": 0.00030584958706133375,
+        "mean_cost_plus_half_gross_sd": 1.8013506795973317,
+        "rmse_to_continuous_limit": 1.2686882507833135,
+        "correlation_with_limit": 0.9203614025115694
+      },
+      {
+        "steps": 256,
+        "gross_pv": {
+          "mean": -0.005828806935878582,
+          "sd": 3.045905258115975,
+          "mean_mcse": 0.016826408303637245,
+          "loss_var95": 4.469966948507761,
+          "loss_es95": 5.064869671802384
+        },
+        "net_pv": {
+          "mean": -0.30284368551016416,
+          "sd": 3.0814467835992647,
+          "mean_mcse": 0.017022749348035278,
+          "loss_var95": 4.856318836345237,
+          "loss_es95": 5.4808677314083125
+        },
+        "mean_cost_pv": 0.2970148785742856,
+        "mean_rebalance_cost_pv": 0.23692742217786106,
+        "cost_mean_mcse": 0.0005723796981477632,
+        "mean_cost_plus_half_gross_sd": 1.8199675076322732,
+        "rmse_to_continuous_limit": 0.6390287941494069,
+        "correlation_with_limit": 0.9777440585750884
+      },
+      {
+        "steps": 1024,
+        "gross_pv": {
+          "mean": -0.004478656570146348,
+          "sd": 2.99366015546096,
+          "mean_mcse": 0.016537792160112644,
+          "loss_var95": 4.166977249467204,
+          "loss_es95": 4.4854456018465685
+        },
+        "net_pv": {
+          "mean": -0.5349210766256187,
+          "sd": 3.067609944726599,
+          "mean_mcse": 0.01694631089024585,
+          "loss_var95": 4.881186256842508,
+          "loss_es95": 5.252223493651863
+        },
+        "mean_cost_pv": 0.5304424200554724,
+        "mean_rebalance_cost_pv": 0.4703617333407967,
+        "cost_mean_mcse": 0.001130833556396886,
+        "mean_cost_plus_half_gross_sd": 2.0272724977859524,
+        "rmse_to_continuous_limit": 0.31663728971559363,
+        "correlation_with_limit": 0.9943905408936541
+      }
+    ],
+    "max_cash_ledger_identity_error": 9.041656312547275e-13,
+    "continuous_limit_sample": {
+      "mean": -0.0044813688633782624,
+      "sd": 2.976343946583956,
+      "mean_mcse": 0.016442132716976927,
+      "loss_var95": 4.048263097687517,
+      "loss_es95": 4.082391180856702
+    },
+    "continuous_limit_sd_quadrature": 2.982801324332613
+  },
+  "time_dependent": {
+    "sigma_first_half": 0.15,
+    "sigma_second_half": 0.4,
+    "effective_sigma": 0.3020761493398643,
+    "initial_price_either_order": 13.363582967741664,
+    "initial_price_using_arithmetic_vol": 12.316196291767277,
+    "half_time_price_remaining_vol_15": 4.984227649183715,
+    "half_time_price_remaining_vol_40": 11.922565867601755
+  },
+  "log_log_slopes": {
+    "hedging_sd_vs_N": -0.4929851768709271,
+    "rebalance_cost_vs_N": 0.5091446904160787
+  },
+  "checks": {
+    "stock_and_cash_ledgers_agree": true,
+    "constant_vol_gross_means_within_5_mcse": true,
+    "revelation_gross_means_within_5_mcse": true,
+    "constant_vol_sd_scales_near_inverse_sqrt_N": true,
+    "rebalancing_cost_scales_near_sqrt_N": true,
+    "revelation_limit_remains_positive": true,
+    "revelation_limit_quadrature_matches_mc_sd": true,
+    "finest_revelation_error_tracks_unspanned_jump": true,
+    "prices_and_costs_finite": true
+  }
+}
