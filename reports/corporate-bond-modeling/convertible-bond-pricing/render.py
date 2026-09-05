@@ -40,7 +40,7 @@ def render():
         '@@HEDGING_RESULTS@@', (ROOT/'hedging_results.json').read_text(encoding='utf-8'))
     text = text.replace('@@STYLE@@', (ROOT/'style.css').read_text(encoding='utf-8')).replace('@@INTERACTIVE@@', js)
     text = re.sub(r'<table(\s[^>]*)?>', lambda m: '<div class="tablewrap">'+m.group(), text).replace('</table>', '</table></div>')
-    text = re.sub(r' id="toc-[^"]*"', '', text)
+    text = re.sub(r'\s+id="toc-[^"]*"', '', text)
     # Normalize unary signs across Pandoc/texmath builds.
     text = text.replace('<mi>−</mi>', '<mo>−</mo>').replace('<mi>+</mi>', '<mo>+</mo>')
     text = re.sub(r'(<math display="block".*?</math>)', r'<span class="math display">\1</span>', text, flags=re.S)
