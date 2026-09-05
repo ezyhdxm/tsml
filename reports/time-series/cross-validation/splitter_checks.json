@@ -1,0 +1,15 @@
+{
+  "documented_boundary_case": true,
+  "rolling_window": true,
+  "extra_clock_gap": true,
+  "unsorted": true,
+  "naive_timezone": true,
+  "negative_gap": true,
+  "zero_window": true,
+  "overlap_validation": true,
+  "insufficient_training": true,
+  "bad_cutoff": true,
+  "missing_column": true,
+  "known_before_origin": true,
+  "experiment_code_matches": true
+}

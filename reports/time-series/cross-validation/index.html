@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="时间序列交叉验证教程式综述：point-in-time、rolling origin、purging、nested CV、quantile、依赖稳健推断与三个可复现实验。">
+<title>Time Series Cross-Validation — TSML</title>
+<style>:root{--ink:#172d3b;--muted:#536873;--paper:#fbfaf7;--panel:#fff;--line:#d9e3e4;--accent:#006e71;--navy:#183e55;--gold:#bf882b;--soft:#edf5f3;--train:#237f7d;--test:#315c96;--gap:#edd49e;--unused:#e8eded;--code:#f0f4f5}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:32px}body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans CJK SC","PingFang SC","Microsoft YaHei",sans-serif;font-size:16px;line-height:1.85}a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:3px}a:hover{color:var(--navy)}#progress{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:50;width:0}.shell{max-width:1500px;margin:auto;display:grid;grid-template-columns:272px minmax(0,1fr);gap:54px;padding:0 48px}.sidebar{position:sticky;top:0;height:100vh;overflow-y:auto;padding:35px 0 40px;font-size:12px;line-height:1.65}.brand{letter-spacing:.16em;font-weight:800;color:var(--accent);font-size:15px;text-decoration:none}.nav-label{margin:24px 0 12px;color:var(--muted);font-size:11px;letter-spacing:.14em;font-weight:700}.sidebar ul{padding:0;list-style:none;margin:0}.sidebar li{margin:7px 0}.sidebar li ul{border-left:1px solid var(--line);margin:7px 0 12px 3px;padding-left:12px;font-size:11px}.sidebar a{display:block;text-decoration:none;color:var(--muted);padding:2px 0}.sidebar a:hover,.sidebar a.active{color:var(--accent)}.sidebar>details>summary{display:none}.nav-tools{border-top:1px solid var(--line);margin-top:24px;padding-top:16px;display:flex;gap:10px;flex-wrap:wrap}.nav-tools button{font:inherit;border:1px solid var(--line);border-radius:5px;background:white;padding:6px 10px;color:var(--ink);cursor:pointer}.content{min-width:0;max-width:1000px;padding-bottom:90px}.hero{padding:75px 0 36px;border-bottom:2px solid var(--navy);margin-bottom:30px}.hero .kicker{text-transform:uppercase;letter-spacing:.15em;font-size:11px;color:var(--accent);font-weight:800;margin-bottom:22px}.hero h1{font-size:clamp(34px,4.2vw,61px);line-height:1.08;letter-spacing:-.055em;margin:0 0 22px;font-weight:800;max-width:860px}.subtitle{font-size:21px;line-height:1.6;margin:0 0 28px;color:var(--muted)}.meta{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:11px}.meta span+span:before{content:"/";margin-right:12px;color:#a8b7bc}.lead{font-size:17px}.eyebrow{font-size:10px!important;color:var(--accent);letter-spacing:.12em;font-weight:800;margin-top:25px}.lead>p:not(.eyebrow){margin:16px 0}p{margin:16px 0}main>h1{font-size:29px;line-height:1.5;margin:68px 0 24px;padding-top:23px;border-top:1px solid var(--line);letter-spacing:-.025em}h2{font-size:21px;margin:38px 0 17px;line-height:1.6}h3{font-size:17px;line-height:1.5}strong{font-weight:700}main>h1:first-of-type{margin-top:45px}main ul,main ol{padding-left:1.5em}main li{margin:8px 0}.callout,.takeaway{padding:17px 24px;border-left:4px solid var(--accent);background:var(--soft);margin:28px 0;border-radius:0 7px 7px 0}.callout p,.takeaway p{margin:8px 0}.takeaway{background:#edf1f5;border-color:var(--navy)}.table-wrap{width:100%;overflow-x:auto;margin:24px 0;border:1px solid var(--line);border-radius:7px;background:white}table{width:100%;border-collapse:collapse;font-size:13px;line-height:1.85;margin:0}th{text-align:left;background:var(--navy);color:white;font-weight:650;vertical-align:top}td,th{padding:13px 16px;min-width:130px;border-bottom:1px solid var(--line)}tr:last-child td{border-bottom:0}tbody tr:nth-child(even){background:#f5f8f8}td:first-child{font-weight:600;min-width:150px}caption{padding:12px;color:var(--muted)}.math.display{display:block;max-width:100%;overflow-x:auto;overflow-y:hidden;padding:17px 20px;margin:24px 0;background:#f4f6f5;border-radius:6px;font-size:1.08em}math{font-family:"STIX Two Math","Cambria Math",math}math[display=block]{margin:0;white-space:nowrap}.math.inline{font-size:1.01em}code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;font-size:.84em;overflow-wrap:anywhere;background:#eaf0f1;border-radius:4px;padding:2px 4px}pre{padding:20px 23px;border:1px solid var(--line);border-radius:6px;overflow-x:auto;line-height:1.65;font-size:13px;background:var(--code);tab-size:4}pre code{padding:0;background:none;border-radius:0;font-size:inherit;white-space:pre;overflow-wrap:normal}div.sourceCode{margin:24px 0}.sourceCode .kw{color:#75396b;font-weight:600}.sourceCode .cf{color:#75396b;font-weight:600}.sourceCode .st{color:#126660}.sourceCode .co{color:#647b83;font-style:italic}.sourceCode .dv,.sourceCode .fl{color:#996315}.sourceCode .bu,.sourceCode .fu{color:#1f5879}.figure,.interactive{margin:30px 0;padding:24px;border:1px solid var(--line);border-radius:10px;background:white}.figure>p:last-child,.figure figcaption{font-size:12px;color:var(--muted);margin-bottom:0}.legend{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:21px}.key{font-size:11px;padding:3px 10px;border-radius:4px}.train{background:var(--train);color:white}.test{background:var(--test);color:white}.gap{background:var(--gap);color:#553d13}.unused{background:var(--unused);color:var(--muted)}.split-row{display:flex;align-items:center;gap:10px;margin:12px 0;font-size:11px}.split-row>b{width:120px;flex-shrink:0}.track{display:flex;flex:1;gap:3px;min-width:0}.track i{font-style:normal;flex:1;text-align:center;padding:7px 2px;white-space:nowrap;overflow:hidden;border-radius:3px;font-size:10px}.interactive h3{margin:0 0 12px}.interactive>p{font-size:13px}.interactive label{display:flex;align-items:center;gap:10px;font-size:13px;margin:14px 0}.interactive input{flex:1;min-width:30px;max-width:310px;accent-color:var(--accent)}.interactive output{min-width:16px;font-weight:700}.demo-cells{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:5px;margin:20px 0}.demo-cells>span{font-size:11px;line-height:1.5;border-radius:4px;text-align:center;padding:7px 0}.demo-cells small{display:block;font-size:9px;opacity:.9}#demo-summary{color:var(--muted)}details:not(.sidebar details){border:1px solid var(--line);padding:15px 19px;border-radius:7px;background:#fff;margin:14px 0}summary{cursor:pointer;font-weight:650;font-size:14px}details p{font-size:14px}.references p{font-size:12px;line-height:1.9;border-bottom:1px solid var(--line);padding-bottom:14px;overflow-wrap:anywhere}.references p:last-child{border-bottom:0}.references strong{color:var(--accent)}.footer-note{font-size:12px;color:var(--muted);border-top:2px solid var(--navy);margin-top:42px;padding-top:22px}.report-footer{font-size:11px;color:var(--muted);margin-top:40px}.bar-chart{padding:21px 24px;background:white;border:1px solid var(--line);border-radius:9px;margin:26px 0}.bar-chart h3{margin:0 0 15px;font-size:14px}.bar-line{display:grid;grid-template-columns:150px minmax(0,1fr) 54px;gap:10px;align-items:center;font-size:11px;margin:9px 0}.bar-rail{background:#edf1f2;height:15px;border-radius:3px;overflow:hidden}.bar-fill{height:100%;width:var(--w);background:var(--accent);border-radius:3px}.bar-line.alt .bar-fill{background:var(--navy)}.bar-chart figcaption{font-size:11px;color:var(--muted);margin-top:16px}.bar-line b{text-align:right;font-variant-numeric:tabular-nums}a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+@media(min-width:1600px){.shell{gap:70px}}@media(max-width:1100px){.shell{grid-template-columns:230px minmax(0,1fr);padding:0 28px;gap:30px}.sidebar{font-size:11px}.hero h1{font-size:46px}main>h1{font-size:26px}.subtitle{font-size:18px}}
+@media(max-width:800px){.shell{display:block;padding:0 22px}.sidebar{position:relative;height:auto;padding:20px 0 0;overflow:visible}.sidebar>details>summary{display:block;padding:12px 0;font-size:12px;color:var(--muted)}.sidebar>details{border-bottom:1px solid var(--line);padding-bottom:10px}.sidebar>details #TOC{max-height:55vh;overflow:auto;padding:0 8px 8px}.sidebar .nav-label{display:none}.sidebar li{font-size:12px}.sidebar li ul{font-size:11px}.nav-tools{display:none}.hero{padding:35px 0 26px}.hero h1{font-size:43px;max-width:620px}.hero .kicker{margin-bottom:17px}.subtitle{font-size:17px}.meta{font-size:10px;gap:8px}.meta span+span:before{margin-right:8px}body{font-size:15px;line-height:1.9}.lead{font-size:16px}main>h1{font-size:25px;margin-top:46px;padding-top:19px}h2{font-size:19px;margin-top:30px}.callout,.takeaway{padding:13px 17px;font-size:14px}.math.display{font-size:1em;padding:15px 12px}.figure,.interactive{padding:16px}.split-row{flex-direction:column;align-items:stretch;gap:5px}.split-row>b{width:auto}.track{flex:none}.track i{font-size:9px}.interactive label{font-size:12px}.demo-cells{gap:4px;grid-template-columns:repeat(8,minmax(0,1fr))}.bar-chart{padding:16px}.bar-line{grid-template-columns:110px minmax(0,1fr) 42px;font-size:10px;gap:7px}td,th{padding:12px;font-size:12px;min-width:145px}pre{padding:15px;font-size:12px}.references p{font-size:12px}p{overflow-wrap:break-word}}
+@media print{body{background:#fff;font-size:10pt;line-height:1.6}.shell{display:block;padding:0;max-width:none}.sidebar,#progress,.interactive input,.nav-tools{display:none}.content{max-width:none}.hero{padding:0 0 20px}.hero h1{font-size:30pt}main>h1{font-size:20pt;break-after:avoid;margin-top:28pt}h2,h3{break-after:avoid}.table-wrap{overflow:visible}table{font-size:8pt}td,th{min-width:0;padding:8px}.math.display{overflow:visible;font-size:.95em}pre{font-size:7.5pt;white-space:pre-wrap}pre code{white-space:pre-wrap}.callout,.takeaway,.figure,.interactive{break-inside:avoid}a{color:inherit}details{display:block}.report-footer{margin-top:20px}@page{margin:18mm 17mm}}
+</style>
+</head>
+<body>
+<div id="progress" aria-hidden="true"></div>
+<div class="shell">
+<aside class="sidebar">
+<a class="brand" href="#top">TSML / RESEARCH NOTES</a>
+<details id="navigation"><summary>目录 · 15 节 / 3 个附录</summary>
+<div class="nav-label">ON THIS PAGE</div>
+<nav id="TOC" aria-label="报告目录"><ul>
+<li><a href="#risk" id="toc-risk">1. 先问：你的 OOS
+数字究竟在估计什么？</a>
+<ul>
+<li><a href="#从一次真正的预测开始" id="toc-从一次真正的预测开始">1.1
+从一次真正的预测开始</a></li>
+<li><a href="#三种经常混为一谈的目标"
+id="toc-三种经常混为一谈的目标">1.2 三种经常混为一谈的目标</a></li>
+</ul></li>
+<li><a href="#four-problems" id="toc-four-problems">2.
+四种不同的问题：不能统称为 leakage</a>
+<ul>
+<li><a href="#信息泄漏用了当时不可能拥有的东西"
+id="toc-信息泄漏用了当时不可能拥有的东西">2.1
+信息泄漏：用了当时不可能拥有的东西</a></li>
+<li><a href="#依赖导致评估不稳定没偷看但有效信息少"
+id="toc-依赖导致评估不稳定没偷看但有效信息少">2.2
+依赖导致评估不稳定：没偷看，但有效信息少</a></li>
+<li><a href="#分布或部署协议不匹配测的不是未来要做的任务"
+id="toc-分布或部署协议不匹配测的不是未来要做的任务">2.3
+分布或部署协议不匹配：测的不是未来要做的任务</a></li>
+<li><a href="#选择偏差试得太多最后挑中了运气"
+id="toc-选择偏差试得太多最后挑中了运气">2.4
+选择偏差：试得太多，最后挑中了运气</a></li>
+</ul></li>
+<li><a href="#availability" id="toc-availability">3.
+时间戳不是一个字段：建立 point-in-time 数据契约</a>
+<ul>
+<li><a href="#每个样本至少记录什么" id="toc-每个样本至少记录什么">3.1
+每个样本至少记录什么？</a></li>
+<li><a href="#一个已经按日期切分仍然泄漏的例子"
+id="toc-一个已经按日期切分仍然泄漏的例子">3.2
+一个“已经按日期切分”仍然泄漏的例子</a></li>
+<li><a href="#不要把历史最终版误当当时可见版"
+id="toc-不要把历史最终版误当当时可见版">3.3
+不要把“历史最终版”误当“当时可见版”</a></li>
+</ul></li>
+<li><a href="#splitters" id="toc-splitters">4.
+各种切分到底模拟了什么？</a>
+<ul>
+<li><a href="#单次-chronological-holdout"
+id="toc-单次-chronological-holdout">4.1 单次 chronological
+holdout</a></li>
+<li><a href="#expanding-window-rolling-origin-evaluation"
+id="toc-expanding-window-rolling-origin-evaluation">4.2 Expanding-window
+/ rolling-origin evaluation</a></li>
+<li><a href="#sliding-rolling-training-window"
+id="toc-sliding-rolling-training-window">4.3 Sliding / rolling training
+window</a></li>
+<li><a href="#blocked-k-foldh-block-与-hv-block"
+id="toc-blocked-k-foldh-block-与-hv-block">4.4 Blocked K-fold、h-block
+与 hv-block</a></li>
+<li><a href="#prequential-evaluation"
+id="toc-prequential-evaluation">4.5 Prequential evaluation</a></li>
+</ul></li>
+<li><a href="#random-cv" id="toc-random-cv">5. 随机 K-fold
+在时间序列上一定错吗？</a>
+<ul>
+<li><a href="#有时间依赖不等于一切随机-cv-都不成立"
+id="toc-有时间依赖不等于一切随机-cv-都不成立">5.1
+有时间依赖，不等于一切随机 CV 都不成立</a></li>
+<li><a href="#三个不能跳过的限定" id="toc-三个不能跳过的限定">5.2
+三个不能跳过的限定</a></li>
+<li><a href="#实证文献为什么看起来互相矛盾"
+id="toc-实证文献为什么看起来互相矛盾">5.3
+实证文献为什么看起来“互相矛盾”？</a></li>
+</ul></li>
+<li><a href="#purging" id="toc-purging">6. Purging、embargo 与
+gap：三个层次</a>
+<ul>
+<li><a href="#purging针对已知依赖关系删样本"
+id="toc-purging针对已知依赖关系删样本">6.1
+Purging：针对已知依赖关系删样本</a></li>
+<li><a href="#embargo在测试区间之后再留一个缓冲"
+id="toc-embargo在测试区间之后再留一个缓冲">6.2
+Embargo：在测试区间之后再留一个缓冲</a></li>
+<li><a href="#gap一个实现参数可能服务于不同目的"
+id="toc-gap一个实现参数可能服务于不同目的">6.3
+Gap：一个实现参数，可能服务于不同目的</a></li>
+<li><a href="#为什么不应机械使用lookback-horizon"
+id="toc-为什么不应机械使用lookback-horizon">6.4
+为什么不应机械使用“lookback + horizon”？</a></li>
+</ul></li>
+<li><a href="#cpcv" id="toc-cpcv">7.
+CPCV：有价值，但不要把它神化</a></li>
+<li><a href="#nested" id="toc-nested">8. Nested
+validation：把选择过程也放回过去</a>
+<ul>
+<li><a href="#为什么最低-cv-分数通常过于乐观"
+id="toc-为什么最低-cv-分数通常过于乐观">8.1 为什么“最低 CV
+分数”通常过于乐观？</a></li>
+<li><a href="#外层与内层分别负责什么"
+id="toc-外层与内层分别负责什么">8.2 外层与内层分别负责什么？</a></li>
+<li><a href="#early-stopping-最常见的漏洞"
+id="toc-early-stopping-最常见的漏洞">8.3 Early stopping
+最常见的漏洞</a></li>
+<li><a href="#最终-holdout-是否永远不能用于更新"
+id="toc-最终-holdout-是否永远不能用于更新">8.4 最终 holdout
+是否永远不能用于更新？</a></li>
+</ul></li>
+<li><a href="#horizons" id="toc-horizons">9.
+Horizon、重训频率、测试块：不要混用三个时间尺度</a>
+<ul>
+<li><a href="#测试一个月不等于预测一个月"
+id="toc-测试一个月不等于预测一个月">9.1
+测试一个月，不等于预测一个月</a></li>
+<li><a href="#多-horizon-数据必须按-origin-切分"
+id="toc-多-horizon-数据必须按-origin-切分">9.2 多 horizon 数据必须按
+origin 切分</a></li>
+</ul></li>
+<li><a href="#irregular" id="toc-irregular">10. 不规则事件与
+panel：splitter 不会替你定义总体</a>
+<ul>
+<li><a href="#后-1000-条与后一天是不同任务"
+id="toc-后-1000-条与后一天是不同任务">10.1 “后 1000
+条”与“后一天”是不同任务</a></li>
+<li><a href="#未来窗口没有事件怎么办"
+id="toc-未来窗口没有事件怎么办">10.2 未来窗口没有事件怎么办？</a></li>
+<li><a href="#观察结束不等于没有事件"
+id="toc-观察结束不等于没有事件">10.3 观察结束不等于“没有事件”</a></li>
+<li><a href="#多对象面板时间与-entity-是两条不同泛化轴"
+id="toc-多对象面板时间与-entity-是两条不同泛化轴">10.4
+多对象面板：时间与 entity 是两条不同泛化轴</a></li>
+</ul></li>
+<li><a href="#scores" id="toc-scores">11. MAE、quantile 与加权：把目标和
+score 对齐</a>
+<ul>
+<li><a href="#mae-为什么对应条件中位数"
+id="toc-mae-为什么对应条件中位数">11.1 MAE
+为什么对应条件中位数？</a></li>
+<li><a href="#一般分位数使用-pinball-loss"
+id="toc-一般分位数使用-pinball-loss">11.2 一般分位数使用 pinball
+loss</a></li>
+<li><a href="#一个-noisy-label-能评估-quantile-吗"
+id="toc-一个-noisy-label-能评估-quantile-吗">11.3 一个 noisy label
+能评估 quantile 吗？</a></li>
+<li><a href="#fold-averagerow-averageday-average-不相等"
+id="toc-fold-averagerow-averageday-average-不相等">11.4 Fold
+average、row average、day average 不相等</a></li>
+<li><a href="#给-micro-noisy-observations-降权会改变什么"
+id="toc-给-micro-noisy-observations-降权会改变什么">11.5 给 micro /
+noisy observations 降权，会改变什么？</a></li>
+</ul></li>
+<li><a href="#uncertainty" id="toc-uncertainty">12. OOS
+改善到底可靠吗？</a>
+<ul>
+<li><a href="#对每个相同事件做配对比较"
+id="toc-对每个相同事件做配对比较">12.1 对每个相同事件做配对比较</a></li>
+<li><a href="#自相关为什么使朴素标准误失真"
+id="toc-自相关为什么使朴素标准误失真">12.2
+自相关为什么使朴素标准误失真？</a></li>
+<li><a href="#hac-与-block-bootstrap-的正确位置"
+id="toc-hac-与-block-bootstrap-的正确位置">12.3 HAC 与 block bootstrap
+的正确位置</a></li>
+<li><a href="#为什么不能把-k-个-fold-当-k-次独立实验"
+id="toc-为什么不能把-k-个-fold-当-k-次独立实验">12.4 为什么不能把 K 个
+fold 当 K 次独立实验？</a></li>
+<li><a href="#还有哪些边界" id="toc-还有哪些边界">12.5
+还有哪些边界？</a></li>
+</ul></li>
+<li><a href="#experiments" id="toc-experiments">13.
+三个已经运行的合成实验</a>
+<ul>
+<li><a href="#实验-a稳定-ar1随机-cv-并没有必然崩溃"
+id="toc-实验-a稳定-ar1随机-cv-并没有必然崩溃">13.1 实验 A：稳定
+AR(1)，随机 CV 并没有必然崩溃</a></li>
+<li><a href="#实验-b机制突变时随机混合平均回答了另一个问题"
+id="toc-实验-b机制突变时随机混合平均回答了另一个问题">13.2 实验
+B：机制突变时，随机混合平均回答了另一个问题</a></li>
+<li><a href="#实验-c重叠标签没有让平均-mae-自动失效却让-iid-se-严重偏小"
+id="toc-实验-c重叠标签没有让平均-mae-自动失效却让-iid-se-严重偏小">13.3
+实验 C：重叠标签没有让平均 MAE 自动失效，却让 IID SE 严重偏小</a></li>
+</ul></li>
+<li><a href="#literature" id="toc-literature">14.
+文献地图：经典结论与新问题各自负责什么？</a>
+<ul>
+<li><a href="#不是所有论文都在研究同一个-estimand"
+id="toc-不是所有论文都在研究同一个-estimand">14.1
+不是所有论文都在研究同一个 estimand</a></li>
+<li><a href="#foundation-models-把泄漏边界推到了预训练"
+id="toc-foundation-models-把泄漏边界推到了预训练">14.2
+2024–2026：foundation models 把泄漏边界推到了预训练</a></li>
+</ul></li>
+<li><a href="#protocol" id="toc-protocol">15.
+一套能执行的默认方案，以及它不能保证的事</a>
+<ul>
+<li><a href="#面向-next-day未来窗口maequantile-的起始协议"
+id="toc-面向-next-day未来窗口maequantile-的起始协议">15.1 面向
+next-day、未来窗口、MAE/quantile 的起始协议</a></li>
+<li><a href="#保存的不应只是折均值而是预测账本"
+id="toc-保存的不应只是折均值而是预测账本">15.2
+保存的不应只是折均值，而是预测账本</a></li>
+<li><a href="#不存在能无条件保证未来的-cv"
+id="toc-不存在能无条件保证未来的-cv">15.3 不存在能无条件保证未来的
+CV</a></li>
+<li><a href="#哪些问题值得继续研究" id="toc-哪些问题值得继续研究">15.4
+哪些问题值得继续研究？</a></li>
+</ul></li>
+<li><a href="#code" id="toc-code">附录 A.
+按真实时间和标签成熟度切分</a></li>
+<li><a href="#reproduce" id="toc-reproduce">附录 B.
+合成实验完整复现</a></li>
+<li><a href="#exercises" id="toc-exercises">附录 C.
+五个自测问题</a></li>
+<li><a href="#references"
+id="toc-references">参考文献与带问题的阅读顺序</a></li>
+</ul></nav>
+</details>
+<div class="nav-tools"><button type="button" id="print">打印 / 保存 PDF</button><button type="button" id="backtop">返回顶部</button></div>
+</aside>
+<div class="content">
+<header class="hero" id="top">
+<div class="kicker">A tutorial survey · Validation as a forecasting protocol</div>
+<h1>Time Series Cross-Validation</h1>
+<p class="subtitle">从预测任务、信息可用性到可信 OOS：教程式综述</p>
+<div class="meta"><span>2026-09-04</span><span>15 个主题章节</span><span>24 项参考资料</span><span>3 组已运行合成实验</span></div>
+</header>
+<main><div class="lead">
+<p class="eyebrow">
+TSML · METHODS &amp; EVALUATION · TUTORIAL SURVEY
+</p>
+<p>
+<strong>时间序列验证不是一种
+splitter，而是一份可回放的预测协议。</strong>先说清楚何时预测、预测什么、届时知道什么、多久重训、对谁平均，再讨论
+rolling window、gap、purging 和 K-fold。
+</p>
+<p>
+本文以一般 forecasting
+为主线，另用不规则事件、未来窗口标签与面板数据说明边界情况。公式从条件风险与简单协方差展开；数值来自独立运行的合成实验，不使用任何真实工作数据。
+</p>
+</div>
+<div class="callout">
+<p><strong>阅读路线。</strong> 首读第 1–6 节，建立任务与切分的对应；第
+7–12 节把它变成可以实施的验证流程；第 13–15
+节看实际实验、文献地图与研究边界。附录给出
+splitter、复现实验和自测题。文中“本文推导”“合成实验”“文献结论”分别标明，不把工程建议写成普遍定理。</p>
+</div>
+<h1 id="risk">1. 先问：你的 OOS 数字究竟在估计什么？</h1>
+<h2 id="从一次真正的预测开始">1.1 从一次真正的预测开始</h2>
+<p>假设在时刻
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>，你拥有信息集
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ℱ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\mathcal F_t</annotation></semantics></math>，构造特征
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><mi>t</mi></msub><annotation encoding="application/x-tex">X_t</annotation></semantics></math>，预测未来目标
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mi>t</mi></msub><annotation encoding="application/x-tex">Y_t</annotation></semantics></math>。下标
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>
+表示<strong>预测发起时刻</strong>，不表示目标已经在
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>
+实现。例如，<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mi>t</mi></msub><mo>=</mo><msub><mi>S</mi><mrow><mi>t</mi><mo>+</mo><mn>24</mn><mi>h</mi></mrow></msub><mo>−</mo><msub><mi>S</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">Y_t=S_{t+24h}-S_t</annotation></semantics></math>；也可以是未来某个窗口内观测的函数。</p>
+<p>令
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>≤</mo><mi>t</mi></mrow><annotation encoding="application/x-tex">c(t)\le t</annotation></semantics></math>
+为最近一次模型训练的数据截止时刻。用截止该时刻允许使用的训练样本
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>D</mi><mrow><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><annotation encoding="application/x-tex">D_{c(t)}</annotation></semantics></math>，以及预先规定的训练算法
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>，得到</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>f</mi><mo accent="true">̂</mo></mover><mrow><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mo>=</mo><mi>A</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>D</mi><mrow><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mover><mi>Y</mi><mo accent="true">̂</mo></mover><mi>t</mi></msub><mo>=</mo><msub><mover><mi>f</mi><mo accent="true">̂</mo></mover><mrow><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\widehat f_{c(t)}=A(D_{c(t)}),\qquad
+\widehat Y_t=\widehat f_{c(t)}(X_t).
+</annotation></semantics></math></span></p>
+<p>这里
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>
+不只是模型类：它还包括缺失值处理、标准化、特征筛选、调参、early
+stopping、训练窗口与重训规则。一个按月重训的系统，与一个每条记录到来就重训的系统，即使都叫
+LightGBM，也不是同一个 forecasting procedure。<a href="#r1">R1</a> <a
+href="#r2">R2</a></p>
+<p>给定损失
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>，在预测时刻的条件风险是</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>r</mi><mi>t</mi></msub><mo>=</mo><mi>𝔼</mi><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">[</mo><mo>ℓ</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Y</mi><mi>t</mi></msub><mo>,</mo><msub><mover><mi>Y</mi><mo accent="true">̂</mo></mover><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>∣</mo><msub><mi>ℱ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+r_t=\mathbb E\!\left[\ell(Y_t,\widehat Y_t)\mid\mathcal F_t\right].
+</annotation></semantics></math></span></p>
+<p>实际评估把多个发起时刻的损失聚合：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>R</mi><mo accent="true">̂</mo></mover><mo>=</mo><mfrac><mrow><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>𝒱</mi></mrow></munder><msub><mi>w</mi><mi>i</mi></msub><mspace width="0.167em"></mspace><mo>ℓ</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Y</mi><mi>i</mi></msub><mo>,</mo><msub><mover><mi>f</mi><mo accent="true">̂</mo></mover><mrow><mi>c</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>t</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>𝒱</mi></mrow></munder><msub><mi>w</mi><mi>i</mi></msub></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\widehat R=\frac{\sum_{i\in\mathcal V}w_i\,
+\ell(Y_i,\widehat f_{c(t_i)}(X_i))}{\sum_{i\in\mathcal V}w_i}.
+</annotation></semantics></math></span></p>
+<p><strong>这只是一个已经实现的历史平均。</strong>要把它解读成下一阶段的预测风险，需要历史评估时段与未来部署环境之间存在可辩护的联系。切分本身不会创造这种联系。</p>
+<h2 id="三种经常混为一谈的目标">1.2 三种经常混为一谈的目标</h2>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>目标</th>
+<th>真正的问题</th>
+<th>常见证据</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>评估学习程序</td>
+<td>在不同历史起点按同样规则训练，表现如何？</td>
+<td>多个 rolling origins、完整嵌套流程</td>
+</tr>
+<tr class="even">
+<td>评估最终已训练模型</td>
+<td>今天这一个具体模型，在接下来一段时间表现如何？</td>
+<td>最靠近部署的未触碰测试段、上线记录</td>
+</tr>
+<tr class="odd">
+<td>选择配置</td>
+<td>哪个窗口、特征集、超参数更值得使用？</td>
+<td>仅在开发区间内的时间序列验证</td>
+</tr>
+</tbody>
+</table></div>
+<p>三个问题相互关联，但答案不相同。普通 CV
+也并不自动精确估计“手头这个最终拟合模型”的条件误差。Bates、Hastie 与
+Tibshirani 对特定线性模型明确分析了这一差别；不能把其 IID
+结论原封不动搬成时间序列定理。<a href="#r3">R3</a></p>
+<p><strong>一个有用的协议表达：</strong>先写清“对象 × 发起时刻 × horizon
+× 信息集 × 更新规则 × 损失 × 权重”。其中任意一项变化，都可能让两个 OOS
+分数失去可比性。</p>
+<div class="takeaway">
+<p><strong>本节落点：</strong>先固定 forecasting procedure，再选择
+splitter。我们想验证的是“过去若真的部署这套程序，会发生什么”，不是“从
+DataFrame 中拿走几行以后还能拟合多好”。</p>
+</div>
+<h1 id="four-problems">2. 四种不同的问题：不能统称为 leakage</h1>
+<h2 id="信息泄漏用了当时不可能拥有的东西">2.1
+信息泄漏：用了当时不可能拥有的东西</h2>
+<p>例如预测周五价格变化，却用到周五收盘后才能算出的全天成交量；或者周一重训时，纳入周二才会成熟的训练标签。错误在于<strong>信息可用时刻</strong>，不在于是否调用了随机
+shuffle。</p>
+<h2 id="依赖导致评估不稳定没偷看但有效信息少">2.2
+依赖导致评估不稳定：没偷看，但有效信息少</h2>
+<p>相邻 24
+小时收益共享大量增量，因此相邻预测损失可能相关。一个完全遵守时间顺序的测试集，仍可能只有很少的有效独立信息。平均
+MAE 可以有意义，朴素标准误却可能太小。</p>
+<h2 id="分布或部署协议不匹配测的不是未来要做的任务">2.3
+分布或部署协议不匹配：测的不是未来要做的任务</h2>
+<p>在一个稳定机制下，跨时间随机抽样可以测量该机制中的预测误差；在制度突变后，它可能主要反映旧机制的混合平均。另一个例子是每天重训的验证，拿来承诺每月重训的上线表现。都不是简单加一个
+gap 可以解决的。</p>
+<h2 id="选择偏差试得太多最后挑中了运气">2.4
+选择偏差：试得太多，最后挑中了运气</h2>
+<p>你反复看同一个验证集，改特征、调窗口、换标签定义，最后挑最小
+MAE。即使每次切分都完全合法，最终赢家的展示分数仍可能乐观。Cawley 与
+Talbot
+专门研究了模型选择过程的过拟合；它不是“训练集拟合过度”的同义词。<a
+href="#r4">R4</a></p>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>症状</th>
+<th>优先处理</th>
+<th>不能指望它解决</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>训练标签在训练时尚未可用</td>
+<td>label-availability 截止、purging</td>
+<td>未来 regime 改变</td>
+</tr>
+<tr class="even">
+<td>相邻损失高度相关</td>
+<td>配对比较、时间聚合、HAC/block bootstrap</td>
+<td>已发生的信息泄漏</td>
+</tr>
+<tr class="odd">
+<td>旧市场表现不能代表新市场</td>
+<td>按时间走的回放、近期分层报告、窗口敏感性</td>
+<td>无条件保证未来稳定</td>
+</tr>
+<tr class="even">
+<td>验证集看了几十次</td>
+<td>nested selection、锁定最终测试段、记录试验</td>
+<td>通过增加 folds 自动消除选择偏差</td>
+</tr>
+</tbody>
+</table></div>
+<p>这些问题可以同时出现。Hewamalage、Ackermann 与 Bergmeir
+的综述覆盖了划分、误差度量、统计检验等环节，适合作为本文的总背景阅读。<a
+href="#r5">R5</a></p>
+<h1 id="availability">3. 时间戳不是一个字段：建立 point-in-time
+数据契约</h1>
+<h2 id="每个样本至少记录什么">3.1 每个样本至少记录什么？</h2>
+<p>对第
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
+个样本，用以下记号：</p>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>记号 / 字段</th>
+<th>含义</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>t</mi><mi>i</mi></msub><annotation encoding="application/x-tex">t_i</annotation></semantics></math>
+/ <code>prediction_time</code></td>
+<td>作出预测的时刻</td>
+<td>周一 10:00</td>
+</tr>
+<tr class="even">
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><mi>i</mi></msub><annotation encoding="application/x-tex">X_i</annotation></semantics></math></td>
+<td>该时刻真实可获取的特征</td>
+<td>截至 10:00 已发布并接收的数据</td>
+</tr>
+<tr class="odd">
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mi>i</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>s</mi><mi>i</mi></msub><mo>,</mo><msub><mi>e</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">I_i=[s_i,e_i]</annotation></semantics></math></td>
+<td>标签依赖的结果区间的保守包络</td>
+<td>周一 10:00 至周二 11:00</td>
+</tr>
+<tr class="even">
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>a</mi><mi>i</mi></msub><annotation encoding="application/x-tex">a_i</annotation></semantics></math>
+/ <code>label_available_at</code></td>
+<td>标签已完整构造、发布并进入系统的时刻</td>
+<td>周二 11:15</td>
+</tr>
+</tbody>
+</table></div>
+<p>还可以记录各原始源的 event、publication、ingestion
+timestamp，特征流水线版本和 label vintage。区间
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>I</mi><mi>i</mi></msub><annotation encoding="application/x-tex">I_i</annotation></semantics></math>
+是依赖记录的概括，不意味着标签一定对区间内每一个点都有依赖。对稀疏事件，记录实际依赖的原始记录
+ID 会更精确。</p>
+<p>最基本的可用性约束为</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>i</mi></msub><mrow><mspace width="0.333em"></mspace><mtext mathvariant="normal"> 只由 </mtext><mspace width="0.333em"></mspace></mrow><msub><mi>ℱ</mi><msub><mi>t</mi><mi>i</mi></msub></msub><mrow><mspace width="0.333em"></mspace><mtext mathvariant="normal"> 中的信息构造</mtext></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>D</mi><mi>c</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mi>i</mi></msub><mo>,</mo><msub><mi>Y</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>:</mo><msub><mi>t</mi><mi>i</mi></msub><mo>&lt;</mo><mi>c</mi><mo>,</mo><mspace width="0.222em"></mspace><msub><mi>a</mi><mi>i</mi></msub><mo>&lt;</mo><mi>c</mi><mo stretchy="false" form="postfix">}</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
+X_i\text{ 只由 }\mathcal F_{t_i}\text{ 中的信息构造},
+\qquad D_c=\{(X_i,Y_i):t_i&lt;c,\ a_i&lt;c\}.
+</annotation></semantics></math></span></p>
+<p>本文采用严格不等号，保守排除恰好与截止时刻同刻才到达的标签。如果真实系统有可靠的同刻事件序列和处理顺序，可以调整边界，但必须固定约定。</p>
+<p><strong>训练计算耗时也要考虑。</strong>若 09:00 开始训练、09:10
+才上线，数据 cutoff 是 09:00，模型最早可用于 09:10
+的预测。不能因为上线在
+09:10，就让训练数据包含这十分钟内才到达的信息。</p>
+<h2 id="一个已经按日期切分仍然泄漏的例子">3.2
+一个“已经按日期切分”仍然泄漏的例子</h2>
+<p>模型于周二 09:00 开始训练。某条训练记录的预测时刻是周一
+10:00，目标用未来 23–25 小时窗口内的观测。窗口到周二 11:00 才结束，再加
+15 分钟发布延迟。</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mi>i</mi></msub><mo>&lt;</mo><mi>c</mi><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>e</mi><mi>i</mi></msub><mo>&gt;</mo><mi>c</mi><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>a</mi><mi>i</mi></msub><mo>&gt;</mo><mi>c</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+t_i&lt;c,\qquad e_i&gt;c,\qquad a_i&gt;c.
+</annotation></semantics></math></span></p>
+<p>按 <code>prediction_time &lt; cutoff</code> 会留下它；按
+<code>label_available_at &lt; cutoff</code> 则会删除它。<strong>23
+小时旧的记录，不等于 23 小时前已经知道的训练标签。</strong></p>
+<p>对固定 horizon
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>H</mi><annotation encoding="application/x-tex">H</annotation></semantics></math>、固定延迟
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>D</mi><annotation encoding="application/x-tex">D</annotation></semantics></math>，若
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>a</mi><mi>i</mi></msub><mo>=</mo><msub><mi>t</mi><mi>i</mi></msub><mo>+</mo><mi>H</mi><mo>+</mo><mi>D</mi></mrow><annotation encoding="application/x-tex">a_i=t_i+H+D</annotation></semantics></math>，训练条件简化成</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mi>i</mi></msub><mo>&lt;</mo><mi>c</mi><mo>−</mo><mi>H</mi><mo>−</mo><mi>D</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+t_i&lt;c-H-D.
+</annotation></semantics></math></span></p>
+<p>因此固定时间 gap 可以是 availability 的实现方式。但当
+horizon、窗口选择、发布延迟随样本变化时，一个统一 gap
+只是粗略上界，不如逐样本判断准确。</p>
+<h2 id="不要把历史最终版误当当时可见版">3.3
+不要把“历史最终版”误当“当时可见版”</h2>
+<p>宏观数据修订、迟报成交、撤销与更正、事后清洗标志，都可能使今天查询的过去数据不同于当时实际可见的数据。特征必须回放当时可见版本；训练标签也只能使用截止时刻已可用的版本。最终评分可以使用事先指定的更成熟标签版本，但应把该口径与训练
+vintage 分开记录。</p>
+<p>全样本 standardization、PCA、winsorization 阈值和 feature selection
+也属于训练。把它们放在 CV 外面，会让验证数据影响拟合过程。官方
+scikit-learn 文档把这种问题归入预处理泄漏，并建议用 pipeline
+保持训练/验证隔离。<a href="#r6">R6</a></p>
+<div class="takeaway">
+<p><strong>本节落点：</strong>对于未来窗口标签，最重要的元数据往往不是
+<code>target_date</code>，而是
+<code>label_available_at</code>。先把这个字段定义对，很多关于 gap
+的争论就会变成可以检查的布尔条件。</p>
+</div>
+<h1 id="splitters">4. 各种切分到底模拟了什么？</h1>
+<div class="figure">
+<div class="legend">
+<span class="key train">训练</span><span class="key gap">排除 /
+gap</span><span class="key test">验证</span><span
+class="key unused">未使用</span>
+</div>
+<div class="split-row">
+<b>Expanding · 1</b>
+<div class="track">
+<i class="train" style="flex:4">过去</i><i class="gap">间隔</i><i class="test" style="flex:2">验证</i><i class="unused" style="flex:5"></i>
+</div>
+</div>
+<div class="split-row">
+<b>Expanding · 2</b>
+<div class="track">
+<i class="train" style="flex:6">过去</i><i class="gap">间隔</i><i class="test" style="flex:2">验证</i><i class="unused" style="flex:3"></i>
+</div>
+</div>
+<div class="split-row">
+<b>Rolling · 2</b>
+<div class="track">
+<i class="unused" style="flex:2"></i><i class="train" style="flex:4">固定窗口</i><i class="gap">间隔</i><i class="test" style="flex:2">验证</i><i class="unused" style="flex:3"></i>
+</div>
+</div>
+<div class="split-row">
+<b>Blocked K-fold</b>
+<div class="track">
+<i class="train" style="flex:4">之前的数据</i><i class="test" style="flex:2">验证</i><i class="train" style="flex:6">之后的数据也训练</i>
+</div>
+</div>
+<p class="caption">
+图 1 ·
+顺序块只是验证集的形状，不保证训练集只来自过去。横轴为时间；示意块宽不是实际样本数量。
+</p>
+</div>
+<h2 id="单次-chronological-holdout">4.1 单次 chronological holdout</h2>
+<p>先训练，再在其后的时间段验证。实现简单、接近一次真实上线，但结论依赖这个测试段的市场状态、季节与难度。它适合做终局测试，不适合被无限次重复查看和调参。</p>
+<h2 id="expanding-window-rolling-origin-evaluation">4.2 Expanding-window
+/ rolling-origin evaluation</h2>
+<p>给定训练截止
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>c</mi><mn>1</mn></msub><mo>&lt;</mo><msub><mi>c</mi><mn>2</mn></msub><mo>&lt;</mo><mi>⋯</mi><mo>&lt;</mo><msub><mi>c</mi><mi>K</mi></msub></mrow><annotation encoding="application/x-tex">c_1&lt;c_2&lt;\cdots&lt;c_K</annotation></semantics></math>，第
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+次使用所有满足 availability 的过去样本，并预测后面的区间。</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝒯</mi><mi>k</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mi>i</mi><mo>:</mo><msub><mi>t</mi><mi>i</mi></msub><mo>&lt;</mo><msub><mi>c</mi><mi>k</mi></msub><mo>,</mo><mspace width="0.222em"></mspace><msub><mi>a</mi><mi>i</mi></msub><mo>&lt;</mo><msub><mi>c</mi><mi>k</mi></msub><mo stretchy="false" form="postfix">}</mo><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>𝒱</mi><mi>k</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mi>i</mi><mo>:</mo><msub><mi>v</mi><mi>k</mi></msub><mo>≤</mo><msub><mi>t</mi><mi>i</mi></msub><mo>&lt;</mo><msub><mi>v</mi><mi>k</mi></msub><mo>+</mo><mi>B</mi><mo stretchy="false" form="postfix">}</mo><mo>,</mo><mspace width="1.0em"></mspace><msub><mi>v</mi><mi>k</mi></msub><mo>≥</mo><msub><mi>c</mi><mi>k</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\mathcal T_k=\{i:t_i&lt;c_k,\ a_i&lt;c_k\},\qquad
+\mathcal V_k=\{i:v_k\le t_i&lt;v_k+B\},\quad v_k\ge c_k.
+</annotation></semantics></math></span></p>
+<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>B</mi><annotation encoding="application/x-tex">B</annotation></semantics></math>
+是评估块长度，不是 forecast horizon。随着 cutoff
+向前移动，训练集不断扩大。这是 FPP 中 time series cross-validation
+的核心思路，并可扩展到多步预测。<a href="#r1">R1</a></p>
+<h2 id="sliding-rolling-training-window">4.3 Sliding / rolling training
+window</h2>
+<p>只用最近
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>W</mi><annotation encoding="application/x-tex">W</annotation></semantics></math>
+时间长度的数据：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝒯</mi><mi>k</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>W</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mi>i</mi><mo>:</mo><msub><mi>c</mi><mi>k</mi></msub><mo>−</mo><mi>W</mi><mo>≤</mo><msub><mi>t</mi><mi>i</mi></msub><mo>&lt;</mo><msub><mi>c</mi><mi>k</mi></msub><mo>,</mo><mspace width="0.222em"></mspace><msub><mi>a</mi><mi>i</mi></msub><mo>&lt;</mo><msub><mi>c</mi><mi>k</mi></msub><mo stretchy="false" form="postfix">}</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\mathcal T_k(W)=\{i:c_k-W\le t_i&lt;c_k,\ a_i&lt;c_k\}.
+</annotation></semantics></math></span></p>
+<p>它与 expanding window
+的区别不只是计算量：它让学习程序主动遗忘旧机制。短窗口更容易适应变化，但估计噪声更大；长窗口样本多，却可能混入过时关系。因此
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>W</mi><annotation encoding="application/x-tex">W</annotation></semantics></math>
+是需要在开发区间选择的模型配置，而不是预处理中的一个无关常数。</p>
+<p>本文以预测发起时间定义
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>W</mi><annotation encoding="application/x-tex">W</annotation></semantics></math>。以标签可用时间定义窗口是另一种合法政策，但两者保留的样本不同，不能偷偷混用。</p>
+<h2 id="blocked-k-foldh-block-与-hv-block">4.4 Blocked K-fold、h-block
+与 hv-block</h2>
+<p>Blocked K-fold
+先把记录分成连续时间块，然后轮流拿一个块验证，其余块训练。<strong>“连续分块”不等于“只用过去”。</strong>验证块之后的数据通常仍在训练集里。</p>
+<p>h-block 在测试点附近删除邻居；hv-block
+使用测试块并在两侧留出缓冲，试图降低训练与测试间的局部依赖。它们服务于依赖数据下的模型选择或风险估计，但不是天然的实时部署回放。Racine
+的工作是这条文献线的重要入口。<a href="#r7">R7</a></p>
+<p>理论上要特别谨慎：Zheng 的说明指出，Racine 文中借助 balanced
+incomplete block design
+的一个论证不成立。因此不要未经核查就宣传“hv-block
+已在一般依赖数据下保证模型选择一致性”。这项批评针对特定论证，不等于否定每一种具体模型下可能成立的结果。<a
+href="#r8">R8</a></p>
+<h2 id="prequential-evaluation">4.5 Prequential evaluation</h2>
+<p>按时间依次执行“预测 → 等标签到达 → 评分 →
+按既定规则更新”。如果标签延迟，必须使用待评分队列，不能在发出预测后立刻把尚未实现的目标用于更新。Dawid
+的 prequential 思想提供了这一顺序视角。<a href="#r2">R2</a></p>
+<p>它特别适合在线学习，但也适用于按日、周、月重训的离线系统：更新时刻不同，原则相同。</p>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>方法</th>
+<th>训练可能使用验证之后的数据？</th>
+<th>最自然的用途</th>
+<th>主要局限</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>单次时间 holdout</td>
+<td>否</td>
+<td>最终测试 / 一次上线模拟</td>
+<td>单一时期，方差与 regime 敏感</td>
+</tr>
+<tr class="even">
+<td>Expanding walk-forward</td>
+<td>否</td>
+<td>累积训练的历史部署回放</td>
+<td>旧数据可能过时；早期模型训练量小</td>
+</tr>
+<tr class="odd">
+<td>Rolling-window walk-forward</td>
+<td>否</td>
+<td>有遗忘机制的部署回放</td>
+<td>窗口选择本身要验证</td>
+</tr>
+<tr class="even">
+<td>Blocked / hv-block</td>
+<td>是，通常如此</td>
+<td>稳定机制下的依赖数据评估</td>
+<td>不是严格时间外推</td>
+</tr>
+<tr class="odd">
+<td>Purged K-fold / CPCV</td>
+<td>是，通常如此</td>
+<td>降低已知重叠、历史子样本稳健性</td>
+<td>不创造独立历史，也不模拟真实时间箭头</td>
+</tr>
+<tr class="even">
+<td>Prequential</td>
+<td>否</td>
+<td>在线或周期更新系统</td>
+<td>必须正确处理延迟反馈与状态更新</td>
+</tr>
+</tbody>
+</table></div>
+<h1 id="random-cv">5. 随机 K-fold 在时间序列上一定错吗？</h1>
+<h2 id="有时间依赖不等于一切随机-cv-都不成立">5.1
+有时间依赖，不等于一切随机 CV 都不成立</h2>
+<p>考虑稳定的 AR(1)：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>S</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><mi>ϕ</mi><msub><mi>S</mi><mi>t</mi></msub><mo>+</mo><msub><mi>ε</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>,</mo><mspace width="2.0em"></mspace><mrow><mo stretchy="true" form="prefix">|</mo><mi>ϕ</mi><mo stretchy="true" form="postfix">|</mo></mrow><mo>&lt;</mo><mn>1</mn><mo>,</mo></mrow><annotation encoding="application/x-tex">
+S_{t+1}=\phi S_t+\varepsilon_{t+1},\qquad |\phi|&lt;1,
+</annotation></semantics></math></span></p>
+<p>其中 innovations 独立同分布，均值为零，且与过去独立。用
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>t</mi></msub><mo>=</mo><msub><mi>S</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">X_t=S_t</annotation></semantics></math>
+预测
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mi>t</mi></msub><mo>=</mo><msub><mi>S</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow><annotation encoding="application/x-tex">Y_t=S_{t+1}</annotation></semantics></math>。虽然
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>S</mi><mi>t</mi></msub><annotation encoding="application/x-tex">S_t</annotation></semantics></math>
+很相关，但正确模型的预测误差是下一期
+innovation；它与原始序列的自相关性质不同。</p>
+<p>Bergmeir、Hyndman 与 Koo 研究了纯自回归预测，给出特定假设下标准
+K-fold
+可用的理论与实验依据。他们强调误差不相关及模型适当设定；该结果不是“任意平稳过程
++ 任意学习器 + 任意损失”的通用许可证。<a href="#r9">R9</a></p>
+<p>这里尤其要区分两个命题：</p>
+<p><strong>统计命题：</strong>在稳定机制和合适正则性条件下，随机 CV
+可能很好地估计某类平均预测风险。</p>
+<p><strong>操作命题：</strong>用一个测试点之后的数据训练的模型，不是该测试点发生时真实能部署的模型。</p>
+<p>二者可以同时为真。风险估计的渐近合理性，并不会改变历史信息的可用性。</p>
+<h2 id="三个不能跳过的限定">5.2 三个不能跳过的限定</h2>
+<p>“ADF 拒绝单位根”不等于所有联合分布稳定；“残差 ACF
+不显著”也不是独立性的证明，更不是整个建模流程不存在 leakage
+的证书。均值误差不相关，不能自动推出分位数 hit
+process、绝对误差或平方误差不相关。</p>
+<p>还要区分正确的一步自回归输入，与包含未来窗口、全样本统计、迟报修订的特征。后者即使随机
+CV 取得漂亮分数，也不在上述简单情形内。</p>
+<p>最后，真实任务可能就是外推到最新时期，而不是从同一个稳定分布中再抽一个样本。这时
+chronological evaluation 更直接地对应目标。</p>
+<h2 id="实证文献为什么看起来互相矛盾">5.3
+实证文献为什么看起来“互相矛盾”？</h2>
+<p>Cerqueira、Torgo 与 Mozetič
+比较了多种性能估计方法。他们的实验发现，在平稳情形中交叉验证方法可以有竞争力；面对非平稳真实序列，保持时间顺序、跨多个测试时期重复的
+OOS 方法更可靠。<a href="#r10">R10</a></p>
+<p>这不与上一节冲突：数据机制、学习器、风险定义和比较基准都不同。本文的实际默认是：<strong>以时间向前的验证作为部署证据；把随机或双向
+blocked CV 限定为有明确统计目的的补充实验。</strong></p>
+<h1 id="purging">6. Purging、embargo 与 gap：三个层次</h1>
+<h2 id="purging针对已知依赖关系删样本">6.1
+Purging：针对已知依赖关系删样本</h2>
+<p>假设标签
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mi>i</mi></msub><annotation encoding="application/x-tex">Y_i</annotation></semantics></math>
+使用区间
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mi>i</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>s</mi><mi>i</mi></msub><mo>,</mo><msub><mi>e</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">I_i=[s_i,e_i]</annotation></semantics></math>
+上的原始结果。对于验证样本集合
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝒱</mi><annotation encoding="application/x-tex">\mathcal V</annotation></semantics></math>，一种常见的区间
+purging 规则是删除满足</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mi>i</mi></msub><mo>∩</mo><msub><mi>I</mi><mi>j</mi></msub><mo>≠</mo><mi>⌀</mi><mspace width="1.0em"></mspace><mrow><mtext mathvariant="normal">for some </mtext><mspace width="0.333em"></mspace></mrow><mi>j</mi><mo>∈</mo><mi>𝒱</mi></mrow><annotation encoding="application/x-tex">
+I_i\cap I_j\ne\varnothing\quad\text{for some }j\in\mathcal V
+</annotation></semantics></math></span></p>
+<p>的训练样本。这是保守的重叠检测；若只记录连续包络，可能删掉实际并不共享原始数据的样本。对多对象数据，还应标记依赖对象：不同实体的同一时段并不必然共享同一条结果，但可能受到共同冲击。</p>
+<p>在严格 forward 训练中，<strong>先检查
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>a</mi><mi>i</mi></msub><mo>&lt;</mo><mi>c</mi></mrow><annotation encoding="application/x-tex">a_i&lt;c</annotation></semantics></math></strong>。对于未来起始、未来结束的标签，这通常已移除了跨越训练时点的未成熟记录。为了实现这一点，可以使用
+purging，但不能只检查标签与验证区间是否相交、却忽略另一些虽不相交但在
+cutoff 尚未发布的标签。</p>
+<h2 id="embargo在测试区间之后再留一个缓冲">6.2
+Embargo：在测试区间之后再留一个缓冲</h2>
+<p>在允许从验证之后取训练数据的双向切分中，后侧训练记录可能通过
+backward-looking features 读到测试期的信息。金融 ML 中常用 embargo
+删除测试之后的一段训练记录；purging 与 embargo 在 López de Prado
+的书中有专门讨论。<a href="#r11">R11</a></p>
+<p>本文采用一种明确的保守约定：先以验证目标的最晚结束时刻
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>E</mi><mi>𝒱</mi></msub><mo>=</mo><msub><mo>max</mo><mrow><mi>j</mi><mo>∈</mo><mi>𝒱</mi></mrow></msub><msub><mi>e</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">E_{\mathcal V}=\max_{j\in\mathcal V}e_j</annotation></semantics></math>
+为右边界，再删除预测时刻位于
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>E</mi><mi>𝒱</mi></msub><mo>,</mo><msub><mi>E</mi><mi>𝒱</mi></msub><mo>+</mo><mi>g</mi><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">(E_{\mathcal V},E_{\mathcal V}+g]</annotation></semantics></math>
+的后侧训练样本。不同实现可能从验证 origin block
+的末端计数，因此必须查看具体语义，不能只看到一个
+<code>embargo=0.01</code> 就认为定义相同。</p>
+<p>即便标签区间不重叠，训练特征仍可能直接包含测试结果。更一般的审核要检查实际特征/标签的数据来源。一个统一
+embargo
+只是对这种关系的近似保护，<strong>不是独立性证明</strong>，更无法把未来训练变成历史上合法的训练。</p>
+<h2 id="gap一个实现参数可能服务于不同目的">6.3
+Gap：一个实现参数，可能服务于不同目的</h2>
+<p>Gap
+可以为标签成熟留时间，可以模拟实际训练延迟，也可以故意降低边界附近的依赖。应先说明目的，再确定时间长度。标签可用性给出的是硬约束；“再隔多远可以弱化依赖”需要另外的假设与敏感性分析。</p>
+<p>scikit-learn 的 <code>TimeSeriesSplit(gap=...)</code> 中，gap
+是<strong>样本条数</strong>，不是小时；它不会读取每条记录的 label end
+或发布时间。该工具按行索引切分，文档也提示等间隔数据与跨 folds
+时间跨度可比性的问题。<a href="#r12">R12</a></p>
+<div id="gap-demo" class="interactive">
+<h3>
+动手改一改：24 条记录的边界审计
+</h3>
+<p>
+假设每小时一条记录，训练截止在第 16 小时；验证为第 16–23
+小时。标签可用时刻 = 发起时刻 + horizon +
+发布延迟。颜色只表示本演示的可用性，不表示独立性。
+</p>
+<label>Horizon
+<input id="horizon" type="range" min="1" max="10" value="4">
+<output id="horizon-out">
+4
+</output>
+小时</label> <label>发布延迟
+<input id="delay" type="range" min="0" max="4" value="1">
+<output id="delay-out">
+1
+</output>
+小时</label>
+<div id="demo-cells" class="demo-cells"
+aria-label="训练与标签成熟时间示意">
+
+</div>
+<p id="demo-summary" aria-live="polite">
+默认 H=4、D=1：只有 t&lt;11 的历史记录满足 a&lt;16；t=11–15
+的历史记录仍不能训练。
+</p>
+<noscript>
+<p>
+本示例默认下，t=0–10 可训练，t=11–15 被排除，t=16–23 用于验证。
+</p>
+</noscript>
+</div>
+<h2 id="为什么不应机械使用lookback-horizon">6.4
+为什么不应机械使用“lookback + horizon”？</h2>
+<p>预测周二 10:00 时，使用过去 7 天的历史观测是正常的。这段 feature
+lookback 与训练期原始数据重叠，并不构成
+leakage，因为它们本来就是当时已知的历史。</p>
+<p>因此，对严格向前回放，训练窗口与验证特征 lookback
+没有必要完全隔离。硬性 gap
+通常首先由训练标签成熟与实际处理延迟决定，而不是自动等于
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>L</mi><mo>+</mo><mi>H</mi></mrow><annotation encoding="application/x-tex">L+H</annotation></semantics></math>。反过来，在<strong>后侧训练</strong>的双向
+CV 中，长度为
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>L</mi><annotation encoding="application/x-tex">L</annotation></semantics></math>
+的回看特征可能读到测试结果，<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>L</mi><annotation encoding="application/x-tex">L</annotation></semantics></math>
+才会进入相关的依赖分析。</p>
+<div class="takeaway">
+<p><strong>本节落点：</strong>purging 删除明确不该共享的依赖；embargo
+增加边界缓冲；gap 是切分参数。它们不能替代 point-in-time
+特征构造，也不能保证历史样本成为独立样本。</p>
+</div>
+<h1 id="cpcv">7. CPCV：有价值，但不要把它神化</h1>
+<p>把历史划成
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math>
+个连续组，每次拿
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+组测试，其余训练，并对每个组合执行 purging/embargo。组合数是</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mfrac linethickness="0"><mi>N</mi><mi>k</mi></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\binom Nk.
+</annotation></semantics></math></span></p>
+<p>例如
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi><mo>=</mo><mn>6</mn><mo>,</mo><mi>k</mi><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">N=6,k=2</annotation></semantics></math>，需要
+15 次组合切分。每个组出现在
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mfrac linethickness="0"><mn>5</mn><mn>1</mn></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">\binom{5}{1}=5</annotation></semantics></math>
+个测试组合里；在标准路径分配约定下，可整理为</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mo>=</mo><mfrac><mi>k</mi><mi>N</mi></mfrac><mrow><mo stretchy="true" form="prefix">(</mo><mfrac linethickness="0"><mi>N</mi><mi>k</mi></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mfrac linethickness="0"><mrow><mi>N</mi><mo>−</mo><mn>1</mn></mrow><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">
+\phi=\frac{k}{N}\binom Nk=\binom{N-1}{k-1}=5
+</annotation></semantics></math></span></p>
+<p>条覆盖全历史各组的预测路径。这是组合计数，不是五段相互独立的真实历史。路径之间共享原始数据与训练样本；多数拟合还会使用被预测组之后的数据。<a
+href="#r11">R11</a></p>
+<p>CPCV
+能回答“这个配置在不同历史子样本组合中是否很脆弱”，也有助于观察选择结果对分段方式的敏感性。它不能直接回答“在当时只知道过去的条件下，下一天到底能预测多好”。</p>
+<p>也不要把 CPCV 与用于估计 backtest overfitting probability 的
+<strong>CSCV</strong> 混为一谈。Bailey 等人的 PBO/CSCV
+框架研究的是策略选择与回测过拟合；它与 purged forecasting validation
+有联系，但评估对象不同。<a href="#r13">R13</a></p>
+<p><strong>本文建议的角色分工：</strong>walk-forward 是部署证据；CPCV
+是明确标注假设的稳健性补充。增加组合数可以复用已有历史，不会增加新的经济状态信息。</p>
+<h1 id="nested">8. Nested validation：把选择过程也放回过去</h1>
+<h2 id="为什么最低-cv-分数通常过于乐观">8.1 为什么“最低 CV
+分数”通常过于乐观？</h2>
+<p>设配置
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>λ</mi><annotation encoding="application/x-tex">\lambda</annotation></semantics></math>
+的验证估计为
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>R</mi><mo accent="true">̂</mo></mover><mi>λ</mi></msub><mo>=</mo><msub><mi>R</mi><mi>λ</mi></msub><mo>+</mo><msub><mi>ϵ</mi><mi>λ</mi></msub></mrow><annotation encoding="application/x-tex">\widehat R_\lambda=R_\lambda+\epsilon_\lambda</annotation></semantics></math>。先忽略时间变化，并假设每个估计都无偏。选择</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mo>arg</mo><munder><mo>min</mo><mi>λ</mi></munder><msub><mover><mi>R</mi><mo accent="true">̂</mo></mover><mi>λ</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\widehat\lambda=\arg\min_\lambda\widehat R_\lambda.
+</annotation></semantics></math></span></p>
+<p>由于最小值会选择较有利的噪声，至少有</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝔼</mi><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">[</mo><munder><mo>min</mo><mi>λ</mi></munder><msub><mover><mi>R</mi><mo accent="true">̂</mo></mover><mi>λ</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>≤</mo><munder><mo>min</mo><mi>λ</mi></munder><mi>𝔼</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mover><mi>R</mi><mo accent="true">̂</mo></mover><mi>λ</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><munder><mo>min</mo><mi>λ</mi></munder><msub><mi>R</mi><mi>λ</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\mathbb E\!\left[\min_\lambda\widehat R_\lambda\right]
+\le \min_\lambda\mathbb E[\widehat R_\lambda]
+=\min_\lambda R_\lambda.
+</annotation></semantics></math></span></p>
+<p><strong>这一步只是 min
+的基本不等式，已足以说明问题。</strong>“先选最优、再汇报同一个最优分数”并不是对所选模型的独立测试。现实中还包含人为反复查看、不同标签和数据清洗版本，选择范围通常比日志中的超参数表更大。<a
+href="#r4">R4</a></p>
+<h2 id="外层与内层分别负责什么">8.2 外层与内层分别负责什么？</h2>
+<p>在外层 cutoff
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>c</mi><mi>k</mi></msub><annotation encoding="application/x-tex">c_k</annotation></semantics></math>，只拿当时已经可用的历史。内层以更早的多个
+cutoff 比较配置，选择
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><annotation encoding="application/x-tex">\widehat\lambda_k</annotation></semantics></math>；然后在外层可用训练集重新拟合，预测外层未来块。</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo>=</mo><mo>arg</mo><munder><mo>min</mo><mi>λ</mi></munder><msubsup><mover><mi>R</mi><mo accent="true">̂</mo></mover><mi>k</mi><mrow><mi mathvariant="normal">i</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">r</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>λ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mover><mi>f</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo>=</mo><msub><mi>A</mi><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>D</mi><msub><mi>c</mi><mi>k</mi></msub></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\widehat\lambda_k
+=\arg\min_\lambda\widehat R^{\mathrm{inner}}_k(\lambda),
+\qquad
+\widehat f_k=A_{\widehat\lambda_k}(D_{c_k}).
+</annotation></semantics></math></span></p>
+<p>外层测试的是<strong>整套选择与重训程序</strong>，不是一个预知未来赢家的固定超参数。内层每一个
+cutoff 也要检查 label
+availability，而不是先把外层数据整理好就默认内层合法。</p>
+<p>有时真实部署政策是“一次选定配置，此后只定期重训参数”。那就应在开发区间固定配置，再在所有后续外层块保持不变。<strong>每个外层重新调参</strong>和<strong>只在开始调一次</strong>是两种不同的合法协议。</p>
+<h2 id="early-stopping-最常见的漏洞">8.3 Early stopping
+最常见的漏洞</h2>
+<p>不能使用外层测试标签选择 boosting round，再把该块分数称作纯
+OOS。可以在内层选 stopping rule / iteration
+count，然后按预先定义的汇总规则，例如内层选择出的轮数中位数，在外层训练集重拟合。也可以在外层历史内部再划一段
+validation，但它的标签也必须在 cutoff 已成熟。</p>
+<p>模型融合权重、残差修正、quantile calibration、feature selection
+同样属于拟合，必须在正确层级完成。</p>
+<h2 id="最终-holdout-是否永远不能用于更新">8.4 最终 holdout
+是否永远不能用于更新？</h2>
+<p>不是。若上线协议本来就是按周重训，那么在最终测试期内，过去已经成熟的测试标签可以按<strong>预先冻结的规则</strong>进入后续训练。这是在评估自适应程序。</p>
+<p>不能做的是：看到终局测试结果以后，人工改变窗口、特征或模型，再仍把修改后的结果当作未触碰测试。规则性更新与事后研究决策必须分开记录。</p>
+<div class="takeaway">
+<p><strong>本节落点：</strong>需要被隔离的不是所有后续学习，而是未在评估前定义、却受测试结果启发的选择行为。每个预测都应能追溯到当时已确定的训练与选择规则。</p>
+</div>
+<h1 id="horizons">9.
+Horizon、重训频率、测试块：不要混用三个时间尺度</h1>
+<h2 id="测试一个月不等于预测一个月">9.1
+测试一个月，不等于预测一个月</h2>
+<p>你可以在整个月的每个交易日都预测未来一天，并每天接收新特征，但只在月初拟合一次参数。这种测试的
+horizon 始终是一天。</p>
+<p>另一种任务是在月初一次性预测未来整个月的路径。这时第 20
+天的预测不能使用第 19 天已经实现的真实值。把它塞进 lag
+feature，就是用一步滚动任务替代了固定起点多步任务。<a
+href="#r14">R14</a></p>
+<p><strong>参数更新</strong>、<strong>状态更新</strong>与<strong>特征更新</strong>也不同。冻结模型参数不等于冻结当时可观测的特征；Kalman
+filtering 可以顺序吸收截至当前时刻的观测，但用后续观测做 smoothing
+后的历史 state 不可直接充当实时特征。</p>
+<h2 id="多-horizon-数据必须按-origin-切分">9.2 多 horizon 数据必须按
+origin 切分</h2>
+<p>如果把
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mi>t</mi></msub><mo>,</mo><mi>h</mi><mo>,</mo><msub><mi>Y</mi><mrow><mi>t</mi><mo>,</mo><mi>h</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(X_t,h,Y_{t,h})</annotation></semantics></math>
+展开成多行，同一个
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>
+的 1 小时、24 小时、3 天标签不应随意分散到不同 folds。首先按预测 origin
+的日历区间划分，再分别检查每个 horizon 标签的 availability。</p>
+<p>一个样本的短期标签已成熟、长期标签还没成熟，有两种明确做法：</p>
+<p><strong>保守整行规则：</strong>所有输出都成熟后才训练该
+origin。简单，但牺牲短 horizon 数据。</p>
+<p><strong>逐输出
+mask：</strong>只让已成熟目标进入对应损失，未成熟目标不参与梯度与调参。实现更复杂，必须确保
+shared representation、归一化和缺失处理都没有读取未成熟标签。</p>
+<p>报告各 horizon 的独立 OOS
+分数，再给预先定义的加权总分。不能靠大量容易的短 horizon 把真正关心的
+next-day 改善稀释掉。</p>
+<h1 id="irregular">10. 不规则事件与 panel：splitter
+不会替你定义总体</h1>
+<h2 id="后-1000-条与后一天是不同任务">10.1 “后 1000
+条”与“后一天”是不同任务</h2>
+<p>交易活跃时 1000
+条记录可能只覆盖几分钟，稀疏时可能跨越多天。按行数切出的等大
+folds，会把交易活跃度混入时间跨度。对日历 horizon 任务，应先在 calendar
+time 上确定训练和验证边界，再取其中的事件记录。</p>
+<p>记录数不同的 calendar blocks
+完全可以评估；但汇总权重决定结果偏向高活跃还是低活跃时期。等时间长度也不保证难度相同，季节、节假日和
+regime 仍需分层看。</p>
+<h2 id="未来窗口没有事件怎么办">10.2 未来窗口没有事件怎么办？</h2>
+<p>设
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>M</mi><mi>t</mi></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">M_t=1</annotation></semantics></math>
+表示预先规定的未来窗口里有至少一次事件。如果只保留这些行，那么测试指标趋向的是</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝔼</mi><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">[</mo><mo>ℓ</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Y</mi><mi>t</mi></msub><mo>,</mo><msub><mover><mi>Y</mi><mo accent="true">̂</mo></mover><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>∣</mo><msub><mi>M</mi><mi>t</mi></msub><mo>=</mo><mn>1</mn><mo stretchy="true" form="postfix">]</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
+\mathbb E\!\left[\ell(Y_t,\widehat Y_t)\mid M_t=1\right],
+</annotation></semantics></math></span></p>
+<p>而不是对所有发起时刻的风险。只在有事件时才定义标签未必错误，但必须说明业务目标就是这一条件总体，并同时报告覆盖率与等待时间分布。</p>
+<p>“24 小时附近最近的一个有事件窗口”也不是固定 24
+小时标签。窗口的位置本身由未来事件决定，实际 horizon 是随机的。设它为
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mi>t</mi></msub><annotation encoding="application/x-tex">H_t</annotation></semantics></math>；预测目标通常是尚未知道
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mi>t</mi></msub><annotation encoding="application/x-tex">H_t</annotation></semantics></math>
+时的混合分布，而不是事后知道
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mi>t</mi></msub><annotation encoding="application/x-tex">H_t</annotation></semantics></math>
+后的条件分布：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>y</mi><mo>∣</mo><msub><mi>ℱ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>∫</mo><mi>F</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>y</mi><mo>∣</mo><msub><mi>ℱ</mi><mi>t</mi></msub><mo>,</mo><msub><mi>H</mi><mi>t</mi></msub><mo>=</mo><mi>h</mi><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mi mathvariant="normal">d</mi><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>h</mi><mo>∣</mo><msub><mi>ℱ</mi><mi>t</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+F(y\mid\mathcal F_t)
+=\int F(y\mid\mathcal F_t,H_t=h)\,
+\mathrm dP(h\mid\mathcal F_t).
+</annotation></semantics></math></span></p>
+<p>这是全概率公式，而不是在建议必须显式估计这个积分。它说明：<strong>用实际未来
+horizon
+当训练与测试输入，评估的是有额外信息的任务。</strong>此外，混合分布的分位数一般不等于各条件分位数的加权平均。</p>
+<h2 id="观察结束不等于没有事件">10.3 观察结束不等于“没有事件”</h2>
+<p>数据只截至某个日期，而最后几天的目标窗口还没完整覆盖，这属于右端未成熟/未观察完整。应把这些
+origins
+标记为不可评分，或者延后评估，而不能把它们误标成“无事件”或随意删除后不报告。</p>
+<p>推荐按 origin cohort
+汇报：总预测次数、完整观察窗口数、有定义标签数、已成熟标签数、评分数、实际
+horizon 分布。这样才能区分模型问题与标签可获得性变化。</p>
+<h2 id="多对象面板时间与-entity-是两条不同泛化轴">10.4
+多对象面板：时间与 entity 是两条不同泛化轴</h2>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>部署问题</th>
+<th>主要划分要求</th>
+<th>允许什么？</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>已知对象的未来</td>
+<td>所有对象按共同日历 cutoff 切分</td>
+<td>使用同一对象过去的数据</td>
+</tr>
+<tr class="even">
+<td>未见对象的未来</td>
+<td>时间切分 + entity / issuer holdout</td>
+<td>使用其他对象的已知历史</td>
+</tr>
+<tr class="odd">
+<td>同时刻横截面插值</td>
+<td>按任务定义横截面可观测信息</td>
+<td>不能把它冒充未来预测</td>
+</tr>
+</tbody>
+</table></div>
+<p>如果同一天不同债券共享市场冲击，随机把某些债券放训练、另一些放验证，通常不是对“下一天”任务的干净测试。反过来，预测已知对象未来时，要求训练和测试从不出现相同对象也没有必要，它把任务改成了
+cold start。</p>
+<p>同一时刻已经公布的其它对象信息可作为特征；同一天尚未发生的结果不可。关键仍是当时的信息集，而不是简单的“跨对象信息一律禁止”。</p>
+<div class="takeaway">
+<p><strong>本节落点：</strong>不规则数据至少要同时固定 calendar
+horizon、event-selection rule 和 aggregation
+measure。切分正确，只能保证你正确验证了某个任务，不能保证这个任务就是最初想预测的那个。</p>
+</div>
+<h1 id="scores">11. MAE、quantile 与加权：把目标和 score 对齐</h1>
+<h2 id="mae-为什么对应条件中位数">11.1 MAE 为什么对应条件中位数？</h2>
+<p>固定
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi><mo>=</mo><mi>x</mi></mrow><annotation encoding="application/x-tex">X=x</annotation></semantics></math>，设条件分布函数为
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mi>x</mi></msub><annotation encoding="application/x-tex">F_x</annotation></semantics></math>。在连续分布、可交换微分与积分的条件下，令</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>L</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>𝔼</mi><mrow><mo stretchy="true" form="prefix">[</mo><mrow><mo stretchy="true" form="prefix">|</mo><mi>Y</mi><mo>−</mo><mi>q</mi><mo stretchy="true" form="postfix">|</mo></mrow><mo>∣</mo><mi>X</mi><mo>=</mo><mi>x</mi><mo stretchy="true" form="postfix">]</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+L(q)=\mathbb E[|Y-q|\mid X=x].
+</annotation></semantics></math></span></p>
+<p>把
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Y</mi><mo>≤</mo><mi>q</mi></mrow><annotation encoding="application/x-tex">Y\le q</annotation></semantics></math>
+与
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Y</mi><mo>&gt;</mo><mi>q</mi></mrow><annotation encoding="application/x-tex">Y&gt;q</annotation></semantics></math>
+两部分分开求导：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>L</mi><mi>′</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>ℙ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>Y</mi><mo>&lt;</mo><mi>q</mi><mo>∣</mo><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mi>ℙ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>Y</mi><mo>&gt;</mo><mi>q</mi><mo>∣</mo><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>2</mn><msub><mi>F</mi><mi>x</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mn>1</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+L&#39;(q)=\mathbb P(Y&lt;q\mid x)-\mathbb P(Y&gt;q\mid x)
+=2F_x(q)-1.
+</annotation></semantics></math></span></p>
+<p>最优点满足
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>F</mi><mi>x</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">F_x(q)=1/2</annotation></semantics></math>。有原子时用次梯度，条件变成
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>F</mi><mi>x</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>q</mi><mo>−</mo><mo stretchy="true" form="postfix">)</mo></mrow><mo>≤</mo><mn>1</mn><mi>/</mi><mn>2</mn><mo>≤</mo><msub><mi>F</mi><mi>x</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">F_x(q-)\le1/2\le F_x(q)</annotation></semantics></math>。因此
+MAE 检验的是对所定义标签的中位数预测表现；它不是直接测量某个不可观测
+latent fair value 的误差。</p>
+<h2 id="一般分位数使用-pinball-loss">11.2 一般分位数使用 pinball
+loss</h2>
+<p>对
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\tau\in(0,1)</annotation></semantics></math>，定义</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>τ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>u</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>u</mi><mo minsize="1.2" maxsize="1.2" stretchy="false" form="prefix">(</mo><mi>τ</mi><mo>−</mo><mn>𝟏</mn><mo stretchy="false" form="prefix">{</mo><mi>u</mi><mo>&lt;</mo><mn>0</mn><mo stretchy="false" form="postfix">}</mo><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="2.0em"></mspace><mi>u</mi><mo>=</mo><mi>Y</mi><mo>−</mo><mi>q</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\rho_\tau(u)=u\bigl(\tau-\mathbf1\{u&lt;0\}\bigr),\qquad u=Y-q.
+</annotation></semantics></math></span></p>
+<p>同样求导得到</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mi>∂</mi><mrow><mi>∂</mi><mi>q</mi></mrow></mfrac><mi>𝔼</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>ρ</mi><mi>τ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>Y</mi><mo>−</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>∣</mo><mi>X</mi><mo>=</mo><mi>x</mi><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><msub><mi>F</mi><mi>x</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mi>τ</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\frac{\partial}{\partial q}\mathbb E[\rho_\tau(Y-q)\mid X=x]
+=F_x(q)-\tau.
+</annotation></semantics></math></span></p>
+<p>最优解就是
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
+条件分位数。特别地，<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mn>0.5</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>u</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">|</mo><mi>u</mi><mo stretchy="true" form="postfix">|</mo></mrow><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">\rho_{0.5}(u)=|u|/2</annotation></semantics></math>，因此中位数
+pinball 与 MAE 对模型的排序相同。分布预测的评分思想可进一步参见 proper
+scoring rules 文献。<a href="#r15">R15</a></p>
+<p><strong>只看 coverage 不够。</strong>例如 90%
+分位数可以在全样本达到约 90%
+命中率，却在某些状态持续偏高、另一些状态持续偏低。应同时看
+pinball、分时段/状态的 hit rate，以及极端损失。</p>
+<h2 id="一个-noisy-label-能评估-quantile-吗">11.3 一个 noisy label
+能评估 quantile 吗？</h2>
+<p>可以。无需每个
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+都有很多次重复目标观测；把恰当 scoring loss 在足够多的可比、依赖受控的
+OOS 观测上平均，就能比较预测规则。但单点的
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">|</mo><mi>Y</mi><mo>−</mo><mi>q</mi><mo stretchy="true" form="postfix">|</mo></mrow><annotation encoding="application/x-tex">|Y-q|</annotation></semantics></math>
+不是“预测分位数与真实分位数之差”。</p>
+<p>对条件真分位数
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>q</mi><mi>τ</mi></msub><annotation encoding="application/x-tex">q_\tau</annotation></semantics></math>，由上一式积分，得到本文使用的一个有用恒等式：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝔼</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>ρ</mi><mi>τ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>Y</mi><mo>−</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><msub><mi>ρ</mi><mi>τ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>Y</mi><mo>−</mo><msub><mi>q</mi><mi>τ</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>∣</mo><mi>x</mi><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><msubsup><mo>∫</mo><msub><mi>q</mi><mi>τ</mi></msub><mi>q</mi></msubsup><mo minsize="1.2" maxsize="1.2" stretchy="false" form="prefix">(</mo><msub><mi>F</mi><mi>x</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>u</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mi>τ</mi><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">)</mo><mspace width="0.167em"></mspace><mi mathvariant="normal">d</mi><mi>u</mi><mo>≥</mo><mn>0</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\mathbb E[\rho_\tau(Y-q)-\rho_\tau(Y-q_\tau)\mid x]
+=\int_{q_\tau}^{q}\bigl(F_x(u)-\tau\bigr)\,\mathrm du\ge0.
+</annotation></semantics></math></span></p>
+<p>若密度在
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>q</mi><mi>τ</mi></msub><annotation encoding="application/x-tex">q_\tau</annotation></semantics></math>
+附近连续且正，则小偏差时约为</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac><msub><mi>f</mi><mi>x</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>q</mi><mi>τ</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>q</mi><mo>−</mo><msub><mi>q</mi><mi>τ</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\frac12 f_x(q_\tau)(q-q_\tau)^2.
+</annotation></semantics></math></span></p>
+<p>这解释了为什么 pinball excess risk 能评估 quantile，但其数值与
+quantile
+位置误差之间还取决于局部密度。本文不把该局部近似当作有限样本置信区间。</p>
+<h2 id="fold-averagerow-averageday-average-不相等">11.4 Fold
+average、row average、day average 不相等</h2>
+<p>一天有 100 条预测，绝对误差均为 1；另一天只有一条，绝对误差为
+10。则</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mrow><mi mathvariant="normal">M</mi><mi mathvariant="normal">A</mi><mi mathvariant="normal">E</mi></mrow><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">w</mi></mrow></msub><mo>=</mo><mfrac><mrow><mn>100</mn><mo>+</mo><mn>10</mn></mrow><mn>101</mn></mfrac><mo>≈</mo><mn>1.089</mn><mo>,</mo><mspace width="2.0em"></mspace><msub><mrow><mi mathvariant="normal">M</mi><mi mathvariant="normal">A</mi><mi mathvariant="normal">E</mi></mrow><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">y</mi></mrow></msub><mo>=</mo><mfrac><mrow><mn>1</mn><mo>+</mo><mn>10</mn></mrow><mn>2</mn></mfrac><mo>=</mo><mn>5.5</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\mathrm{MAE}_{\mathrm{row}}=\frac{100+10}{101}\approx1.089,
+\qquad
+\mathrm{MAE}_{\mathrm{day}}=\frac{1+10}{2}=5.5.
+</annotation></semantics></math></span></p>
+<p>两个数字都计算正确，只是总体不同。Fold
+分数等权相加，只有在合适条件下才等于把所有 OOS 行汇总后的 MAE；当 fold
+的评分样本量不同，应明确选择哪一种。</p>
+<p>对 panel 可增加 entity-macro 指标；对事件数据可同时报告 row-weighted
+与
+day-weighted。主指标必须事先确定，不应在结果出来后挑最好看的口径。</p>
+<h2 id="给-micro-noisy-observations-降权会改变什么">11.5 给 micro /
+noisy observations 降权，会改变什么？</h2>
+<p>如果权重只是
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">w(X)&gt;0</annotation></semantics></math>，在固定
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi><mo>=</mo><mi>x</mi></mrow><annotation encoding="application/x-tex">X=x</annotation></semantics></math>
+下，它只把 conditional risk
+乘以常数，不改变理想条件分位数。但在受限模型类、有限样本和整体训练中，它仍会改变拟合的关注区域。</p>
+<p>如果权重还依赖
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
+或与
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
+有关的未来特征
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Z</mi><annotation encoding="application/x-tex">Z</annotation></semantics></math>，则加权最优解对应的是
+tilted conditional distribution。例如</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>F</mi><mi>w</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>y</mi><mo>∣</mo><mi>x</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mrow><mi>𝔼</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>w</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mo>,</mo><mi>Y</mi><mo>,</mo><mi>Z</mi><mo stretchy="true" form="postfix">)</mo></mrow><mn>𝟏</mn><mo stretchy="false" form="prefix">{</mo><mi>Y</mi><mo>≤</mo><mi>y</mi><mo stretchy="false" form="postfix">}</mo><mo>∣</mo><mi>X</mi><mo>=</mo><mi>x</mi><mo stretchy="true" form="postfix">]</mo></mrow></mrow><mrow><mi>𝔼</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>w</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mo>,</mo><mi>Y</mi><mo>,</mo><mi>Z</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>∣</mo><mi>X</mi><mo>=</mo><mi>x</mi><mo stretchy="true" form="postfix">]</mo></mrow></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+F_w(y\mid x)
+=\frac{\mathbb E[w(X,Y,Z)\mathbf1\{Y\le y\}\mid X=x]}
+{\mathbb E[w(X,Y,Z)\mid X=x]}.
+</annotation></semantics></math></span></p>
+<p>因此“按未来成交量加权”可以是一个明确的业务评价选择，但不是不改变目标的纯降噪操作；更不能因此把未来成交量直接当作当前可知输入。</p>
+<h1 id="uncertainty">12. OOS 改善到底可靠吗？</h1>
+<h2 id="对每个相同事件做配对比较">12.1 对每个相同事件做配对比较</h2>
+<p>比较模型 A 与基准 B，在相同 origins、相同标签版本、相同
+horizon、相同权重上计算</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>d</mi><mi>i</mi></msub><mo>=</mo><mo>ℓ</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Y</mi><mi>i</mi></msub><mo>,</mo><msubsup><mover><mi>Y</mi><mo accent="true">̂</mo></mover><mi>i</mi><mi>A</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mo>ℓ</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Y</mi><mi>i</mi></msub><mo>,</mo><msubsup><mover><mi>Y</mi><mo accent="true">̂</mo></mover><mi>i</mi><mi>B</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+d_i=\ell(Y_i,\widehat Y_i^A)-\ell(Y_i,\widehat Y_i^B).
+</annotation></semantics></math></span></p>
+<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>d</mi><mo accent="true">¯</mo></mover><mo>&lt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\overline d&lt;0</annotation></semantics></math>
+表示 A 更好。比起分别对两个 MAE 做区间，直接分析配对的
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>d</mi><mi>i</mi></msub><annotation encoding="application/x-tex">d_i</annotation></semantics></math>
+可以消除一部分共同难度变化。不同模型缺失预测时，应同时报告完整 coverage
+与共同样本上的配对结果，避免只在容易样本上比较。</p>
+<p>Diebold–Mariano 的核心就是用 loss differential
+比较预测准确性，而不是要求使用平方损失。<a href="#r16">R16</a></p>
+<h2 id="自相关为什么使朴素标准误失真">12.2
+自相关为什么使朴素标准误失真？</h2>
+<p>先考虑等权、弱平稳的损失差序列，记
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>γ</mi><mi>k</mi></msub><mo>=</mo><mo>Cov</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>d</mi><mi>t</mi></msub><mo>,</mo><msub><mi>d</mi><mrow><mi>t</mi><mo>−</mo><mi>k</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\gamma_k=\operatorname{Cov}(d_t,d_{t-k})</annotation></semantics></math>。直接展开方差：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right"><mo>Var</mo><mrow><mo stretchy="true" form="prefix">(</mo><mover><mi>d</mi><mo accent="true">¯</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mfrac><mn>1</mn><msup><mi>n</mi><mn>2</mn></msup></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mo>Cov</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>d</mi><mi>i</mi></msub><mo>,</mo><msub><mi>d</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>γ</mi><mn>0</mn></msub><mo>+</mo><mn>2</mn><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></munderover><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mfrac><mi>k</mi><mi>n</mi></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>γ</mi><mi>k</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mi>.</mi></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\operatorname{Var}(\overline d)
+&amp;=\frac1{n^2}\sum_{i=1}^{n}\sum_{j=1}^{n}\operatorname{Cov}(d_i,d_j)\\
+&amp;=\frac1n\left[\gamma_0+2\sum_{k=1}^{n-1}
+\left(1-\frac{k}{n}\right)\gamma_k\right].
+\end{aligned}
+</annotation></semantics></math></span></p>
+<p>朴素 IID 标准误只保留
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>γ</mi><mn>0</mn></msub><mi>/</mi><mi>n</mi></mrow><annotation encoding="application/x-tex">\gamma_0/n</annotation></semantics></math>。当自协方差累计为正，区间会偏窄；负相关也可能使朴素区间偏宽，因此不能不加条件地说依赖一定降低有效样本量。</p>
+<p>若相关可求和，一个解释性近似是</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mrow><mi mathvariant="normal">e</mi><mi mathvariant="normal">f</mi><mi mathvariant="normal">f</mi></mrow></msub><mo>≈</mo><mfrac><mi>n</mi><mrow><mn>1</mn><mo>+</mo><mn>2</mn><munder><mo>∑</mo><mrow><mi>k</mi><mo>≥</mo><mn>1</mn></mrow></munder><msub><mi>ρ</mi><mi>k</mi></msub></mrow></mfrac><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>ρ</mi><mi>k</mi></msub><mo>=</mo><msub><mi>γ</mi><mi>k</mi></msub><mi>/</mi><msub><mi>γ</mi><mn>0</mn></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+n_{\mathrm{eff}}\approx
+\frac{n}{1+2\sum_{k\ge1}\rho_k},\qquad \rho_k=\gamma_k/\gamma_0.
+</annotation></semantics></math></span></p>
+<p>这针对当前的 loss / loss-difference 序列，不是从原始价格的 ACF
+直接算出来的万能样本量。</p>
+<h2 id="hac-与-block-bootstrap-的正确位置">12.3 HAC 与 block bootstrap
+的正确位置</h2>
+<p>Newey–West 型估计用有限滞后及 Bartlett 权重估计长期方差：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>Ω</mi><mo accent="true">̂</mo></mover><mo>=</mo><msub><mover><mi>γ</mi><mo accent="true">̂</mo></mover><mn>0</mn></msub><mo>+</mo><mn>2</mn><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><mi>L</mi></munderover><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mfrac><mi>k</mi><mrow><mi>L</mi><mo>+</mo><mn>1</mn></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><msub><mover><mi>γ</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><mo>SE</mo><mrow><mo stretchy="true" form="prefix">(</mo><mover><mi>d</mi><mo accent="true">¯</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mo>≈</mo><msqrt><mrow><mover><mi>Ω</mi><mo accent="true">̂</mo></mover><mi>/</mi><mi>n</mi></mrow></msqrt><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\widehat\Omega=\widehat\gamma_0+
+2\sum_{k=1}^{L}\left(1-\frac{k}{L+1}\right)\widehat\gamma_k,
+\qquad
+\operatorname{SE}(\overline d)\approx\sqrt{\widehat\Omega/n}.
+</annotation></semantics></math></span></p>
+<p>这里
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>γ</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo>=</mo><msup><mi>n</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><msubsup><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mi>k</mi><mo>+</mo><mn>1</mn></mrow><mi>n</mi></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>d</mi><mi>t</mi></msub><mo>−</mo><mover><mi>d</mi><mo accent="true">¯</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>d</mi><mrow><mi>t</mi><mo>−</mo><mi>k</mi></mrow></msub><mo>−</mo><mover><mi>d</mi><mo accent="true">¯</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\widehat\gamma_k=n^{-1}\sum_{t=k+1}^{n}(d_t-\overline d)(d_{t-k}-\overline d)</annotation></semantics></math>。一致性需要适当弱依赖、矩条件和
+bandwidth 条件；任意选个
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>L</mi><annotation encoding="application/x-tex">L</annotation></semantics></math>
+不会自动得到正确 coverage。<a href="#r17">R17</a></p>
+<p>Block bootstrap 则成段重抽样，以保留部分局部依赖；stationary
+bootstrap 使用随机块长度。<a href="#r18">R18</a> 对固定 OOS 预测表做
+bootstrap，主要描述这段评估记录上的抽样不确定性，<strong>不是完整训练与超参数选择的不确定性</strong>。后者需要另行设计重拟合或程序级重采样。</p>
+<p>对不规则
+panel，一个实用起点是先构造固定日历频率的配对损失汇总，再按连续时间块抽样，保留同块中的横截面共同冲击。需要明确无事件日期、非交易日和权重的处理；不能把事件间隔不等的第
+1、2、3 条记录直接解释为等长时间 lag。</p>
+<h2 id="为什么不能把-k-个-fold-当-k-次独立实验">12.4 为什么不能把 K 个
+fold 当 K 次独立实验？</h2>
+<p>Expanding folds
+的训练集高度重叠；测试期可能共享目标增量和状态；配置也是共同选择的。因此“fold
+标准差除以
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msqrt><mi>K</mi></msqrt><annotation encoding="application/x-tex">\sqrt K</annotation></semantics></math>”不是可靠的通用标准误。</p>
+<p>同样，CPCV
+的数百组合也不是数百次独立市场实验。依赖校正并不能撤销多次研究选择带来的
+winner’s curse。</p>
+<h2 id="还有哪些边界">12.5 还有哪些边界？</h2>
+<p>在强非平稳、小样本、嵌套模型、频繁调参或学习程序变化下，标准渐近检验可能不适用。Giacomini–White
+提供了以 forecasting method
+和条件预测能力为中心的另一条文献线，但也有自身假设，不能当作所有场景的自动修正器。<a
+href="#r19">R19</a></p>
+<p>实际报告至少应给出总体配对改善、按时间分层的改善、时间相关性诊断、多个合理
+bandwidth/block length
+的敏感性，以及经济上是否足够重要。统计显著与业务有用不是一回事。</p>
+<h1 id="experiments">13. 三个已经运行的合成实验</h1>
+<div class="callout">
+<p><strong>实验边界。</strong>以下为本文原创合成演示，每个实验运行 200
+个固定种子的重复；不是对任何真实市场或论文结果的复现。环境为 NumPy
+2.3.5；生成与估计代码见附录 B。表中的“±”是跨重复均值的 Monte Carlo
+标准误，不是单次 CV 的置信区间。未根据最终随机结果更改 seed。</p>
+</div>
+<h2 id="实验-a稳定-ar1随机-cv-并没有必然崩溃">13.1 实验 A：稳定
+AR(1)，随机 CV 并没有必然崩溃</h2>
+<p>生成
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>S</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><mn>0.8</mn><msub><mi>S</mi><mi>t</mi></msub><mo>+</mo><msub><mi>ε</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow><annotation encoding="application/x-tex">S_{t+1}=0.8S_t+\varepsilon_{t+1}</annotation></semantics></math>，<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ε</mi><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\varepsilon\sim N(0,1)</annotation></semantics></math>；以平稳分布初始化并
+burn-in 300 步。使用 1200 个历史预测对，未来 400 对留作验证；用带截距
+OLS 从当前值预测下一步。</p>
+<p>随机 5-fold 使用 960 条训练记录；expanding 在 origins
+400、600、800、1000 各预测之后 200 条。未来块用全部 1200
+条训练参数，逐次使用当时已知的
+lag，不做块内重拟合。离散步内约定先接收当前
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>S</mi><mi>c</mi></msub><annotation encoding="application/x-tex">S_c</annotation></semantics></math>（使前一预测对的标签成熟），再无计算延迟地拟合并预测下一步；训练
+cutoff
+位于这一接收动作之后。这不是把尚未接收的同刻标签偷偷纳入附录的严格截止规则。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr class="header">
+<th>评估方式</th>
+<th style="text-align: right;">MAE 均值 ± MCSE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>随机 5-fold</td>
+<td style="text-align: right;"><strong>0.7995 ± 0.0013</strong></td>
+</tr>
+<tr class="even">
+<td>Expanding CV</td>
+<td style="text-align: right;"><strong>0.7998 ± 0.0015</strong></td>
+</tr>
+<tr class="odd">
+<td>随后的 400 个 origins</td>
+<td style="text-align: right;"><strong>0.7966 ± 0.0021</strong></td>
+</tr>
+<tr class="even">
+<td>已知真实参数的理论 MAE</td>
+<td
+style="text-align: right;"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msqrt><mrow><mn>2</mn><mi>/</mi><mi>π</mi></mrow></msqrt><mo>=</mo><mn>0.7979</mn></mrow><annotation encoding="application/x-tex">\sqrt{2/\pi}=0.7979</annotation></semantics></math></td>
+</tr>
+</tbody>
+</table></div>
+<figure class="bar-chart">
+<h3>
+实验 A · 不同评估的 MAE
+</h3>
+<div class="bar-line">
+<span>随机 5-fold</span>
+<div class="bar-rail">
+<div class="bar-fill" style="--w:94.06%">
+
+</div>
+</div>
+<b>0.7995</b>
+</div>
+<div class="bar-line alt">
+<span>Expanding CV</span>
+<div class="bar-rail">
+<div class="bar-fill" style="--w:94.09%">
+
+</div>
+</div>
+<b>0.7998</b>
+</div>
+<div class="bar-line">
+<span>随后未来块</span>
+<div class="bar-rail">
+<div class="bar-fill" style="--w:93.72%">
+
+</div>
+</div>
+<b>0.7966</b>
+</div>
+<figcaption>
+各条均从 0 起；横轴共同上限为 0.85。样本量和起点并非完全匹配，不能据此给
+splitter 排名。
+</figcaption>
+</figure>
+<p>这里随机 CV
+与未来误差接近，符合稳定、正确设定的小模型直觉。注意训练样本量不同，所以这不是“严格相同训练预算下
+splitter 优劣”的实验，也不验证任意学习器的定理。</p>
+<h2 id="实验-b机制突变时随机混合平均回答了另一个问题">13.2 实验
+B：机制突变时，随机混合平均回答了另一个问题</h2>
+<p>生成可在 origin 观察的
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>t</mi></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">X_t\sim N(0,1)</annotation></semantics></math>，以及</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mi>t</mi></msub><mo>=</mo><msub><mi>β</mi><mi>t</mi></msub><msub><mi>X</mi><mi>t</mi></msub><mo>+</mo><msub><mi>ε</mi><mi>t</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>β</mi><mi>t</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mn>1</mn><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mi>t</mi><mo>&lt;</mo><mn>800</mn><mo>,</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mo>−</mo><mn>1</mn><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mi>t</mi><mo>≥</mo><mn>800</mn><mo>,</mo></mtd></mtr></mtable></mrow><mspace width="1.0em"></mspace><msub><mi>ε</mi><mi>t</mi></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msup><mn>0.3</mn><mn>2</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+Y_t=\beta_t X_t+\varepsilon_t,\qquad
+\beta_t=\begin{cases}1,&amp;t&lt;800,\\-1,&amp;t\ge800,\end{cases}
+\quad \varepsilon_t\sim N(0,0.3^2).
+</annotation></semantics></math></span></p>
+<p>这里每个
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mi>t</mi></msub><annotation encoding="application/x-tex">Y_t</annotation></semantics></math>
+在下一离散步前可用于更新；没有额外报告延迟。仍用前 1200 条做开发，后 400
+条做未来块。近期 forward CV 取 origins 900、1000、1100，每次评估后 100
+条；rolling 政策仅训练最近 200 条。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr class="header">
+<th>协议</th>
+<th style="text-align: right;">MAE 均值 ± MCSE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>全历史池上的随机 5-fold</td>
+<td style="text-align: right;"><strong>0.7539 ± 0.0016</strong></td>
+</tr>
+<tr class="even">
+<td>近期 forward / expanding</td>
+<td style="text-align: right;"><strong>1.3109 ± 0.0037</strong></td>
+</tr>
+<tr class="odd">
+<td>近期 forward / rolling 200</td>
+<td style="text-align: right;"><strong>0.4392 ± 0.0025</strong></td>
+</tr>
+<tr class="even">
+<td>最终未来块 / expanding</td>
+<td style="text-align: right;"><strong>1.0830 ± 0.0035</strong></td>
+</tr>
+<tr class="odd">
+<td>最终未来块 / rolling 200</td>
+<td style="text-align: right;"><strong>0.2397 ± 0.0007</strong></td>
+</tr>
+</tbody>
+</table></div>
+<figure class="bar-chart">
+<h3>
+实验 B · 机制突变后的错位
+</h3>
+<div class="bar-line">
+<span>随机 5-fold</span>
+<div class="bar-rail">
+<div class="bar-fill" style="--w:53.85%">
+
+</div>
+</div>
+<b>0.7539</b>
+</div>
+<div class="bar-line alt">
+<span>近期 expanding</span>
+<div class="bar-rail">
+<div class="bar-fill" style="--w:93.64%">
+
+</div>
+</div>
+<b>1.3109</b>
+</div>
+<div class="bar-line">
+<span>近期 rolling 200</span>
+<div class="bar-rail">
+<div class="bar-fill" style="--w:31.37%">
+
+</div>
+</div>
+<b>0.4392</b>
+</div>
+<div class="bar-line alt">
+<span>未来 expanding</span>
+<div class="bar-rail">
+<div class="bar-fill" style="--w:77.36%">
+
+</div>
+</div>
+<b>1.0830</b>
+</div>
+<div class="bar-line">
+<span>未来 rolling 200</span>
+<div class="bar-rail">
+<div class="bar-fill" style="--w:17.12%">
+
+</div>
+</div>
+<b>0.2397</b>
+</div>
+<figcaption>
+各条均从 0 起；横轴共同上限为
+1.4。不同训练政策必须分别对照自己的未来块，而不是混为一个模型。
+</figcaption>
+</figure>
+<p>随机 CV 的约 0.75 不是对最新 regime 中 expanding 模型约 1.08
+的良好估计。近期 forward 能暴露这一问题，并显示遗忘旧数据的价值。</p>
+<p><strong>但不要只摘取自己喜欢的结论：</strong>近期 rolling CV 的约
+0.44 也明显高于其最终约 0.24，因为第一个近期训练窗口仍混入旧
+regime。正确时间顺序并不消除时间位置和训练组成差异。此例只说明这个 DGP
+下 rolling 更合适，不说明 rolling 总优于 expanding。</p>
+<h2 id="实验-c重叠标签没有让平均-mae-自动失效却让-iid-se-严重偏小">13.3
+实验 C：重叠标签没有让平均 MAE 自动失效，却让 IID SE 严重偏小</h2>
+<p>设独立
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ε</mi><mi>t</mi></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\varepsilon_t\sim N(0,1)</annotation></semantics></math>，目标为相邻
+24 个未来增量之和：</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mi>t</mi></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mn>24</mn></munderover><msub><mi>ε</mi><mrow><mi>t</mi><mo>+</mo><mi>j</mi></mrow></msub><mo>,</mo><mspace width="2.0em"></mspace><msub><mover><mi>Y</mi><mo accent="true">̂</mo></mover><mi>t</mi></msub><mo>=</mo><mn>0</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+Y_t=\sum_{j=1}^{24}\varepsilon_{t+j},\qquad\widehat Y_t=0.
+</annotation></semantics></math></span></p>
+<p>没有训练步骤，因此这里<strong>不存在训练泄漏</strong>。相邻目标满足</p>
+<p><span class="math display"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>Corr</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Y</mi><mi>t</mi></msub><mo>,</mo><msub><mi>Y</mi><mrow><mi>t</mi><mo>+</mo><mi>k</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mrow><mn>24</mn><mo>−</mo><mi>k</mi></mrow><mn>24</mn></mfrac><mo>,</mo><mspace width="1.0em"></mspace><mn>0</mn><mo>≤</mo><mi>k</mi><mo>&lt;</mo><mn>24</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\operatorname{Corr}(Y_t,Y_{t+k})=\frac{24-k}{24},\quad 0\le k&lt;24.
+</annotation></semantics></math></span></p>
+<p>绝对误差的相关函数不等于上式，但仍有明显依赖。每次生成 2000 个 loss
+observations，比较 200 次重复中 MAE 的真实波动与各种 SE 估计。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr class="header">
+<th>数量</th>
+<th style="text-align: right;">数值</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>理论 MAE</td>
+<td style="text-align: right;"><strong>3.9088</strong></td>
+</tr>
+<tr class="even">
+<td>合成平均 MAE</td>
+<td style="text-align: right;"><strong>3.8802 ± 0.0189</strong></td>
+</tr>
+<tr class="odd">
+<td>200 次 MAE 的经验标准差</td>
+<td style="text-align: right;"><strong>0.2668</strong></td>
+</tr>
+<tr class="even">
+<td>平均 IID SE</td>
+<td style="text-align: right;"><strong>0.0652</strong></td>
+</tr>
+<tr class="odd">
+<td>平均 HAC SE，L=24</td>
+<td style="text-align: right;"><strong>0.2191</strong></td>
+</tr>
+<tr class="even">
+<td>平均 HAC SE，L=48</td>
+<td style="text-align: right;"><strong>0.2340</strong></td>
+</tr>
+<tr class="odd">
+<td>平均 HAC SE，L=96</td>
+<td style="text-align: right;"><strong>0.2382</strong></td>
+</tr>
+</tbody>
+</table></div>
+<figure class="bar-chart">
+<h3>
+实验 C · 平均标准误与跨重复经验波动
+</h3>
+<div class="bar-line">
+<span>IID SE</span>
+<div class="bar-rail">
+<div class="bar-fill" style="--w:23.29%">
+
+</div>
+</div>
+<b>0.0652</b>
+</div>
+<div class="bar-line alt">
+<span>HAC L=24</span>
+<div class="bar-rail">
+<div class="bar-fill" style="--w:78.25%">
+
+</div>
+</div>
+<b>0.2191</b>
+</div>
+<div class="bar-line">
+<span>HAC L=48</span>
+<div class="bar-rail">
+<div class="bar-fill" style="--w:83.57%">
+
+</div>
+</div>
+<b>0.2340</b>
+</div>
+<div class="bar-line alt">
+<span>HAC L=96</span>
+<div class="bar-rail">
+<div class="bar-fill" style="--w:85.07%">
+
+</div>
+</div>
+<b>0.2382</b>
+</div>
+<div class="bar-line">
+<span>MAE 的经验 SD</span>
+<div class="bar-rail">
+<div class="bar-fill" style="--w:95.29%">
+
+</div>
+</div>
+<b>0.2668</b>
+</div>
+<figcaption>
+各条均从 0 起；横轴共同上限为 0.28。经验 SD 也由有限的 200
+次重复估计，不是精确已知真值。
+</figcaption>
+</figure>
+<p>IID SE 只有经验波动的约四分之一。HAC 明显更接近，但这些有限 bandwidth
+的平均估计仍偏低；不能据此宣称其区间已经精确校准。本实验也没运行
+coverage
+study。正确结论是：<strong>重叠需要处理不确定性，不代表应该一律删掉所有相邻
+OOS 预测。</strong></p>
+<h1 id="literature">14. 文献地图：经典结论与新问题各自负责什么？</h1>
+<h2 id="不是所有论文都在研究同一个-estimand">14.1
+不是所有论文都在研究同一个 estimand</h2>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>文献线</th>
+<th>首要阅读</th>
+<th>本文取走的内容</th>
+<th>不应过度解释成</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>顺序预测与 rolling origins</td>
+<td>Dawid；FPP <a href="#r2">R2</a> <a href="#r1">R1</a></td>
+<td>先预测、后观察；滚动起点</td>
+<td>不需要关心 label delay</td>
+</tr>
+<tr class="even">
+<td>CV 与模型选择理论</td>
+<td>Arlot–Celisse <a href="#r20">R20</a></td>
+<td>风险估计、选择目标与假设区分</td>
+<td>任何 K 都给无偏最终风险</td>
+</tr>
+<tr class="odd">
+<td>自回归上的随机 CV</td>
+<td>Bergmeir–Hyndman–Koo <a href="#r9">R9</a></td>
+<td>在受限条件下并非禁用随机 CV</td>
+<td>所有金融序列都可 shuffle</td>
+</tr>
+<tr class="even">
+<td>依赖数据 block CV</td>
+<td>Racine；Zheng <a href="#r7">R7</a> <a href="#r8">R8</a></td>
+<td>缓冲与测试块的统计动机</td>
+<td>已证明一般意义的独立 / 一致</td>
+</tr>
+<tr class="odd">
+<td>非平稳实证与评估实践</td>
+<td>Cerqueira；Hewamalage <a href="#r10">R10</a> <a
+href="#r5">R5</a></td>
+<td>时间外推、指标和统计测试的整体流程</td>
+<td>某个方法在所有 DGP 必胜</td>
+</tr>
+<tr class="even">
+<td>金融标签重叠与选择</td>
+<td>López de Prado；Bailey <a href="#r11">R11</a> <a
+href="#r13">R13</a></td>
+<td>Purging、组合回测、选择偏差</td>
+<td>多路径等于多份独立未来</td>
+</tr>
+<tr class="odd">
+<td>模型比较与不确定性</td>
+<td>DM、NW、Politis–Romano、GW <a href="#r16">R16</a>–<a
+href="#r19">R19</a></td>
+<td>配对损失与时间相关</td>
+<td>任意数据都可套标准 p 值</td>
+</tr>
+<tr class="even">
+<td>现代 forecasting benchmark</td>
+<td>TFB、GIFT-Eval、fev-bench <a href="#r21">R21</a>–<a
+href="#r23">R23</a></td>
+<td>统一任务协议、协变量和跨数据集评估</td>
+<td>leaderboard 排名就是本地未来收益</td>
+</tr>
+</tbody>
+</table></div>
+<p>Arlot 与 Celisse 的 survey
+强调区分理论与实证、以及不同模型选择目标。它不是时间序列工程手册，但有助于避免把“预测效果好”与“选中最小真实模型”混为同一个一致性结论。<a
+href="#r20">R20</a></p>
+<h2 id="foundation-models-把泄漏边界推到了预训练">14.2
+2024–2026：foundation models 把泄漏边界推到了预训练</h2>
+<p>TFB（2024）关注数据域覆盖、基线多样性以及公平统一的评估
+pipeline。其主要价值不是一个新的
+splitter，而是避免不同方法在不同流程下比较。<a href="#r21">R21</a></p>
+<p>GIFT-Eval（2024）面向通用、尤其 zero-shot
+的时间序列预测评估，并提供预训练/评估数据隔离的设计。对于预训练模型，<strong>你本地测试集没有用于
+fine-tuning，并不等于它没进入过预训练</strong>。<a
+href="#r22">R22</a></p>
+<p>fev-bench（2025，本文查阅至 2026-06 的
+v4）扩展了对实际预测任务和协变量的关注。评价模型时，必须区分未来已知协变量、仅过去可观测协变量和待预测量，而不能只比较一列
+target 的误差。<a href="#r23">R23</a></p>
+<p>Meyer 等人关于 time-series foundation model evaluation
+的预印本进一步讨论未知预训练语料及其 information leakage 风险；本文采用
+2026-02 的 v3 标题与版本，不把预印本的全部主张当作共识定理。<a
+href="#r24">R24</a></p>
+<p>对研究流水线的直接含义是：记录
+checkpoint、预训练数据声明和可核查时间覆盖，区分 zero-shot / fine-tuned
+设置，并对潜在数据重叠给出限制说明。新增一个本地
+<code>TimeSeriesSplit</code> 无法审计黑箱预训练。</p>
+<h1 id="protocol">15. 一套能执行的默认方案，以及它不能保证的事</h1>
+<h2 id="面向-next-day未来窗口maequantile-的起始协议">15.1 面向
+next-day、未来窗口、MAE/quantile 的起始协议</h2>
+<p>以下是一个<strong>可调整的设计模板，不是普遍最优参数</strong>。数据总长度、机制变化和真实部署频率决定具体数值。</p>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>决策</th>
+<th>起始做法</th>
+<th>必须预先记录</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>目标</td>
+<td>固定 origin、固定窗口/事件选择规则</td>
+<td>无事件与右端未成熟如何处理</td>
+</tr>
+<tr class="even">
+<td>信息</td>
+<td>point-in-time 特征与逐样本 availability</td>
+<td>vintage、发布/摄入延迟、同刻边界</td>
+</tr>
+<tr class="odd">
+<td>开发验证</td>
+<td>多个 calendar-time forward blocks</td>
+<td>模型上线时刻、训练 cutoff、块长度</td>
+</tr>
+<tr class="even">
+<td>训练历史</td>
+<td>expanding 与少数 rolling windows 比较</td>
+<td>窗口候选只在开发区间选择</td>
+</tr>
+<tr class="odd">
+<td>更新</td>
+<td>按真实线上频率回放</td>
+<td>参数、状态、特征各自何时更新</td>
+</tr>
+<tr class="even">
+<td>选择</td>
+<td>内层 forward 调参 / early stopping</td>
+<td>外层不参与选择</td>
+</tr>
+<tr class="odd">
+<td>主指标</td>
+<td>中位数 MAE；其它分位数 pinball</td>
+<td>row/day/entity 权重</td>
+</tr>
+<tr class="even">
+<td>基准</td>
+<td>简单、可部署、同信息集的基准</td>
+<td>delta target 的零变化基准仅在适用时使用</td>
+</tr>
+<tr class="odd">
+<td>比较</td>
+<td>同 origin 的 loss differential</td>
+<td>coverage 与共同样本数量</td>
+</tr>
+<tr class="even">
+<td>不确定性</td>
+<td>时间分层 + 配对块方法 / HAC 敏感性</td>
+<td>不把 folds 当独立重复</td>
+</tr>
+<tr class="odd">
+<td>最终测试</td>
+<td>留下最新一段未用于研究决策的时期</td>
+<td>允许的规则性重训事先冻结</td>
+</tr>
+<tr class="even">
+<td>上线后</td>
+<td>保存 immutable prediction log</td>
+<td>数据版本、model ID、截止时刻、预测时间</td>
+</tr>
+</tbody>
+</table></div>
+<p>一个例子可以是按月 outer test blocks、每周重训、每个 origin
+预测未来一天；内部再用若干较早月份选择训练窗口和超参数。这里“月、周、天”分别代表评估块、重训频率、forecast
+horizon，不能用一个 <code>test_size</code> 代替三者。</p>
+<h2 id="保存的不应只是折均值而是预测账本">15.2
+保存的不应只是折均值，而是预测账本</h2>
+<p>每一条 OOS 记录建议包括 <code>origin_id</code>、entity、prediction
+time、forecast horizon / 实际标签窗口、model ID、训练 cutoff、label
+available time、预测、目标、loss、权重、fold
+ID、标签与特征版本。公开报告只需展示字段契约；真实数据及内部路径留在私有系统。</p>
+<p>随后任何 MAE、按日曲线、paired improvement、coverage
+与统计推断，都从同一份不可变预测账本派生。这样才能发现“两份图实际上使用了不同评分样本”的问题。</p>
+<h2 id="不存在能无条件保证未来的-cv">15.3 不存在能无条件保证未来的
+CV</h2>
+<p>本文给出一个简单的不可区分论证：设两个世界在截至今天
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math>
+的全部联合分布完全相同，但
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math>
+之后一个保持关系
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Y</mi><mo>=</mo><mi>X</mi><mo>+</mo><mi>ε</mi></mrow><annotation encoding="application/x-tex">Y=X+\varepsilon</annotation></semantics></math>，另一个变成
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Y</mi><mo>=</mo><mo>−</mo><mi>X</mi><mo>+</mo><mi>ε</mi></mrow><annotation encoding="application/x-tex">Y=-X+\varepsilon</annotation></semantics></math>。任何只读取历史的
+CV 程序在这两个世界给出相同结果，却不可能同时正确预测两者未来风险。</p>
+<p>所以任何未来泛化结论都需要某种稳定性、可转移性、机制约束或未来情景假设。Nested、purging、block
+bootstrap
+都有价值，但它们解决的是特定问题，不是对不可知未来的万能保险。</p>
+<h2 id="哪些问题值得继续研究">15.4 哪些问题值得继续研究？</h2>
+<p><strong>信息契约可验证性。</strong>把特征、标签、发布延迟和修订版本组成可审计的依赖图，自动判断每个历史模型是否可部署；研究固定
+gap 相比精确 availability 的样本效率损失。</p>
+<p><strong>随机事件时间下的 quantile evaluation。</strong>区分
+fixed-calendar 风险、event-conditioned 风险与随机 horizon
+混合目标，再研究延迟反馈、窗口缺失与适当评分的联合影响。这一段是研究问题的组织方式，不是宣称尚无相关文献或已经证明新定理。</p>
+<p><strong>非平稳下的评估与窗口选择。</strong>不仅比较模型，还比较评估协议对未来风险的估计误差、选择
+regret、适应延迟与不确定性校准。要用可控 DGP
+与多个公开数据机制支撑，不能只在一个数据集上找最漂亮的切分。</p>
+<div class="takeaway">
+<p><strong>全文收束：</strong>一个可信的 OOS
+结论，应同时回答：任务是否一致、当时信息是否合法、选择过程是否隔离、平均对象是否明确、依赖与漂移是否被诚实呈现。正确的
+splitter 只是其中一个部件。</p>
+</div>
+<h1 id="code">附录 A. 按真实时间和标签成熟度切分</h1>
+<p>下面的实现只负责<strong>索引与样本
+eligibility</strong>。它不会神奇验证原始特征的 PIT
+正确性，不会执行嵌套调参，也不会决定无标签样本对应的统计总体。评估块内默认冻结参数；要模拟周内重训，应在真实重训时刻再生成
+blocks。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> Iterator</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span>(frozen<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CalendarFold:</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    fit_time: pd.Timestamp</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    valid_start: pd.Timestamp</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    valid_end: pd.Timestamp</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> availability_splits(</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    frame: pd.DataFrame,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    folds: <span class="bu">list</span>[CalendarFold],</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    train_window: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    extra_gap: <span class="bu">str</span> <span class="op">=</span> <span class="st">&quot;0h&quot;</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    min_train: <span class="bu">int</span> <span class="op">=</span> <span class="dv">1</span>,</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>) <span class="op">-&gt;</span> Iterator[<span class="bu">tuple</span>[np.ndarray, np.ndarray]]:</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Return positional indices; use frame.iloc, not frame.loc.</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="co">    Required columns: prediction_time, label_available_at.</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="co">    All timestamps and fold boundaries must be timezone-aware UTC.</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="co">    Missing label_available_at is allowed; that row is not trainable.</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="co">    Validation includes all origins, including not-yet-scoreable labels.</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="co">    extra_gap is an additional origin-time restriction, not a replacement</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="co">    for the sample-specific label availability check.</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    required <span class="op">=</span> {<span class="st">&quot;prediction_time&quot;</span>, <span class="st">&quot;label_available_at&quot;</span>}</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> required.issubset(frame.columns):</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f&quot;Missing columns: </span><span class="sc">{</span>required <span class="op">-</span> <span class="bu">set</span>(frame.columns)<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> min_train <span class="op">&lt;</span> <span class="dv">1</span>:</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">&quot;min_train must be positive&quot;</span>)</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> frame[<span class="st">&quot;prediction_time&quot;</span>]</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> frame[<span class="st">&quot;label_available_at&quot;</span>]</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> name, col <span class="kw">in</span> [(<span class="st">&quot;prediction_time&quot;</span>, t), (<span class="st">&quot;label_available_at&quot;</span>, a)]:</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(col.dtype, pd.DatetimeTZDtype):</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f&quot;</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss"> must be timezone-aware datetime&quot;</span>)</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">str</span>(col.dt.tz) <span class="op">!=</span> <span class="st">&quot;UTC&quot;</span>:</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="ss">f&quot;</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss"> must use UTC&quot;</span>)</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> t.isna().<span class="bu">any</span>() <span class="kw">or</span> <span class="kw">not</span> t.is_monotonic_increasing:</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">&quot;prediction_time must be nonmissing and sorted&quot;</span>)</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (a.notna() <span class="op">&amp;</span> (a <span class="op">&lt;</span> t)).<span class="bu">any</span>():</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">&quot;This future-target splitter requires a &gt;= t&quot;</span>)</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>    gap <span class="op">=</span> pd.Timedelta(extra_gap)</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>    window <span class="op">=</span> <span class="va">None</span> <span class="cf">if</span> train_window <span class="kw">is</span> <span class="va">None</span> <span class="cf">else</span> pd.Timedelta(train_window)</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> pd.isna(gap) <span class="kw">or</span> gap <span class="op">&lt;</span> pd.Timedelta(<span class="dv">0</span>):</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">&quot;extra_gap must be finite and nonnegative&quot;</span>)</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> window <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="kw">and</span> (pd.isna(window) <span class="kw">or</span> window <span class="op">&lt;=</span> pd.Timedelta(<span class="dv">0</span>)):</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">&quot;train_window must be finite and positive&quot;</span>)</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>    previous_end <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> fold <span class="kw">in</span> folds:</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>        c, v, e <span class="op">=</span> <span class="bu">map</span>(pd.Timestamp,</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>                      (fold.fit_time, fold.valid_start, fold.valid_end))</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">any</span>(pd.isna(z) <span class="kw">or</span> z.tzinfo <span class="kw">is</span> <span class="va">None</span> <span class="kw">or</span> <span class="bu">str</span>(z.tzinfo) <span class="op">!=</span> <span class="st">&quot;UTC&quot;</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>               <span class="cf">for</span> z <span class="kw">in</span> (c, v, e)):</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">&quot;Fold times must be nonmissing UTC timestamps&quot;</span>)</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> c <span class="op">&lt;=</span> v <span class="op">&lt;</span> e:</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">&quot;Require fit_time &lt;= valid_start &lt; valid_end&quot;</span>)</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> previous_end <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="kw">and</span> v <span class="op">&lt;</span> previous_end:</span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">&quot;Validation origin blocks must not overlap&quot;</span>)</span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>        previous_end <span class="op">=</span> e</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>        train <span class="op">=</span> (t <span class="op">&lt;</span> c<span class="op">-</span>gap) <span class="op">&amp;</span> a.notna() <span class="op">&amp;</span> (a <span class="op">&lt;</span> c)</span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> window <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>            train <span class="op">&amp;=</span> t <span class="op">&gt;=</span> c<span class="op">-</span>window</span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>        valid <span class="op">=</span> (t <span class="op">&gt;=</span> v) <span class="op">&amp;</span> (t <span class="op">&lt;</span> e)</span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a>        tr <span class="op">=</span> np.flatnonzero(train.to_numpy())</span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>        va <span class="op">=</span> np.flatnonzero(valid.to_numpy())</span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(tr) <span class="op">&lt;</span> min_train <span class="kw">or</span> <span class="bu">len</span>(va) <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a>            <span class="cf">raise</span> <span class="pp">ValueError</span>(<span class="st">&quot;Insufficient training rows or empty validation&quot;</span>)</span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="kw">not</span> np.intersect1d(tr, va).size</span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> (a.iloc[tr] <span class="op">&lt;</span> c).<span class="bu">all</span>()</span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> (t.iloc[tr] <span class="op">&lt;</span> c).<span class="bu">all</span>()</span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a>        <span class="cf">yield</span> tr, va</span></code></pre></div>
+<p><strong>边界自测。</strong>以下例子特意让一个很早的 origin
+拥有超长标签延迟，并让一个验证标签未知。后者仍应被预测，不能被 splitter
+悄悄过滤。</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>t <span class="op">=</span> pd.date_range(<span class="st">&quot;2026-01-01&quot;</span>, periods<span class="op">=</span><span class="dv">12</span>, freq<span class="op">=</span><span class="st">&quot;h&quot;</span>, tz<span class="op">=</span><span class="st">&quot;UTC&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>a <span class="op">=</span> pd.Series(t <span class="op">+</span> pd.Timedelta(<span class="st">&quot;2h&quot;</span>))</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>a.iloc[<span class="dv">1</span>] <span class="op">=</span> t[<span class="dv">10</span>]             <span class="co"># old origin, delayed label</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>a.iloc[<span class="dv">9</span>] <span class="op">=</span> pd.NaT            <span class="co"># prediction still belongs in validation</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>frame <span class="op">=</span> pd.DataFrame({<span class="st">&quot;prediction_time&quot;</span>: t, <span class="st">&quot;label_available_at&quot;</span>: a})</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>fold <span class="op">=</span> CalendarFold(t[<span class="dv">8</span>], t[<span class="dv">8</span>], t[<span class="dv">11</span>])</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>tr, va <span class="op">=</span> <span class="bu">next</span>(availability_splits(frame, [fold]))</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> tr.tolist() <span class="op">==</span> [<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>]</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> va.tolist() <span class="op">==</span> [<span class="dv">8</span>, <span class="dv">9</span>, <span class="dv">10</span>]</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co"># origin 6 has a == cutoff, excluded by the strict boundary convention.</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co"># The validation block is half-open, so origin 11 is excluded.</span></span></code></pre></div>
+<p><strong>评分必须另做。</strong>模型对 <code>va</code> 中所有 origins
+发出预测后，再按评估数据截止时刻决定哪些标签已经可评分。报告所有被排除的原因；若想给完整
+cohort 结论，应等待整个规定窗口成熟，而不是只算到达最快的标签。</p>
+<h1 id="reproduce">附录 B. 合成实验完整复现</h1>
+<p>把以下代码保存为 <code>experiments.py</code>，安装 NumPy 后运行。输出
+<code>results.json</code>。本节代码仅含独立生成的随机序列和基础
+OLS；所有 forecast pairs 的生成方式、origin 范围、seed 与 bandwidth
+都固定。它不声称是生产 CV 系统。</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">&quot;&quot;&quot;Public synthetic demonstrations; no real or connected financial data.</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">Run: python experiments.py. Requires only NumPy. Seeds and DGP are fixed.</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> __future__ <span class="im">import</span> annotations</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>REPEATS <span class="op">=</span> <span class="dv">200</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ols_predict(x, y, train, test):</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    xtr <span class="op">=</span> np.column_stack([np.ones(<span class="bu">len</span>(train)), x[train]])</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    beta <span class="op">=</span> np.linalg.lstsq(xtr, y[train], rcond<span class="op">=</span><span class="va">None</span>)[<span class="dv">0</span>]</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.column_stack([np.ones(<span class="bu">len</span>(test)), x[test]]) <span class="op">@</span> beta</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mae(x, y, train, test):</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">float</span>(np.mean(np.<span class="bu">abs</span>(y[test] <span class="op">-</span> ols_predict(x, y, train, test))))</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> random_cv(x, y, n, rng):</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    chunks <span class="op">=</span> np.array_split(rng.permutation(n), <span class="dv">5</span>)</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    all_rows <span class="op">=</span> np.arange(n)</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.mean([mae(x, y, np.setdiff1d(all_rows, te), te) <span class="cf">for</span> te <span class="kw">in</span> chunks])</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> forward_cv(x, y, origins, width, window<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.mean([mae(x, y, np.arange(<span class="dv">0</span> <span class="cf">if</span> window <span class="kw">is</span> <span class="va">None</span> <span class="cf">else</span> <span class="bu">max</span>(<span class="dv">0</span>, c<span class="op">-</span>window), c),</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>                          np.arange(c, c<span class="op">+</span>width)) <span class="cf">for</span> c <span class="kw">in</span> origins])</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mean_se(a):</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> np.asarray(a, dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {<span class="st">&quot;mean&quot;</span>: <span class="bu">float</span>(a.mean()), <span class="st">&quot;mcse&quot;</span>: <span class="bu">float</span>(a.std(ddof<span class="op">=</span><span class="dv">1</span>) <span class="op">/</span> np.sqrt(<span class="bu">len</span>(a)))}</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> hac_mean_se(z, bandwidth):</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    u <span class="op">=</span> z <span class="op">-</span> z.mean()</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">len</span>(u)</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    lrv <span class="op">=</span> np.dot(u, u) <span class="op">/</span> n</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, bandwidth <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>        lrv <span class="op">+=</span> <span class="dv">2</span> <span class="op">*</span> (<span class="dv">1</span><span class="op">-</span>k<span class="op">/</span>(bandwidth<span class="op">+</span><span class="dv">1</span>)) <span class="op">*</span> np.dot(u[k:], u[:<span class="op">-</span>k]) <span class="op">/</span> n</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">float</span>(np.sqrt(<span class="bu">max</span>(lrv, <span class="dv">0</span>) <span class="op">/</span> n))</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run():</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    stationary <span class="op">=</span> {k: [] <span class="cf">for</span> k <span class="kw">in</span> [<span class="st">&#39;random_cv&#39;</span>, <span class="st">&#39;expanding_cv&#39;</span>, <span class="st">&#39;future&#39;</span>]}</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>    drift <span class="op">=</span> {k: [] <span class="cf">for</span> k <span class="kw">in</span> [<span class="st">&#39;random_cv&#39;</span>, <span class="st">&#39;recent_expanding_cv&#39;</span>, <span class="st">&#39;recent_rolling_cv&#39;</span>,</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>                             <span class="st">&#39;future_expanding&#39;</span>, <span class="st">&#39;future_rolling&#39;</span>]}</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>    overlap <span class="op">=</span> {k: [] <span class="cf">for</span> k <span class="kw">in</span> [<span class="st">&#39;mae&#39;</span>, <span class="st">&#39;iid_se&#39;</span>, <span class="st">&#39;hac24&#39;</span>, <span class="st">&#39;hac48&#39;</span>, <span class="st">&#39;hac96&#39;</span>]}</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> seed <span class="kw">in</span> <span class="bu">range</span>(REPEATS):</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>        rng <span class="op">=</span> np.random.default_rng(<span class="dv">10000</span> <span class="op">+</span> seed)</span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>        innovations <span class="op">=</span> rng.normal(size<span class="op">=</span><span class="dv">1901</span>)</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>        series <span class="op">=</span> np.empty(<span class="dv">1901</span>)</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>        series[<span class="dv">0</span>] <span class="op">=</span> rng.normal(scale<span class="op">=</span><span class="dv">1</span> <span class="op">/</span> np.sqrt(<span class="dv">1</span><span class="op">-</span><span class="fl">0.8</span><span class="op">**</span><span class="dv">2</span>))</span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> t <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">1901</span>):</span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>            series[t] <span class="op">=</span> <span class="fl">0.8</span> <span class="op">*</span> series[t<span class="op">-</span><span class="dv">1</span>] <span class="op">+</span> innovations[t]</span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>        series <span class="op">=</span> series[<span class="dv">300</span>:]</span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>        x, y <span class="op">=</span> series[:<span class="op">-</span><span class="dv">1</span>], series[<span class="dv">1</span>:]</span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>        stationary[<span class="st">&#39;random_cv&#39;</span>].append(random_cv(x, y, <span class="dv">1200</span>, rng))</span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>        stationary[<span class="st">&#39;expanding_cv&#39;</span>].append(forward_cv(x, y, [<span class="dv">400</span>,<span class="dv">600</span>,<span class="dv">800</span>,<span class="dv">1000</span>], <span class="dv">200</span>))</span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>        stationary[<span class="st">&#39;future&#39;</span>].append(mae(x, y, np.arange(<span class="dv">1200</span>), np.arange(<span class="dv">1200</span>,<span class="dv">1600</span>)))</span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>        rng <span class="op">=</span> np.random.default_rng(<span class="dv">20000</span> <span class="op">+</span> seed)</span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>        x <span class="op">=</span> rng.normal(size<span class="op">=</span><span class="dv">1600</span>)</span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>        slope <span class="op">=</span> np.where(np.arange(<span class="dv">1600</span>) <span class="op">&lt;</span> <span class="dv">800</span>, <span class="fl">1.0</span>, <span class="op">-</span><span class="fl">1.0</span>)</span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>        y <span class="op">=</span> slope <span class="op">*</span> x <span class="op">+</span> rng.normal(scale<span class="op">=</span><span class="fl">0.3</span>, size<span class="op">=</span><span class="dv">1600</span>)</span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>        drift[<span class="st">&#39;random_cv&#39;</span>].append(random_cv(x, y, <span class="dv">1200</span>, rng))</span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>        drift[<span class="st">&#39;recent_expanding_cv&#39;</span>].append(forward_cv(x, y, [<span class="dv">900</span>,<span class="dv">1000</span>,<span class="dv">1100</span>],<span class="dv">100</span>))</span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>        drift[<span class="st">&#39;recent_rolling_cv&#39;</span>].append(forward_cv(x, y, [<span class="dv">900</span>,<span class="dv">1000</span>,<span class="dv">1100</span>],<span class="dv">100</span>,<span class="dv">200</span>))</span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>        drift[<span class="st">&#39;future_expanding&#39;</span>].append(mae(x,y,np.arange(<span class="dv">1200</span>),np.arange(<span class="dv">1200</span>,<span class="dv">1600</span>)))</span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>        drift[<span class="st">&#39;future_rolling&#39;</span>].append(mae(x,y,np.arange(<span class="dv">1000</span>,<span class="dv">1200</span>),np.arange(<span class="dv">1200</span>,<span class="dv">1600</span>)))</span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>        rng <span class="op">=</span> np.random.default_rng(<span class="dv">30000</span> <span class="op">+</span> seed)</span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>        eps <span class="op">=</span> rng.normal(size<span class="op">=</span><span class="dv">2023</span>)</span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>        target <span class="op">=</span> np.convolve(eps, np.ones(<span class="dv">24</span>), mode<span class="op">=</span><span class="st">&#39;valid&#39;</span>)</span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>        loss <span class="op">=</span> np.<span class="bu">abs</span>(target)</span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">len</span>(loss) <span class="op">==</span> <span class="dv">2000</span></span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>        overlap[<span class="st">&#39;mae&#39;</span>].append(<span class="bu">float</span>(loss.mean()))</span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>        overlap[<span class="st">&#39;iid_se&#39;</span>].append(<span class="bu">float</span>(loss.std(ddof<span class="op">=</span><span class="dv">1</span>)<span class="op">/</span>np.sqrt(<span class="dv">2000</span>)))</span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> lag <span class="kw">in</span> (<span class="dv">24</span>,<span class="dv">48</span>,<span class="dv">96</span>):</span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>            overlap[<span class="ss">f&#39;hac</span><span class="sc">{</span>lag<span class="sc">}</span><span class="ss">&#39;</span>].append(hac_mean_se(loss,lag))</span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> {</span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;repeats&#39;</span>: REPEATS, <span class="st">&#39;numpy_version&#39;</span>: np.__version__,</span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;stationary&#39;</span>: {k:mean_se(v) <span class="cf">for</span> k,v <span class="kw">in</span> stationary.items()},</span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;drift&#39;</span>: {k:mean_se(v) <span class="cf">for</span> k,v <span class="kw">in</span> drift.items()},</span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;overlap&#39;</span>: {k:mean_se(v) <span class="cf">for</span> k,v <span class="kw">in</span> overlap.items()},</span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;overlap_empirical_sd&#39;</span>: <span class="bu">float</span>(np.std(overlap[<span class="st">&#39;mae&#39;</span>],ddof<span class="op">=</span><span class="dv">1</span>)),</span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;oracle_stationary_mae&#39;</span>: <span class="bu">float</span>(np.sqrt(<span class="dv">2</span><span class="op">/</span>np.pi)),</span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>        <span class="st">&#39;oracle_overlap_mae&#39;</span>: <span class="bu">float</span>(np.sqrt(<span class="dv">24</span>)<span class="op">*</span>np.sqrt(<span class="dv">2</span><span class="op">/</span>np.pi)),</span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>    Path(<span class="va">__file__</span>).with_name(<span class="st">&#39;results.json&#39;</span>).write_text(json.dumps(result, indent<span class="op">=</span><span class="dv">2</span>))</span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(json.dumps(result,indent<span class="op">=</span><span class="dv">2</span>))</span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">&#39;__main__&#39;</span>:</span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>    run()</span></code></pre></div>
+<h1 id="exercises">附录 C. 五个自测问题</h1>
+<details>
+<summary>
+<ol type="1">
+<li>验证特征回看 30 天，是否必须把训练和验证隔开 30 天？
+</summary>
+<p>
+不必须。严格 forward
+回放中，验证时读取已知历史是合法的。先检查训练标签成熟与特征可用性。如果用验证之后的记录训练，再检查后侧特征是否读到了验证结果；这是另一种问题。
+</p>
+</details></li>
+</ol>
+<details>
+<summary>
+<ol start="2" type="1">
+<li>24 小时目标、最多 2 小时发布延迟，gap=24 就够了吗？
+</summary>
+<p>
+如果 gap
+按小时计，仍可能不够；如果按记录条数计，更无法直接判断。固定上界例子需要结合
+26 小时与严格边界约定，最准确的判断仍是每条记录的 label_available_at
+是否早于 cutoff。
+</p>
+</details></li>
+</ol>
+<details>
+<summary>
+<ol start="3" type="1">
+<li>两个模型 MAE 相差 0.02，但测试集有一百万行，是否一定显著？
+</summary>
+<p>
+不是。需要相同预测任务上的配对损失差、依赖结构和覆盖信息。一百万条高度聚集在少数时间段的事件记录，并不等于一百万次独立实验。还要考虑
+0.02 在业务上是否有意义。
+</p>
+</details></li>
+</ol>
+<details>
+<summary>
+<ol start="4" type="1">
+<li>在最终测试月内，第二周训练使用第一周已经成熟的标签，是不是泄漏？
+</summary>
+<p>
+若每周更新规则在测试前已固定，且标签在训练截止前真实可用，这是合法的
+prequential
+更新。根据第一周表现临时换特征、窗口或模型，则属于利用测试反馈做研究选择。
+</p>
+</details></li>
+</ol>
+<details>
+<summary>
+<ol start="5" type="1">
+<li>所有 folds 都按时间切了，能否使用实际未来事件间隔作为输入？
+</summary>
+<p>
+不能把它称作原信息集下的预测。如果发起时刻不知道该间隔，加入它就是扩大条件信息集。可以把这种结果作为明确标注的事后条件
+/ oracle 实验，但必须另给真实可部署的信息集下的结果。
+</p>
+</details></li>
+</ol>
+<h1 id="references">参考文献与带问题的阅读顺序</h1>
+<div class="references">
+<p id="r1">
+<strong>[R1]</strong> Hyndman, R. J. &amp; Athanasopoulos, G.
+<em>Forecasting: Principles and Practice</em>, 3rd ed., §5.10, Time
+series cross-validation.
+<a href="https://otexts.com/fpp3/tscv.html">作者开放教材</a>。入门先读：rolling
+origin 的预测时点如何随训练集移动？
+</p>
+<p id="r2">
+<strong>[R2]</strong> Dawid, A. P. (1984). Statistical theory: the
+prequential approach. <em>Journal of the Royal Statistical Society
+A</em>, 147(2), 278–290.
+<a href="https://academic.oup.com/jrsssa/article/147/2/278/7106293">期刊页面</a>。思考：评估对象为何可以是顺序预测，而不是参数估计？
+</p>
+<p id="r3">
+<strong>[R3]</strong> Bates, S., Hastie, T. &amp; Tibshirani, R. (2024).
+Cross-validation: What does it estimate and how well does it do it?
+<em>JASA</em>, 119(546), 1434–1445.
+<a href="https://doi.org/10.1080/01621459.2023.2197686">DOI</a> ·
+<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11412612/">开放全文</a>。在线发表年份为
+2023；此处采用卷期年份。重点：最终模型的误差与学习程序的平均误差。
+</p>
+<p id="r4">
+<strong>[R4]</strong> Cawley, G. C. &amp; Talbot, N. L. C. (2010). On
+over-fitting in model selection and subsequent selection bias in
+performance evaluation. <em>JMLR</em>, 11, 2079–2107.
+<a href="https://jmlr.org/papers/v11/cawley10a.html">开放全文</a>。重点：验证过程本身如何被过拟合？
+</p>
+<p id="r5">
+<strong>[R5]</strong> Hewamalage, H., Ackermann, K. &amp; Bergmeir, C.
+(2023). Forecast evaluation for data scientists: Common pitfalls and
+best practices. <em>Data Mining and Knowledge Discovery</em>, 37,
+788–832. <a href="https://doi.org/10.1007/s10618-022-00894-5">DOI</a> ·
+<a href="https://arxiv.org/abs/2203.10716">作者预印本</a>。最接近本文主题的整体
+survey；先读 partitioning 与 error measures，再读 statistical testing。
+</p>
+<p id="r6">
+<strong>[R6]</strong> scikit-learn developers. Common pitfalls and
+recommended practices: Data leakage.
+<a href="https://scikit-learn.org/stable/common_pitfalls.html">官方文档</a>，访问于
+2026-09-04。软件文档，不是理论保证。
+</p>
+<p id="r7">
+<strong>[R7]</strong> Racine, J. (2000). Consistent cross-validatory
+model-selection for dependent data: hv-block cross-validation.
+<em>Journal of Econometrics</em>, 99(1), 39–61.
+<a href="https://doi.org/10.1016/S0304-4076(00)00030-0">DOI</a>。与 R8
+一起读，区分方法、模型选择目标与理论论证。
+</p>
+<p id="r8">
+<strong>[R8]</strong> Zheng, W. (2019). hv-Block cross validation is not
+a BIBD: a note on the paper by Jeff Racine (2000).
+<a href="https://arxiv.org/abs/1910.08904">arXiv:1910.08904</a>。预印本说明；不要把对一个证明环节的反例扩大成对所有
+block 方法的否定。
+</p>
+<p id="r9">
+<strong>[R9]</strong> Bergmeir, C., Hyndman, R. J. &amp; Koo, B. (2018).
+A note on the validity of cross-validation for evaluating autoregressive
+time series prediction. <em>Computational Statistics &amp; Data
+Analysis</em>, 120, 70–83.
+<a href="https://doi.org/10.1016/j.csda.2017.11.003">DOI</a> ·
+<a href="https://robjhyndman.com/papers/cv-wp.pdf">作者
+PDF</a>。重点核对纯自回归设定、误差与正则性假设，勿直接推广到任意
+quantile/窗口目标。
+</p>
+<p id="r10">
+<strong>[R10]</strong> Cerqueira, V., Torgo, L. &amp; Mozetič, I.
+(2020). Evaluating time series forecasting models: An empirical study on
+performance estimation methods. <em>Machine Learning</em>, 109,
+1997–2028. <a href="https://doi.org/10.1007/s10994-020-05910-7">DOI</a>
+·
+<a href="https://arxiv.org/abs/1905.11744">作者预印本</a>。重点：平稳合成数据与非平稳实际序列为什么得到不同结论？
+</p>
+<p id="r11">
+<strong>[R11]</strong> López de Prado, M. (2018). <em>Advances in
+Financial Machine Learning</em>. Wiley，Ch. 7 Cross-Validation in
+Finance；Ch. 12 Backtesting through Cross-Validation.
+<a href="https://www.wiley-vch.de/de/fachgebiete/finanzen-wirtschaft-recht/advances-in-financial-machine-learning-978-1-119-48208-6">出版社页面</a>。方法来源；本文区间与边界约定为明确化后的工程表述，不声称逐字复刻某个软件实现。
+</p>
+<p id="r12">
+<strong>[R12]</strong> scikit-learn developers. TimeSeriesSplit.
+<a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.TimeSeriesSplit.html">官方
+API</a>，访问于 2026-09-04。检查 gap、test_size、max_train_size
+的单位，而不是只看类名。
+</p>
+<p id="r13">
+<strong>[R13]</strong> Bailey, D. H., Borwein, J. M., López de Prado, M.
+&amp; Zhu, Q. J. (2017). The probability of backtest overfitting.
+<em>Journal of Computational Finance</em>, 20(4), 39–69.
+<a href="https://scholarworks.wmich.edu/math_pubs/42/">作者机构记录</a>
+·
+<a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253">早期作者版本</a>。重点区分
+CSCV、CPCV、策略选择与 forecast error。
+</p>
+<p id="r14">
+<strong>[R14]</strong> Hyndman, R. J. &amp; Athanasopoulos, G.
+<em>FPP3</em>, §13.8, Forecasting on training and test sets.
+<a href="https://otexts.com/fpp3/training-test.html">作者开放教材</a>。对照
+one-step 更新信息与 fixed-origin multi-step。
+</p>
+<p id="r15">
+<strong>[R15]</strong> Gneiting, T. &amp; Raftery, A. E. (2007).
+Strictly proper scoring rules, prediction, and estimation.
+<em>JASA</em>, 102(477), 359–378.
+<a href="https://doi.org/10.1198/016214506000001437">DOI</a> ·
+<a href="https://sites.stat.washington.edu/raftery/Research/PDF/Gneiting2007jasa.pdf">作者
+PDF</a>。本文 pinball 导数与 excess-risk 积分在正文独立展开。
+</p>
+<p id="r16">
+<strong>[R16]</strong> Diebold, F. X. &amp; Mariano, R. S. (1995).
+Comparing predictive accuracy. <em>Journal of Business &amp; Economic
+Statistics</em>, 13(3), 253–263.
+<a href="https://doi.org/10.1080/07350015.1995.10524599">DOI</a>。从
+loss differential 出发读，而不是只记住检验名称。
+</p>
+<p id="r17">
+<strong>[R17]</strong> Newey, W. K. &amp; West, K. D. (1987). A simple,
+positive semi-definite, heteroskedasticity and autocorrelation
+consistent covariance matrix. <em>Econometrica</em>, 55(3), 703–708.
+<a href="https://www.jstor.org/stable/1913610">期刊记录</a> ·
+<a href="https://www.nber.org/papers/t0055">1986
+工作论文</a>。重点：长期方差、bandwidth 与一致性条件。
+</p>
+<p id="r18">
+<strong>[R18]</strong> Politis, D. N. &amp; Romano, J. P. (1994). The
+stationary bootstrap. <em>JASA</em>, 89(428), 1303–1313.
+<a href="https://doi.org/10.1080/01621459.1994.10476870">DOI</a>。思考：重抽的是损失序列，还是整个重新训练程序？
+</p>
+<p id="r19">
+<strong>[R19]</strong> Giacomini, R. &amp; White, H. (2006). Tests of
+conditional predictive ability. <em>Econometrica</em>, 74(6), 1545–1578.
+<a href="https://doi.org/10.1111/j.1468-0262.2006.00718.x">DOI</a>。适合在配对平均损失比较之后继续读；注意估计窗口与检验框架假设。
+</p>
+<p id="r20">
+<strong>[R20]</strong> Arlot, S. &amp; Celisse, A. (2010). A survey of
+cross-validation procedures for model selection. <em>Statistics
+Surveys</em>, 4, 40–79.
+<a href="https://doi.org/10.1214/09-SS054">DOI</a> ·
+<a href="https://arxiv.org/abs/0907.4728">作者预印本</a>。最后回到理论：你追求
+risk minimization，还是 model identification？
+</p>
+<p id="r21">
+<strong>[R21]</strong> Qiu, X. et al. (2024). TFB: Towards comprehensive
+and fair benchmarking of time series forecasting methods.
+<em>PVLDB</em>, 17(9), 2363–2377.
+<a href="https://arxiv.org/abs/2403.20150">论文</a>。关注统一评估
+pipeline，不把 benchmark 排名外推为本地保证。
+</p>
+<p id="r22">
+<strong>[R22]</strong> Aksu, T. et al. (2024). GIFT-Eval: A benchmark
+for general time series forecasting model evaluation.
+<a href="https://arxiv.org/abs/2410.10393">论文</a>。关注 zero-shot
+和预训练数据隔离；此处采用首次预印本年份。
+</p>
+<p id="r23">
+<strong>[R23]</strong> Shchur, O. et al. (2025/2026). fev-bench: A
+realistic benchmark for time series forecasting.
+<a href="https://arxiv.org/abs/2509.26468v4">arXiv:2509.26468v4</a>，2026-06-30
+修订。关注真实任务、协变量与评价口径。
+</p>
+<p id="r24">
+<strong>[R24]</strong> Meyer, M. et al. (2025/2026). Rethinking
+evaluation in the era of time series foundation models: (Un)known
+information leakage challenges.
+<a href="https://arxiv.org/abs/2510.13654v3">arXiv:2510.13654v3</a>，2026-02-25
+修订。预印本；关注难以核实的预训练重叠，而不是将它当作新 CV 定理。
+</p>
+</div>
+<p class="footer-note">
+范围说明：本报告是围绕预测验证的教程式综述，而非 PRISMA
+式系统综述；不声称穷尽所有 dependent-data CV
+文献。检索与软件文档核查截至
+2026-09-04。原始数据、标签定义及业务部署约束仍需要在各自项目中单独审计。
+</p></main>
+<footer class="report-footer">TSML Research Notes · 可离线阅读，公式使用原生 MathML。合成实验与一般方法说明，不含真实业务数据。</footer>
+</div>
+</div>
+<script>
+(function(){
+ 'use strict';
+ const nav=document.getElementById('navigation');
+ const mq=window.matchMedia('(min-width:801px)');
+ function layout(){nav.open=mq.matches;}
+ layout();mq.addEventListener('change',layout);
+ document.getElementById('print').addEventListener('click',()=>window.print());
+ document.getElementById('backtop').addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+ document.querySelectorAll('#TOC a').forEach(a=>a.addEventListener('click',()=>{if(!mq.matches)nav.open=false;}));
+ const progress=document.getElementById('progress');
+ function update(){const height=document.documentElement.scrollHeight-window.innerHeight;progress.style.width=(height>0?100*window.scrollY/height:0)+'%';}
+ document.addEventListener('scroll',update,{passive:true});update();
+ const observer=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){document.querySelectorAll('#TOC a').forEach(a=>a.classList.remove('active'));const link=document.querySelector('#TOC a[href="#'+CSS.escape(e.target.id)+'"]');if(link)link.classList.add('active');}});},{rootMargin:'-10% 0px -75% 0px'});
+ document.querySelectorAll('main>h1').forEach(h=>observer.observe(h));
+ const H=document.getElementById('horizon'),D=document.getElementById('delay'),cells=document.getElementById('demo-cells');
+ function draw(){
+  const h=Number(H.value),d=Number(D.value),cutoff=16;
+  document.getElementById('horizon-out').textContent=h;document.getElementById('delay-out').textContent=d;
+  cells.replaceChildren();let count=0;
+  for(let t=0;t<24;t++){
+   const cell=document.createElement('span'),available=t+h+d;
+   const eligible=t<cutoff&&available<cutoff;
+   if(eligible)count++;
+   cell.className=t>=cutoff?'test':eligible?'train':'gap';
+   cell.textContent='t='+t;
+   const sub=document.createElement('small');sub.textContent=t>=cutoff?'验证':'a='+available;cell.appendChild(sub);
+   cell.title='origin '+t+'；label available at '+available+'；'+(t>=cutoff?'验证':eligible?'可训练':'标签未成熟');
+   cells.appendChild(cell);
+  }
+  document.getElementById('demo-summary').textContent='H='+h+'、D='+d+'：可训练 '+count+' 条，历史排除 '+(16-count)+' 条，验证 8 条。必须 a < 16；a = 16 也排除。先按真实可用性筛选，再讨论额外的依赖缓冲。';
+ }
+ H.addEventListener('input',draw);D.addEventListener('input',draw);draw();
+})();
+</script>
+</body>
+</html>

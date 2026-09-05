@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="$lang$">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="时间序列交叉验证教程式综述：point-in-time、rolling origin、purging、nested CV、quantile、依赖稳健推断与三个可复现实验。">
+<title>$title$ — TSML</title>
+<style>/*INLINE_STYLE*/</style>
+</head>
+<body>
+<div id="progress" aria-hidden="true"></div>
+<div class="shell">
+<aside class="sidebar">
+<a class="brand" href="#top">TSML / RESEARCH NOTES</a>
+<details id="navigation"><summary>目录 · 15 节 / 3 个附录</summary>
+<div class="nav-label">ON THIS PAGE</div>
+<nav id="TOC" aria-label="报告目录">$toc$</nav>
+</details>
+<div class="nav-tools"><button type="button" id="print">打印 / 保存 PDF</button><button type="button" id="backtop">返回顶部</button></div>
+</aside>
+<div class="content">
+<header class="hero" id="top">
+<div class="kicker">A tutorial survey · Validation as a forecasting protocol</div>
+<h1>$title$</h1>
+<p class="subtitle">$subtitle$</p>
+<div class="meta"><span>$date$</span><span>15 个主题章节</span><span>24 项参考资料</span><span>3 组已运行合成实验</span></div>
+</header>
+<main>$body$</main>
+<footer class="report-footer">TSML Research Notes · 可离线阅读，公式使用原生 MathML。合成实验与一般方法说明，不含真实业务数据。</footer>
+</div>
+</div>
+<script>
+(function(){
+ 'use strict';
+ const nav=document.getElementById('navigation');
+ const mq=window.matchMedia('(min-width:801px)');
+ function layout(){nav.open=mq.matches;}
+ layout();mq.addEventListener('change',layout);
+ document.getElementById('print').addEventListener('click',()=>window.print());
+ document.getElementById('backtop').addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+ document.querySelectorAll('#TOC a').forEach(a=>a.addEventListener('click',()=>{if(!mq.matches)nav.open=false;}));
+ const progress=document.getElementById('progress');
+ function update(){const height=document.documentElement.scrollHeight-window.innerHeight;progress.style.width=(height>0?100*window.scrollY/height:0)+'%';}
+ document.addEventListener('scroll',update,{passive:true});update();
+ const observer=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){document.querySelectorAll('#TOC a').forEach(a=>a.classList.remove('active'));const link=document.querySelector('#TOC a[href="#'+CSS.escape(e.target.id)+'"]');if(link)link.classList.add('active');}});},{rootMargin:'-10% 0px -75% 0px'});
+ document.querySelectorAll('main>h1').forEach(h=>observer.observe(h));
+ const H=document.getElementById('horizon'),D=document.getElementById('delay'),cells=document.getElementById('demo-cells');
+ function draw(){
+  const h=Number(H.value),d=Number(D.value),cutoff=16;
+  document.getElementById('horizon-out').textContent=h;document.getElementById('delay-out').textContent=d;
+  cells.replaceChildren();let count=0;
+  for(let t=0;t<24;t++){
+   const cell=document.createElement('span'),available=t+h+d;
+   const eligible=t<cutoff&&available<cutoff;
+   if(eligible)count++;
+   cell.className=t>=cutoff?'test':eligible?'train':'gap';
+   cell.textContent='t='+t;
+   const sub=document.createElement('small');sub.textContent=t>=cutoff?'验证':'a='+available;cell.appendChild(sub);
+   cell.title='origin '+t+'；label available at '+available+'；'+(t>=cutoff?'验证':eligible?'可训练':'标签未成熟');
+   cells.appendChild(cell);
+  }
+  document.getElementById('demo-summary').textContent='H='+h+'、D='+d+'：可训练 '+count+' 条，历史排除 '+(16-count)+' 条，验证 8 条。必须 a < 16；a = 16 也排除。先按真实可用性筛选，再讨论额外的依赖缓冲。';
+ }
+ H.addEventListener('input',draw);D.addEventListener('input',draw);draw();
+})();
+</script>
+</body>
+</html>

@@ -51,6 +51,13 @@
 
 ### C1. Machine learning 与 time series
 
+- [ ] [Time Series Cross-Validation — HTML](reports/time-series/cross-validation/index.html) · [Markdown](reports/time-series/cross-validation/SOURCE.md)
+  - [ ] 第 1–6 节：区分部署风险、信息泄漏、依赖与漂移；审计逐样本 label availability。
+  - [ ] 第 7–10 节：复核 CPCV 的边界、nested selection、重训频率、多 horizon 与不规则事件总体。
+  - [ ] 第 11–12 节：推导 MAE / pinball 与配对损失的长期方差；检查 row/day 权重。
+  - [ ] 第 13 节及附录：运行三组合成实验，完成 splitter 边界自测，区分 MCSE 与单次测试标准误。
+  - [ ] 第 14–15 节：按文献地图阅读，写出自己的 forecasting protocol 与最终未触碰测试规则。
+
 - [ ] [Autoresearch for Time-Series LightGBM](reports/machine-learning/autoresearch_time_series_lightgbm.html)
 - [ ] [Time-Series ML Pipeline](reports/time-series/time_series_ml_pipeline.html)
 - [ ] [Irregularly Sampled Time-Series Autocorrelation — HTML](reports/time-series/irregular-autocorrelation/index.html) · [Markdown](reports/time-series/irregular-autocorrelation/SOURCE.md)

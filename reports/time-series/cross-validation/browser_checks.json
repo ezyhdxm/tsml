@@ -1,0 +1,20 @@
+{
+  "desktop": {
+    "errors": [],
+    "width": 1440,
+    "docWidth": 1440,
+    "math": 121,
+    "cells": 24,
+    "train": 11,
+    "horizon_interaction": true
+  },
+  "mobile": {
+    "errors": [],
+    "width": 390,
+    "docWidth": 390,
+    "math": 121,
+    "cells": 24,
+    "train": 11,
+    "horizon_interaction": true
+  }
+}

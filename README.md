@@ -4,6 +4,8 @@
 
 ## 阅读与编辑入口
 
+- **Time Series Cross-Validation 教程式综述**：[中文 HTML](reports/time-series/cross-validation/index.html) · [可编辑 Markdown](reports/time-series/cross-validation/SOURCE.md) · [复现与渲染说明](reports/time-series/cross-validation/README.md) — forecasting protocol、PIT、purging、nested CV、quantile 与依赖稳健 OOS。
+
 - [阅读列表与完成标记](READING_LIST.md)
 - [English report index](ENGLISH_REPORT_INDEX.md)
 - [报告编辑与渲染流程](meta/REPORT_EDITING_WORKFLOW.md)
@@ -35,6 +37,7 @@
     │   ├── lightgbm-first-tree-theory/
     │   └── autoresearch_time_series_lightgbm.html
     ├── time-series/
+    │   ├── cross-validation/
     │   ├── exponential-weighting/
     │   ├── irregular-autocorrelation/
     │   └── time_series_ml_pipeline.html
