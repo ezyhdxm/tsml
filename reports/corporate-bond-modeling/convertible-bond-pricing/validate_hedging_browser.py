@@ -28,7 +28,7 @@ def main():
             errors, external = [], []
             page.on('pageerror', lambda error: errors.append(str(error)))
             page.on('request', lambda request: external.append(request.url) if request.url.startswith(('http://','https://')) else None)
-            page.goto((ROOT/'index.html').as_uri(), wait_until='load')
+            page.set_content((ROOT/'index.html').read_text(encoding='utf-8'), wait_until='load')
             page.wait_for_function('window.BSHedgingTeaching !== undefined')
             metrics = page.evaluate('''() => ({
                 viewport: innerWidth, document: document.documentElement.scrollWidth,
