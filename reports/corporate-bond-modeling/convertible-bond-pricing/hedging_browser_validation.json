@@ -1,0 +1,40 @@
+{
+  "html_sha256": "ffcd10ec632e9cc312a3a1f0b6706f86ff24aeee52cf8ae347ac713dd494e595",
+  "viewports": [
+    {
+      "name": "desktop",
+      "viewport": 1440,
+      "document": 1440,
+      "mathml": 570,
+      "math_errors": 0,
+      "foundation_headers": 9,
+      "old_exercise_section": true,
+      "canvases": [
+        {"id":"bsCostChart","width":838,"height":320,"visible_pixels":16443},
+        {"id":"bsVolRiskChart","width":848,"height":320,"visible_pixels":16138}
+      ],
+      "javascript_errors": [],
+      "external_requests": [],
+      "interactive_controls_passed": true
+    },
+    {
+      "name": "mobile",
+      "viewport": 390,
+      "document": 390,
+      "mathml": 570,
+      "math_errors": 0,
+      "foundation_headers": 9,
+      "old_exercise_section": true,
+      "canvases": [
+        {"id":"bsCostChart","width":302,"height":270,"visible_pixels":7035},
+        {"id":"bsVolRiskChart","width":310,"height":270,"visible_pixels":6871}
+      ],
+      "javascript_errors": [],
+      "external_requests": [],
+      "interactive_controls_passed": true
+    }
+  ],
+  "score_comparisons": 144,
+  "browser_version": "144.0.7559.96",
+  "passed": true
+}
