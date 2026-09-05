@@ -1,0 +1,84 @@
+name: Build convertible Black-Scholes foundations
+
+on:
+  push:
+    branches: [report/black-scholes-frictions-volatility-20260905]
+    paths:
+      - 'reports/corporate-bond-modeling/convertible-bond-pricing/**'
+      - '.github/workflows/build-convertible-foundations.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: convertible-foundations-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[build foundations]'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      REPORT: reports/corporate-bond-modeling/convertible-bond-pricing
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Install reproducible numerical environment
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          curl --fail --location --retry 3 https://github.com/jgm/pandoc/releases/download/3.1.11.1/pandoc-3.1.11.1-linux-amd64.tar.gz --output /tmp/pandoc.tar.gz
+          tar -xzf /tmp/pandoc.tar.gz -C /tmp
+          echo '/tmp/pandoc-3.1.11.1/bin' >> "$GITHUB_PATH"
+      - name: Recompute synthetic experiments and render
+        run: |
+          python "$REPORT/hedging_experiments.py" --paths 32768 --seed 20260905
+          python "$REPORT/render.py"
+      - name: Update report reading entries
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          report = 'reports/corporate-bond-modeling/convertible-bond-pricing'
+          p = Path('README.md')
+          s = p.read_text(encoding='utf-8')
+          marker = '## 阅读与编辑入口\n'
+          assert marker in s
+          if report + '/index.html#bs-replication' not in s:
+              entry = '\n- **Black–Scholes、交易摩擦与可变波动率**：[新增九节教程](' + report + '/index.html#bs-replication) · [Markdown](' + report + '/foundations/) — 自融资复制、离散 hedge、bid–ask、Dupire、Heston 与可复算对冲风险实验；整合在可转债报告中。\n'
+              s = s.replace(marker, marker + entry, 1)
+              p.write_text(s, encoding='utf-8')
+          p = Path('READING_LIST.md')
+          s = p.read_text(encoding='utf-8')
+          if '## Black–Scholes 基础与现实修正' not in s:
+              s += '\n## Black–Scholes 基础与现实修正\n\n'
+              s += '**报告入口：** [HTML](' + report + '/index.html#bs-replication) · [专题源文](' + report + '/foundations/)\n\n'
+              s += '- [ ] BS1–BS2：由自融资账户推导 PDE、风险中性期望和两个截断正态积分。\n'
+              s += '- [ ] BS3–BS4：固定损益方向，推导离散误差和 half-spread 成本尺度；区分平均补偿与超复制。\n'
+              s += '- [ ] BS5–BS7：比较确定时间变化、local vol 与 stochastic vol；推导 Dupire 和 Heston 的剩余风险。\n'
+              s += '- [ ] BS8–BS9：把信用风险放回可转债，复算费用账本与独立波动率消息的非零 hedge 误差极限。\n'
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Save generated readable assets on the selected branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A "$REPORT"
+          git add README.md READING_LIST.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'Render Black-Scholes foundations and freeze hedging experiments [rendered]'
+            git pull --rebase origin "${{ github.ref_name }}"
+            git push origin "HEAD:${{ github.ref_name }}"
+          fi
+      - name: Export report for independent browser review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: convertible-foundations-review
+          path: reports/corporate-bond-modeling/convertible-bond-pricing/
+          retention-days: 7
