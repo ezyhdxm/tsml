@@ -1,0 +1,123 @@
+name: Render time-series cross-validation tutorial
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'reports/time-series/cross-validation/**'
+      - '.github/workflows/render-time-series-cv.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: time-series-cv-render
+  cancel-in-progress: false
+
+jobs:
+  render:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      REPORT: reports/time-series/cross-validation
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Restore checksum-verified publication assets
+        run: |
+          python - <<'PY'
+          import base64, hashlib, json, lzma, os, shutil
+          from pathlib import Path
+          root = Path(os.environ['REPORT']).resolve()
+          transport = root / '.transport'
+          if transport.exists():
+              pieces = sorted(transport.glob('payload-*.txt'))
+              assert len(pieces) == 5, 'Missing publication chunk'
+              packed = ''.join(p.read_text() for p in pieces)
+              raw = lzma.decompress(base64.b64decode(packed, validate=True))
+              expected = '5391bd114a328a7c7fe2acb5cea9ed3b213079e75d309a97e0766bfd53c5e04c'
+              assert hashlib.sha256(raw).hexdigest() == expected, 'Checksum mismatch'
+              assets = json.loads(raw)
+              allowed = {'SOURCE.md', 'README.md', 'style.css', 'template.html',
+                         'render.py', 'experiments.py', 'results.json',
+                         'splitter_checks.json', 'browser_checks.json'}
+              assert set(assets) == allowed
+              for relative, content in assets.items():
+                  path = (root / relative).resolve()
+                  assert path.is_relative_to(root)
+                  path.write_text(content, encoding='utf-8')
+              shutil.rmtree(transport)
+              with open(os.environ['GITHUB_ENV'], 'a') as f:
+                  f.write('FIRST_PUBLICATION=1\n')
+              print('Restored editable source and frozen results; removed transport.')
+          else:
+              assert (root / 'SOURCE.md').is_file()
+          PY
+      - name: Install pinned Pandoc
+        run: |
+          curl --fail --location --retry 3 \
+            https://github.com/jgm/pandoc/releases/download/3.1.11.1/pandoc-3.1.11.1-linux-amd64.tar.gz \
+            --output /tmp/pandoc.tar.gz
+          tar -xzf /tmp/pandoc.tar.gz -C /tmp
+          echo '/tmp/pandoc-3.1.11.1/bin' >> "$GITHUB_PATH"
+      - name: Render offline MathML report and validate
+        run: |
+          python "$REPORT/render.py"
+          python - <<'PY'
+          import hashlib, os
+          from pathlib import Path
+          root = Path(os.environ['REPORT'])
+          if os.environ.get('FIRST_PUBLICATION') == '1':
+              expected = 'c4413d4ed9052fc0de34808833fb177a736983078f411bbb5f6dff5479ad37fe'
+              assert hashlib.sha256((root / 'index.html').read_bytes()).hexdigest() == expected, 'Rendered HTML differs from locally reviewed report'
+          PY
+          cat "$REPORT/build_validation.json"
+      - name: Add report to repository reading entries
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          report = 'reports/time-series/cross-validation'
+          p = Path('README.md')
+          s = p.read_text()
+          entry = '- **Time Series Cross-Validation 教程式综述**：[中文 HTML](' + report + '/index.html) · [可编辑 Markdown](' + report + '/SOURCE.md) · [复现与渲染说明](' + report + '/README.md) — forecasting protocol、PIT、purging、nested CV、quantile 与依赖稳健 OOS。\n'
+          if report not in s:
+              marker = '## 阅读与编辑入口\n'
+              assert marker in s
+              s = s.replace(marker, marker + '\n' + entry, 1)
+          if '    │   ├── cross-validation/' not in s:
+              s = s.replace('    ├── time-series/\n', '    ├── time-series/\n    │   ├── cross-validation/\n', 1)
+          p.write_text(s)
+          p = Path('READING_LIST.md')
+          s = p.read_text()
+          if report not in s:
+              entry = '\n- [ ] [Time Series Cross-Validation — HTML](' + report + '/index.html) · [Markdown](' + report + '/SOURCE.md)\n'
+              entry += '  - [ ] 第 1–6 节：区分部署风险、信息泄漏、依赖与漂移；审计逐样本 label availability。\n'
+              entry += '  - [ ] 第 7–10 节：复核 CPCV 的边界、nested selection、重训频率、多 horizon 与不规则事件总体。\n'
+              entry += '  - [ ] 第 11–12 节：推导 MAE / pinball 与配对损失的长期方差；检查 row/day 权重。\n'
+              entry += '  - [ ] 第 13 节及附录：运行三组合成实验，完成 splitter 边界自测，区分 MCSE 与单次测试标准误。\n'
+              entry += '  - [ ] 第 14–15 节：按文献地图阅读，写出自己的 forecasting protocol 与最终未触碰测试规则。\n'
+              marker = '### C1. Machine learning 与 time series\n'
+              assert marker in s
+              s = s.replace(marker, marker + entry, 1)
+              p.write_text(s)
+          PY
+      - name: Commit report and reading entries
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A "$REPORT"
+          git add README.md READING_LIST.md
+          if git diff --cached --quiet; then
+            echo 'Report is already up to date.'
+          else
+            git commit -m 'Render time-series CV tutorial with offline MathML and frozen experiments [rendered]'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
