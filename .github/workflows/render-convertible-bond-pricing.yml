@@ -1,0 +1,132 @@
+name: Render convertible-bond pricing tutorial
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'reports/corporate-bond-modeling/convertible-bond-pricing/**'
+      - '.github/workflows/render-convertible-bond-pricing.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: convertible-bond-pricing-render
+  cancel-in-progress: false
+
+jobs:
+  render:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      REPORT: reports/corporate-bond-modeling/convertible-bond-pricing
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Restore checksum-verified publication assets
+        run: |
+          python - <<'PY'
+          import base64, hashlib, json, lzma, os, shutil
+          from pathlib import Path
+          root = Path(os.environ['REPORT']).resolve()
+          transport = root / '.transport'
+          if transport.exists():
+              pieces = sorted(transport.glob('payload-*.txt'))
+              assert len(pieces) == 4, 'Missing publication chunk'
+              packed = ''.join(p.read_text(encoding='utf-8') for p in pieces)
+              raw = lzma.decompress(base64.b64decode(packed, validate=True))
+              expected = '4861d9201e6c6bdceb580ae268bce9aaebbf2a765be9854d6e076254daad76a5'
+              assert hashlib.sha256(raw).hexdigest() == expected, 'Checksum mismatch'
+              assets = json.loads(raw)
+              allowed = {'SOURCE.md', 'README.md', 'experiments.py', 'style.css',
+                         'template.html', 'render.py', 'interactive.js', 'results.json',
+                         'validate_browser.py', 'browser_validation.json'}
+              assert set(assets) == allowed
+              for relative, content in assets.items():
+                  path = (root / relative).resolve()
+                  assert path.is_relative_to(root)
+                  path.write_text(content, encoding='utf-8')
+              shutil.rmtree(transport)
+              with open(os.environ['GITHUB_ENV'], 'a') as f:
+                  f.write('FIRST_PUBLICATION=1\n')
+              print('Restored editable public report assets and frozen synthetic results.')
+          else:
+              assert (root / 'SOURCE.md').is_file()
+          PY
+      - name: Install pinned Pandoc
+        run: |
+          curl --fail --location --retry 3 \
+            https://github.com/jgm/pandoc/releases/download/3.1.11.1/pandoc-3.1.11.1-linux-amd64.tar.gz \
+            --output /tmp/pandoc.tar.gz
+          tar -xzf /tmp/pandoc.tar.gz -C /tmp
+          echo '/tmp/pandoc-3.1.11.1/bin' >> "$GITHUB_PATH"
+      - name: Render offline MathML report and validate
+        run: |
+          python "$REPORT/render.py"
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path(os.environ['REPORT'])
+          results = json.loads((root / 'results.json').read_text())
+          assert len(results['checks']) == 10 and all(results['checks'].values())
+          if os.environ.get('FIRST_PUBLICATION') == '1':
+              expected = 'a0d8d0b6ef8f7e83804a74f4593302e2727e99d4cb861be884530a3eb4f70d83'
+              assert hashlib.sha256((root / 'index.html').read_bytes()).hexdigest() == expected, 'Rendered HTML differs from locally reviewed report'
+          PY
+          cat "$REPORT/build_validation.json"
+      - name: Preserve rendered artifact on validation failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: convertible-bond-pricing-render-diagnostic
+          path: |
+            reports/corporate-bond-modeling/convertible-bond-pricing/index.html
+            reports/corporate-bond-modeling/convertible-bond-pricing/build_validation.json
+          retention-days: 7
+      - name: Add report to repository reading entries
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          report = 'reports/corporate-bond-modeling/convertible-bond-pricing'
+          p = Path('README.md')
+          s = p.read_text(encoding='utf-8')
+          if report not in s:
+              marker = '## 阅读与编辑入口\n'
+              assert marker in s
+              entry = '\n- **Convertible Bond Pricing · 可转债定价教程**：[中文 HTML](' + report + '/index.html) · [可编辑 Markdown](' + report + '/SOURCE.md) · [实验与渲染说明](' + report + '/README.md) — payoff、转股/call/put、TF、显式违约 PDE、数值树、联合校准与对冲；含离线交互实验。\n'
+              s = s.replace(marker, marker + entry, 1)
+          if '        ├── convertible-bond-pricing/' not in s:
+              s = s.replace('    └── corporate-bond-modeling/\n', '    └── corporate-bond-modeling/\n        ├── convertible-bond-pricing/\n', 1)
+          p.write_text(s, encoding='utf-8')
+          p = Path('READING_LIST.md')
+          s = p.read_text(encoding='utf-8')
+          if report not in s:
+              s += '\n## Convertible Bond Pricing · 可转债定价\n\n'
+              s += '**报告入口：** [HTML](' + report + '/index.html) · [Markdown](' + report + '/SOURCE.md) · [复现说明](' + report + '/README.md)\n\n'
+              s += '- [ ] 第 2–4 节：逐状态推导 bond + call，区分 parity、bond floor 与信用保护。\n'
+              s += '- [ ] 第 5–8 节：手算行权节点，推导 continuation PDE、TF 分拆和违约股票漂移修正。\n'
+              s += '- [ ] 第 9–11 节：运行合成实验，复核闭式/树收敛、六种合约及十项模型检查。\n'
+              s += '- [ ] 第 12–14 节：解释 20/30 日触发的状态需求、联合校准与 delta 对冲后的违约残差。\n'
+              s += '- [ ] 第 15 节与附录：按原始文献地图阅读，运行最小 Python 基准并写下扩展条款。\n'
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit rendered report and navigation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A "$REPORT"
+          git add README.md READING_LIST.md
+          if git diff --cached --quiet; then
+            echo 'Report is already up to date.'
+          else
+            git commit -m 'Publish convertible pricing tutorial, offline MathML, and synthetic experiments [rendered]'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
