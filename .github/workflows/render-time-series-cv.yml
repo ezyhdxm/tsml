@@ -79,6 +79,15 @@ jobs:
               assert hashlib.sha256((root / 'index.html').read_bytes()).hexdigest() == expected, 'Rendered HTML differs from locally reviewed report'
           PY
           cat "$REPORT/build_validation.json"
+      - name: Preserve rendered artifact on validation failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: time-series-cv-render-diagnostic
+          path: |
+            reports/time-series/cross-validation/index.html
+            reports/time-series/cross-validation/build_validation.json
+          retention-days: 7
       - name: Add report to repository reading entries
         run: |
           python - <<'PY'
